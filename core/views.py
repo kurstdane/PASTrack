@@ -1171,9 +1171,10 @@ def dashboard(request):
             q = (request.GET.get("q") or "").strip()
             lgu_filter = (request.GET.get("lgu") or "").strip()
             type_filter = (request.GET.get("case_type") or "").strip()
+            date_numbered_filter = (request.GET.get("date_numbered") or "").strip()
 
             base_all = Case.objects.filter(status="for_release")
-            qs = base_all.select_related("submitted_by").order_by("-updated_at")
+            qs = base_all.select_related("submitted_by").prefetch_related("numbers").order_by("-updated_at")
 
             if q:
                 qs = qs.filter(
@@ -1192,25 +1193,33 @@ def dashboard(request):
             page_obj = paginator.get_page(request.GET.get("page") or 1)
 
             today = timezone.localdate()
-            released_today = AuditLog.objects.filter(actor=user, action="case_release", created_at__date=today).count()
-            released_total = AuditLog.objects.filter(actor=user, action="case_release").count()
-            since = timezone.now() - timedelta(days=7)
-            released_week = AuditLog.objects.filter(actor=user, action="case_release", created_at__gte=since).count()
+            pending_release = base_all.count()
+            released_today_count = Case.objects.filter(status="released", released_at__date=today).count()
+            total_released = Case.objects.filter(status="released").count()
+            
+            cases_released_today = Case.objects.filter(status="released", released_at__date=today).select_related("submitted_by").order_by("-released_at")[:5]
+            
+            seven_days_ago = timezone.now() - timedelta(days=7)
+            unclaimed_cases = Case.objects.filter(status="released", released_at__lt=seven_days_ago).select_related("submitted_by").order_by("-released_at")[:5]
+            
+            recent_activity = AuditLog.objects.filter(actor=user, action__startswith="case_").order_by("-created_at")[:10]
 
             context.update({
                 "page_obj": page_obj,
                 "filter_q": q,
                 "filter_lgu": lgu_filter,
                 "filter_case_type": type_filter,
+                "filter_date_numbered": date_numbered_filter,
                 "lgu_choices": CustomUser.LGU_MUNICIPALITY_CHOICES,
                 "case_type_choices": Case.CASE_TYPE_CHOICES,
                 "stat_cards": [
-                    {"value": base_all.count(), "label": "For Release"},
-                    {"value": released_today, "label": "Released Today"},
-                    {"value": released_week, "label": "Released (7 days)"},
-                    {"value": released_total, "label": "Total Released"},
-                    {"value": context.get("activity_total", 0), "label": "My Total Actions"},
+                    {"value": pending_release, "label": "Pending Release"},
+                    {"value": released_today_count, "label": "Released Today"},
+                    {"value": total_released, "label": "Total Released"},
                 ],
+                "cases_released_today": cases_released_today,
+                "unclaimed_cases": unclaimed_cases,
+                "recent_activity": recent_activity,
             })
 
         template = "core/dashboard_capitol.html"
@@ -2690,15 +2699,15 @@ def submissions(request):
     qs = Case.objects.filter(lgu_submitted_at__isnull=False).select_related("submitted_by", "assigned_to").order_by("-created_at")
 
     if request.user.role == "capitol_examiner":
-        qs = qs.filter(assigned_to=request.user)
+        qs = qs.filter(Q(assigned_to=request.user) | Q(status__in=["for_approval", "for_taxmapping", "for_numbering", "for_release", "released"]))
     elif request.user.role == "capitol_approver":
-        qs = qs.filter(status="for_approval")
+        qs = qs.filter(status__in=["for_approval", "for_taxmapping", "for_numbering", "for_release", "released"])
     elif request.user.role == "capitol_taxmapper":
-        qs = qs.filter(status="for_taxmapping", taxmapper_assigned_to=request.user)
+        qs = qs.filter(Q(status="for_taxmapping", taxmapper_assigned_to=request.user) | Q(status__in=["for_approval", "for_numbering", "for_release", "released"]))
     elif request.user.role == "capitol_numberer":
-        qs = qs.filter(status="for_numbering")
+        qs = qs.filter(status__in=["for_numbering", "for_release", "released"])
     elif request.user.role == "capitol_releaser":
-        qs = qs.filter(status="for_release")
+        qs = qs.filter(status__in=["for_release", "released"])
 
     tab_map = {
         "all": None,

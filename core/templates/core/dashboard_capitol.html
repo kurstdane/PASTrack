@@ -19,45 +19,47 @@
 {% endblock %}
 
 {% block content %}
-{% if activity_counts %}
-    <div class="card card--flat">
-        <div class="card__header">
-            <strong>My Report</strong>
-            <span class="muted">Total actions: <strong>{{ activity_total }}</strong></span>
-        </div>
-        <div class="card__body card__body--flush">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Action</th>
-                        <th style="width:18%">Count</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for r in activity_counts %}
-                        <tr>
-                            <td>{{ r.action }}</td>
-                            <td class="muted">{{ r.count }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-{% endif %}
-
-{% if stat_cards %}
-    <div class="statgrid" aria-label="Summary">
-        {% for s in stat_cards %}
-            <div class="statcard">
-                <div class="staticon" aria-hidden="true"></div>
-                <div>
-                    <p class="statnum">{{ s.value }}</p>
-                    <p class="statlabel">{{ s.label }}</p>
-                </div>
+{% if user.role != 'capitol_releaser' %}
+    {% if activity_counts %}
+        <div class="card card--flat">
+            <div class="card__header">
+                <strong>My Report</strong>
+                <span class="muted">Total actions: <strong>{{ activity_total }}</strong></span>
             </div>
-        {% endfor %}
-    </div>
+            <div class="card__body card__body--flush">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Action</th>
+                            <th style="width:18%">Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in activity_counts %}
+                            <tr>
+                                <td>{{ r.action }}</td>
+                                <td class="muted">{{ r.count }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if stat_cards %}
+        <div class="statgrid" aria-label="Summary">
+            {% for s in stat_cards %}
+                <div class="statcard">
+                    <div class="staticon" aria-hidden="true"></div>
+                    <div>
+                        <p class="statnum">{{ s.value }}</p>
+                        <p class="statlabel">{{ s.label }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
 {% endif %}
 
 {% if user.role == 'capitol_receiving' %}
@@ -614,22 +616,27 @@
     </div>
 
 {% elif user.role == 'capitol_releaser' %}
+    {% if stat_cards %}
+        <div class="statgrid" aria-label="Summary">
+            {% for s in stat_cards %}
+                <div class="statcard">
+                    <div class="staticon" aria-hidden="true"></div>
+                    <div>
+                        <p class="statnum">{{ s.value }}</p>
+                        <p class="statlabel">{{ s.label }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
     <div class="filters">
         <form method="get" class="searchbar m-0">
             <div class="grow">
                 <label for="id_q">Search</label>
-                <input id="id_q" name="q" value="{{ filter_q }}" placeholder="Search by Transaction No., Owner Name, LGU Origin, or Transaction Type" />
+                <input id="id_q" name="q" value="{{ filter_q }}" placeholder="Search by Case Number, Client Name, LGU Origin, or Case Type" />
             </div>
             <div class="filters-row">
-                <div>
-                    <label for="id_lgu">LGU Origin</label>
-                    <select id="id_lgu" name="lgu">
-                        <option value="">All</option>
-                        {% for v,l in lgu_choices %}
-                            <option value="{{ v }}" {% if filter_lgu == v %}selected{% endif %}>{{ l }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
                 <div>
                     <label for="id_type">Request Type</label>
                     <select id="id_type" name="case_type">
@@ -640,26 +647,42 @@
                     </select>
                 </div>
                 <div>
+                    <label for="id_date_numbered">Date Numbered</label>
+                    <input id="id_date_numbered" type="date" name="date_numbered" value="{{ filter_date_numbered }}" />
+                </div>
+                <div>
+                    <label for="id_lgu">LGU Origin</label>
+                    <select id="id_lgu" name="lgu">
+                        <option value="">All</option>
+                        {% for v,l in lgu_choices %}
+                            <option value="{{ v }}" {% if filter_lgu == v %}selected{% endif %}>{{ l }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
                     <label>&nbsp;</label>
                     <button class="btn btn-primary" type="submit">Apply</button>
                 </div>
             </div>
         </form>
     </div>
+
     <div class="card card--flat card-elevated">
         <div class="card__header">
-            <strong>For Release</strong>
+            <strong class="section-title">Pending Releasing Cases</strong>
+            <span class="muted" style="margin-left:auto;">See All</span>
         </div>
         <div class="card__body card__body--flush">
             {% if page_obj and page_obj.object_list %}
                 <table class="table">
                     <thead>
                         <tr>
-                            <th style="width:22%">Tracking No.</th>
-                            <th>Owner</th>
-                            <th style="width:18%">Status</th>
-                            <th style="width:20%">Updated</th>
-                            <th style="width:14%">Action</th>
+                            <th style="width:18%">Case Number</th>
+                            <th>Client Name</th>
+                            <th style="width:18%">Request Type</th>
+                            <th style="width:14%">LGU Origin</th>
+                            <th style="width:14%">Date Numbered</th>
+                            <th style="width:20%">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -667,37 +690,111 @@
                             <tr>
                                 <td><strong><a href="{% url 'case_detail' case.tracking_id %}">{{ case.tracking_id }}</a></strong></td>
                                 <td>{{ case.client_display_name }}</td>
-                                <td class="muted">{{ case.get_status_display }}</td>
-                                <td class="muted">{{ case.updated_at|date:"M d, Y H:i" }}</td>
+                                <td class="muted">{{ case.get_case_type_display|default:"—" }}</td>
+                                <td class="muted">{{ case.submitted_by.lgu_municipality|default:"—" }}</td>
+                                <td class="muted">{% if case.numbers.all %}{{ case.numbers.all.0.created_at|date:"m/d/Y" }}{% else %}—{% endif %}</td>
                                 <td class="row" style="gap:8px;">
                                     <button class="btn btn-link btn-sm" type="button" data-open-drawer="1" data-tracking="{{ case.tracking_id }}" data-mode="preview">Quick View</button>
-                                    <button class="btn btn-link btn-sm" type="button" data-open-drawer="1" data-tracking="{{ case.tracking_id }}" data-mode="documents">Preview Docs</button>
-                                    <a class="btn btn-link btn-sm link-primary" href="{% url 'case_detail' case.tracking_id %}">Open</a>
+                                    <form method="post" action="{% url 'release_case' case.tracking_id %}" style="margin:0;">
+                                        {% csrf_token %}
+                                        <button class="btn btn-link btn-sm link-accent" type="submit">Mark as Released</button>
+                                    </form>
                                 </td>
                             </tr>
                         {% endfor %}
                     </tbody>
                 </table>
-                {% if page_obj.has_other_pages %}
-                    <div class="pagination">
-                        {% if page_obj.has_previous %}
-                            <a class="pagepill" href="?{% if filter_q %}q={{ filter_q|urlencode }}&{% endif %}{% if filter_lgu %}lgu={{ filter_lgu|urlencode }}&{% endif %}{% if filter_case_type %}case_type={{ filter_case_type|urlencode }}&{% endif %}page={{ page_obj.previous_page_number }}">Prev</a>
-                        {% endif %}
-                        {% for n in page_obj.paginator.page_range %}
-                            {% if n == page_obj.number %}
-                                <span class="pagepill active">{{ n }}</span>
-                            {% elif n <= 10 %}
-                                <a class="pagepill" href="?{% if filter_q %}q={{ filter_q|urlencode }}&{% endif %}{% if filter_lgu %}lgu={{ filter_lgu|urlencode }}&{% endif %}{% if filter_case_type %}case_type={{ filter_case_type|urlencode }}&{% endif %}page={{ n }}">{{ n }}</a>
-                            {% endif %}
-                        {% endfor %}
-                        {% if page_obj.has_next %}
-                            <a class="pagepill" href="?{% if filter_q %}q={{ filter_q|urlencode }}&{% endif %}{% if filter_lgu %}lgu={{ filter_lgu|urlencode }}&{% endif %}{% if filter_case_type %}case_type={{ filter_case_type|urlencode }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
-                        {% endif %}
-                    </div>
-                {% endif %}
             {% else %}
-                <div class="card__body"><p class="muted" style="margin:0;">No transactions for release.</p></div>
+                <div class="card__body"><p class="muted" style="margin:0;">No pending releasing cases.</p></div>
             {% endif %}
+        </div>
+    </div>
+
+    <div class="cards3">
+        <div class="card card--flat card-elevated">
+            <div class="card__header">
+                <strong class="section-title">Cases Released Today</strong>
+            </div>
+            <div class="card__body card__body--flush">
+                {% if cases_released_today %}
+                    {% for case in cases_released_today %}
+                        <div class="card__body" style="padding:12px 16px; border-bottom:1px solid var(--border);">
+                            <div class="row" style="justify-content:space-between; align-items:center;">
+                                <div>
+                                    <div style="font-weight:600;">{{ case.tracking_id }}</div>
+                                    <div class="muted" style="font-size:12px;">{{ case.submitted_by.lgu_municipality|default:"—" }}, {{ case.client_display_name }}</div>
+                                </div>
+                                <div class="muted" style="font-size:12px;">{{ case.released_at|date:"g:i A" }}</div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="card__body"><p class="muted" style="margin:0;">No cases released today.</p></div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card card--flat card-elevated">
+            <div class="card__header">
+                <strong class="section-title">Unclaimed Cases (7+ Days)</strong>
+            </div>
+            <div class="card__body card__body--flush">
+                {% if unclaimed_cases %}
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Case Number</th>
+                                <th style="width:30%">Date Numbered</th>
+                                <th style="width:22%">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for case in unclaimed_cases %}
+                                <tr>
+                                    <td><a href="{% url 'case_detail' case.tracking_id %}">{{ case.tracking_id }}</a></td>
+                                    <td class="muted">{% if case.numbers.all %}{{ case.numbers.all.0.created_at|date:"m/d/Y" }}{% else %}—{% endif %}</td>
+                                    <td class="row" style="gap:8px;">
+                                        <a class="btn btn-link btn-sm" href="{% url 'case_detail' case.tracking_id %}">Quick View</a>
+                                        <a class="btn btn-link btn-sm" href="{% url 'case_detail' case.tracking_id %}">Notify Client</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="card__body"><p class="muted" style="margin:0;">No unclaimed cases.</p></div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card card--flat card-elevated">
+            <div class="card__header">
+                <strong class="section-title">Recent Activity</strong>
+            </div>
+            <div class="card__body card__body--flush">
+                {% if recent_activity %}
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th style="width:34%">Timestamp</th>
+                                <th style="width:22%">Case Number</th>
+                                <th>Activity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for a in recent_activity %}
+                                <tr>
+                                    <td class="muted">{{ a.created_at|date:"m/d/y  g:i A" }}</td>
+                                    <td class="muted">{{ a.target_object|default:"—" }}</td>
+                                    <td>{{ a.get_action_display|default:a.action }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="card__body"><p class="muted" style="margin:0;">No recent activity.</p></div>
+                {% endif %}
+            </div>
         </div>
     </div>
 {% else %}
