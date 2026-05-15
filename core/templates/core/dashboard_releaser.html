@@ -4,51 +4,51 @@
 <!-- HEADER SECTION -->
 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
     <div>
-        <h1 style="font-size: 1.75rem; font-weight: 700; color: #0f172a; margin: 0;">Hi, {{ request.user.first_name|default:"Releaser" }}!</h1>
-        <p style="color: #64748b; margin-top: 0.25rem;">Releasing & Dispatch Dashboard</p>
+        <h1 style="font-size: 1.75rem; font-weight: 700; color: var(--text-main); margin: 0;">Hi, {{ request.user.first_name|default:"Releaser" }}!</h1>
+        <p style="color: var(--text-muted); margin-top: 0.25rem;">Releasing & Dispatch Dashboard</p>
     </div>
 </div>
 
 <!-- 4-CARD KPI ROW -->
 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
     <!-- Ready for Pickup -->
-    <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.25rem; display: flex; align-items: center; gap: 1rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+    <div style="background: var(--bg-surface); border-radius: 12px; border: 1px solid var(--border); padding: 1.25rem; display: flex; align-items: center; gap: 1rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
         <div style="width: 48px; height: 48px; background: #fef3c7; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <i class="ri-folder-shared-line" style="font-size: 1.5rem; color: #d97706;"></i>
         </div>
         <div>
-            <div style="font-size: 1.5rem; font-weight: 700; color: #0f172a; line-height: 1;">{{ stats_pending }}</div>
-            <div style="font-size: 0.8rem; color: #64748b; margin-top: 4px;">Ready for Pickup</div>
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-main); line-height: 1;">{{ stats_pending }}</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Ready for Pickup</div>
         </div>
     </div>
     <!-- Released Today -->
-    <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.25rem; display: flex; align-items: center; gap: 1rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+    <div style="background: var(--bg-surface); border-radius: 12px; border: 1px solid var(--border); padding: 1.25rem; display: flex; align-items: center; gap: 1rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
         <div style="width: 48px; height: 48px; background: #dcfce7; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <i class="ri-checkbox-circle-line" style="font-size: 1.5rem; color: #16a34a;"></i>
         </div>
         <div>
-            <div style="font-size: 1.5rem; font-weight: 700; color: #0f172a; line-height: 1;">{{ stats_released_today }}</div>
-            <div style="font-size: 0.8rem; color: #64748b; margin-top: 4px;">Released Today</div>
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-main); line-height: 1;">{{ stats_released_today }}</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Released Today</div>
         </div>
     </div>
     <!-- Released This Week -->
-    <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.25rem; display: flex; align-items: center; gap: 1rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+    <div style="background: var(--bg-surface); border-radius: 12px; border: 1px solid var(--border); padding: 1.25rem; display: flex; align-items: center; gap: 1rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
         <div style="width: 48px; height: 48px; background: #e0e7ff; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <i class="ri-calendar-check-line" style="font-size: 1.5rem; color: #4f46e5;"></i>
         </div>
         <div>
-            <div style="font-size: 1.5rem; font-weight: 700; color: #0f172a; line-height: 1;">{{ stats_released_week }}</div>
-            <div style="font-size: 0.8rem; color: #64748b; margin-top: 4px;">Released This Week</div>
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-main); line-height: 1;">{{ stats_released_week }}</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Released This Week</div>
         </div>
     </div>
     <!-- Total Dispatched -->
-    <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.25rem; display: flex; align-items: center; gap: 1rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-        <div style="width: 48px; height: 48px; background: #f1f5f9; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i class="ri-stack-line" style="font-size: 1.5rem; color: #475569;"></i>
+    <div style="background: var(--bg-surface); border-radius: 12px; border: 1px solid var(--border); padding: 1.25rem; display: flex; align-items: center; gap: 1rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+        <div style="width: 48px; height: 48px; background: var(--inactive-bg); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i class="ri-stack-line" style="font-size: 1.5rem; color: var(--text-muted);"></i>
         </div>
         <div>
-            <div style="font-size: 1.5rem; font-weight: 700; color: #0f172a; line-height: 1;">{{ stats_total_released }}</div>
-            <div style="font-size: 0.8rem; color: #64748b; margin-top: 4px;">Total Dispatched</div>
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-main); line-height: 1;">{{ stats_total_released }}</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Total Dispatched</div>
         </div>
     </div>
 </div>
@@ -59,33 +59,33 @@
 <div style="display: flex; gap: 1.5rem; align-items: stretch; margin-bottom: 2rem;">
     
     <!-- LEFT PANEL: The Table -->
-    <div class="panel" style="flex: 1; background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
+    <div class="panel" style="flex: 1; background: var(--bg-surface); border-radius: 12px; border: 1px solid var(--border); padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-            <h3 style="font-weight: 700; color: #1e293b; font-size: 1.1rem; margin: 0;">Documents Ready for Pickup</h3>
+            <h3 style="font-weight: 700; color: var(--text-main); font-size: 1.1rem; margin: 0;">Documents Ready for Pickup</h3>
             <!-- Updated Link to My Workspace -->
-            <a href="{% url 'submissions' %}" style="color: #2563eb; font-size: 0.85rem; text-decoration: none; font-weight: 500;">Manage Workspace &rarr;</a>
+            <a href="{% url 'submissions' %}" style="color: var(--primary); font-size: 0.85rem; text-decoration: none; font-weight: 500;">Manage Workspace &rarr;</a>
         </div>
 
         <div style="overflow-x: auto; flex: 1;">
             <table style="width: 100%; border-collapse: collapse;">
                 <thead>
-                    <tr style="border-bottom: 2px solid #f1f5f9; text-align: left;">
-                        <th style="padding: 1rem 0.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Case No.</th>
-                        <th style="padding: 1rem 0.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Client / Request</th>
-                        <th style="padding: 1rem 0.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">TD Number</th>
-                        <th style="padding: 1rem 0.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Status</th>
-                        <th style="padding: 1rem 0.5rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; text-align: right;">Action</th>
+                    <tr style="border-bottom: 2px solid var(--border); text-align: left;">
+                        <th style="padding: 1rem 0.5rem; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Case No.</th>
+                        <th style="padding: 1rem 0.5rem; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Client / Request</th>
+                        <th style="padding: 1rem 0.5rem; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">TD Number</th>
+                        <th style="padding: 1rem 0.5rem; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Status</th>
+                        <th style="padding: 1rem 0.5rem; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; text-align: right;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for case in page_obj %}
-                    <tr style="border-bottom: 1px solid #f1f5f9;">
-                        <td style="padding: 1rem 0.5rem;"><span style="font-weight: 700; color: #0f172a; font-size: 0.85rem;">{{ case.tracking_id }}</span></td>
+                    <tr style="border-bottom: 1px solid var(--border);">
+                        <td style="padding: 1rem 0.5rem;"><span style="font-weight: 700; color: var(--text-main); font-size: 0.85rem;">{{ case.tracking_id }}</span></td>
                         <td style="padding: 1rem 0.5rem;">
-                            <div style="font-weight: 600; color: #1e293b; font-size: 0.85rem;">{{ case.client_name }}</div>
-                            <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 2px;">{{ case.submitted_by.lgu_municipality }}</div>
+                            <div style="font-weight: 600; color: var(--text-main); font-size: 0.85rem;">{{ case.client_name }}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">{{ case.submitted_by.lgu_municipality }}</div>
                         </td>
-                        <td style="padding: 1rem 0.5rem;"><span style="font-weight: 700; color: #0f172a; font-size: 0.85rem;">{{ case.td_number|default:"-" }}</span></td>
+                        <td style="padding: 1rem 0.5rem;"><span style="font-weight: 700; color: var(--text-main); font-size: 0.85rem;">{{ case.td_number|default:"-" }}</span></td>
                         <td style="padding: 1rem 0.5rem;">
                             <span style="background: #fef3c7; color: #b45309; padding: 0.25rem 0.6rem; border-radius: 20px; font-weight: 600; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;">
                                 <span style="color: #d97706; font-size: 0.5rem;">●</span> For Release
@@ -93,18 +93,18 @@
                         </td>
                         <td style="padding: 1rem 0.5rem; text-align: right;">
                             <div style="display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem;">
-                                <a href="{% url 'case_detail' case.tracking_id %}" style="color: #2563eb; font-weight: 600; font-size: 0.85rem; text-decoration: none;">Preview</a>
+                                <a href="{% url 'case_detail' case.tracking_id %}" style="color: var(--primary); font-weight: 600; font-size: 0.85rem; text-decoration: none;">Preview</a>
                                 <form action="{% url 'release_case' case.tracking_id %}" method="POST" style="margin: 0;">
                                     {% csrf_token %}
-                                    <button type="submit" onclick="return confirm('Confirm handover to client?');" style="border: none; background: #2563eb; color: white; padding: 0.4rem 0.75rem; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: background 0.2s;">Release</button>
+                                    <button type="submit" onclick="return confirm('Confirm handover to client?');" style="border: none; background: var(--primary); color: white; padding: 0.4rem 0.75rem; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: background 0.2s;">Release</button>
                                 </form>
                             </div>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" style="text-align: center; padding: 4rem 1rem; color: #94a3b8;">
-                            <i class="ri-check-double-line" style="font-size: 3rem; display: block; margin-bottom: 1rem; color: #cbd5e1;"></i>
+                        <td colspan="5" style="text-align: center; padding: 4rem 1rem; color: var(--text-muted);">
+                            <i class="ri-check-double-line" style="font-size: 3rem; display: block; margin-bottom: 1rem; color: var(--border);"></i>
                             <div style="font-size: 0.95rem; font-weight: 500;">No documents currently waiting for release.</div>
                         </td>
                     </tr>
@@ -115,31 +115,31 @@
     </div>
 
     <!-- RIGHT PANEL: Activity Logs -->
-    <div class="panel" style="width: 350px; background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #f1f5f9;">
-            <h3 style="font-size: 1rem; font-weight: 700; color: #1e293b; margin: 0;">Recent Activity</h3>
+    <div class="panel" style="width: 350px; background: var(--bg-surface); border-radius: 12px; border: 1px solid var(--border); padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
+            <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-main); margin: 0;">Recent Activity</h3>
             <!-- Added Full History Link -->
-            <a href="{% url 'audit_logs' %}" style="color: #2563eb; font-size: 0.75rem; text-decoration: none; font-weight: 500;">Full History &rarr;</a>
+            <a href="{% url 'audit_logs' %}" style="color: var(--primary); font-size: 0.75rem; text-decoration: none; font-weight: 500;">Full History &rarr;</a>
         </div>
         
         <div style="flex: 1;">
             {% for log in recent_activity %}
                 <div style="display: flex; gap: 1rem; margin-bottom: 1.25rem;">
-                    <div style="width: 36px; height: 36px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <div style="width: 36px; height: 36px; background: var(--bg-body); border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                         {% if log.action == 'case_released' %}
                             <i class="ri-send-plane-fill" style="color: #16a34a; font-size: 1rem;"></i>
                         {% else %}
-                            <i class="ri-user-settings-line" style="color: #64748b; font-size: 1rem;"></i>
+                            <i class="ri-user-settings-line" style="color: var(--text-muted); font-size: 1rem;"></i>
                         {% endif %}
                     </div>
                     <div>
-                        <div style="font-size: 0.85rem; font-weight: 600; color: #334155;">{{ log.get_action_display }}</div>
-                        <div style="font-size: 0.75rem; color: #64748b; margin-top: 2px;">{% if log.target_object %}{{ log.target_object }}{% else %}System Activity{% endif %}</div>
-                        <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 4px;">{{ log.created_at|timesince }} ago</div>
+                        <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">{{ log.get_action_display }}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">{% if log.target_object %}{{ log.target_object }}{% else %}System Activity{% endif %}</div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px;">{{ log.created_at|timesince }} ago</div>
                     </div>
                 </div>
             {% empty %}
-                <div style="text-align: center; padding: 2rem 0; color: #94a3b8;">
+                <div style="text-align: center; padding: 2rem 0; color: var(--text-muted);">
                     <i class="ri-history-line" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
                     <p style="font-size: 0.85rem;">No recent actions found.</p>
                 </div>

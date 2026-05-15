@@ -14,26 +14,29 @@
         }
         .assign-modal-backdrop.active { opacity: 1; visibility: visible; }
         .assign-modal-panel {
-            background: white; width: 100%; max-width: 400px; border-radius: var(--radius-lg);
+            background: var(--bg-surface); width: 100%; max-width: 400px; border-radius: var(--radius-lg);
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
             transform: translateY(20px); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             overflow: hidden;
+            border: 1px solid var(--border);
         }
         .assign-modal-backdrop.active .assign-modal-panel { transform: translateY(0); }
 
-        .assign-header { padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #f8fafc; }
+        .assign-header { padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--bg-body); }
         .assign-header h3 { margin: 0; font-size: 1.125rem; color: var(--text-main); }
         .close-modal-btn { background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; }
         .close-modal-btn:hover { color: var(--danger-text); }
 
         .assign-body { padding: 1.5rem; }
-        .assign-select { width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.875rem; margin-top: 0.5rem; margin-bottom: 1.5rem; outline: none; }
+        .assign-select { width: 100%; padding: 0.75rem; border: 1px solid var(--border-input); border-radius: 6px; font-size: 0.875rem; margin-top: 0.5rem; margin-bottom: 1.5rem; outline: none; background: var(--bg-input); color: var(--text-input); }
         .assign-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
 
         /* ===== DASHBOARD LAYOUT & HEADER ===== */
         .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; }
-        .greeting h1 { font-size: 1.75rem; font-weight: 700; color: #0f172a; margin-bottom: 0.25rem; }
-        .greeting p { color: #64748b; margin-top: 0.25rem; font-family: 'Inter', sans-serif; font-weight: 500; }
+        .greeting h1 { font-size: 1.75rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.25rem; }
+        .greeting p { color: var(--text-muted); margin-top: 0.25rem; font-family: 'Inter', sans-serif; font-weight: 500; }
+        
+        .header-actions { display: flex; gap: 1rem; }
 
         .icon-purple { background: #f3e8ff; color: #6b21a8; }
         
@@ -44,6 +47,14 @@
             display: flex; align-items: center; gap: 0.5rem; box-shadow: var(--shadow-sm); text-decoration: none;
         }
         .btn-primary:hover { background-color: var(--primary-hover); box-shadow: var(--shadow-md); transform: translateY(-1px); color: white; }
+
+        .btn-outline {
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+            padding: 0.6rem 1.25rem; border: 1px solid var(--border-input); border-radius: 6px;
+            background: var(--bg-input); color: var(--text-input); font-size: 0.875rem; font-weight: 500;
+            transition: 0.2s; cursor: pointer; text-decoration: none;
+        }
+        .btn-outline:hover { background: var(--inactive-bg); border-color: var(--border-hover); color: var(--text-main); }
 
         /* ===== KPI CARDS GRID ===== */
         .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
@@ -83,12 +94,12 @@
         .table-responsive { overflow-x: auto; }
         .legal-table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: left; }
         .legal-table th { 
-            background: #f8fafc; padding: 1rem 1.5rem; color: var(--text-muted); 
+            background: var(--bg-body); padding: 1rem 1.5rem; color: var(--text-muted); 
             font-size: 0.75rem; font-weight: 700; text-transform: uppercase; 
             letter-spacing: 0.05em; border-bottom: 2px solid var(--border); 
         }
-        .legal-table td { padding: 1.25rem 1.5rem; vertical-align: middle; border-bottom: 1px solid #f1f5f9; font-size: 0.875rem; transition: 0.2s; }
-        .legal-table tbody tr:hover td { background-color: #fafbfc; }
+        .legal-table td { padding: 1.25rem 1.5rem; vertical-align: middle; border-bottom: 1px solid var(--border); font-size: 0.875rem; transition: 0.2s; color: var(--text-main); }
+        .legal-table tbody tr:hover td { background-color: var(--inactive-bg); }
 
         /* Specific Column Widths */
         .col-case-no { width: 15%; }
@@ -125,7 +136,7 @@
         /* ===== BOTTOM PANELS ===== */
         .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
         .activity-list { display: flex; flex-direction: column; gap: 1.25rem; }
-        .activity-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 0.5rem 0; border-bottom: 1px solid #f8fafc; }
+        .activity-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
         .activity-item:last-child { border-bottom: none; }
         .activity-left { display: flex; gap: 1rem; align-items: flex-start; }
         .activity-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
@@ -146,14 +157,17 @@
         <div class="greeting">
             <h1>Hi, {{ request.user.first_name|default:"Receiver" }}!</h1>
             <p>
-                <span style="color: #3b82f6; font-weight: 700;">{{ request.user.staff_id|default:"REC-001" }}</span> 
-                <span style="margin: 0 8px; color: #cbd5e1;">|</span> 
+                <span style="color: var(--primary); font-weight: 700;">{{ request.user.staff_id|default:"REC-001" }}</span> 
+                <span style="margin: 0 8px; color: var(--border);">|</span> 
                 Capitol Receiver
             </p>
         </div>
-        <div style="display: flex; gap: 1rem;">
+        <div class="header-actions">
+            <a href="{% url 'submissions' %}?tab=all" class="btn-outline">
+                <i class="ri-history-line"></i> View History
+            </a>
             <a href="{% url 'submit_case' %}" class="btn-primary">
-                <i class="ri-add-fill"></i> New Transaction
+                <i class="ri-add-line"></i> Receive New Case
             </a>
         </div>
     </div>
@@ -223,7 +237,7 @@
                                 {% if case.status == 'not_received' %}status-pending
                                 {% elif case.status == 'received' %}status-received
                                 {% else %}status-active{% endif %}">
-                                {{ case.get_status_display }}
+                                {% if 'Review' in case.get_status_display or 'Examination' in case.get_status_display %}To Examine{% else %}{{ case.get_status_display }}{% endif %}
                             </span>
                         </td>
                         <td style="color: var(--text-muted);">{{ case.created_at|date:"M d, Y" }}</td>

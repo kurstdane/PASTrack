@@ -8,7 +8,16 @@
 <style>
     /* Full screen layout overrides */
     body {
-        background: #fff;
+        background: #fff !important;
+        color: #111 !important;
+    }
+    /* Force light theme variables for login page */
+    :root, body, [data-theme="dark"] body.login-page {
+        --bg: #fff;
+        --text: #111;
+        --card: #fff;
+        --border: #e5e7eb;
+        --muted: #6b7280;
     }
     .container.login-page-container {
         max-width: 100% !important;

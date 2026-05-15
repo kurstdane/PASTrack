@@ -15,6 +15,20 @@
         --text-muted: #64748b;
         --bg-white: #ffffff;
         --bg-gray: #f8fafc;
+        --border-color: #e2e8f0;
+    }
+
+    [data-theme="dark"] {
+        --primary-blue: #3b82f6;
+        --secondary-blue: #60a5fa;
+        --light-blue: rgba(59, 130, 246, 0.1);
+        --accent-yellow: #fcd34d;
+        --accent-red: #f87171;
+        --text-dark: #f8fafc;
+        --text-muted: #94a3b8;
+        --bg-white: #0f172a;
+        --bg-gray: #0b1220;
+        --border-color: #1f2a44;
     }
 
     .landing-full-width {
@@ -33,6 +47,7 @@
         top: 0;
         z-index: 1000;
         box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        border-bottom: 1px solid var(--border-color);
     }
     .public-brand {
         display: flex;
@@ -75,7 +90,7 @@
     }
     .btn-staff-login {
         background: var(--text-dark);
-        color: white;
+        color: var(--bg-white);
         padding: 10px 24px;
         border-radius: 99px;
         font-weight: 700;
@@ -124,7 +139,8 @@
         position: relative;
         display: flex;
         align-items: center;
-        background: #f1f5f9;
+        background: var(--bg-gray);
+        border: 1px solid var(--border-color);
         border-radius: 16px;
         padding: 8px;
         margin-bottom: 40px;
@@ -173,7 +189,7 @@
         background: var(--bg-gray);
         padding: 20px;
         border-radius: 16px;
-        border: 1px solid var(--border);
+        border: 1px solid var(--border-color);
         box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         transition: all 0.2s ease;
     }
@@ -239,7 +255,7 @@
         background: var(--bg-white);
         padding: 40px;
         border-radius: 24px;
-        border: 1px solid var(--border);
+        border: 1px solid var(--border-color);
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         transition: all 0.3s ease;
     }
@@ -284,7 +300,7 @@
         margin-bottom: 40px;
     }
     .partner-item {
-        background: white;
+        background: var(--bg-white);
         padding: 20px 30px;
         border-radius: 16px;
         font-weight: 700;
@@ -292,7 +308,7 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        border: 1px solid var(--border);
+        border: 1px solid var(--border-color);
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         transition: all 0.2s ease;
     }
@@ -318,12 +334,12 @@
         gap: 50px;
     }
     .feature-card {
-        background: white;
+        background: var(--bg-white);
         padding: 40px;
         border-radius: 20px;
         box-shadow: 0 10px 25px rgba(0,0,0,0.05);
         transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-        border: 1px solid var(--border);
+        border: 1px solid var(--border-color);
         border-top: 4px solid transparent;
     }
     .feature-card:hover {
@@ -335,10 +351,10 @@
     .faq-container {
         max-width: 800px;
         margin: 0 auto;
-        background: white;
+        background: var(--bg-white);
         padding: 40px;
         border-radius: 24px;
-        border: 1px solid var(--border);
+        border: 1px solid var(--border-color);
         box-shadow: 0 10px 30px rgba(0,0,0,0.04);
     }
     .faq-item {
@@ -433,10 +449,10 @@
         gap: 30px;
     }
     .rights-card {
-        border: 1px solid var(--border);
+        border: 1px solid var(--border-color);
         padding: 40px;
         border-radius: 24px;
-        background: white;
+        background: var(--bg-white);
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         transition: all 0.3s ease;
     }
@@ -455,7 +471,7 @@
     .public-footer {
         background: var(--bg-white);
         padding: 40px 50px;
-        border-top: 1px solid var(--border);
+        border-top: 1px solid var(--border-color);
     }
     .footer-content {
         max-width: 1200px;
@@ -495,7 +511,7 @@
         padding: 20px;
     }
     .modal-content {
-        background: white;
+        background: var(--bg-white);
         border-radius: 32px;
         width: 100%;
         max-width: 900px;
@@ -503,6 +519,8 @@
         overflow-y: auto;
         padding: 60px;
         position: relative;
+        color: var(--text-dark);
+        border: 1px solid var(--border-color);
     }
     .modal-close {
         position: absolute;
@@ -560,7 +578,7 @@
             <a href="#guide" class="nav-link">User Guide</a>
             <a href="#faqs" class="nav-link">FAQs</a>
             <a href="{% url 'support' %}" class="nav-link" style="color: var(--accent-red);">Need Help?</a>
-            <a href="{% url 'login' %}" class="btn-staff-login">Staff Login</a>
+            <!-- <a href="{% url 'login' %}" class="btn-staff-login">Staff Login</a> -->
         </nav>
     </header>
 

@@ -7,23 +7,23 @@
     <style>
         /* ===== DASHBOARD LAYOUT & HEADER ===== */
         .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; }
-        .greeting h1 { font-size: 1.75rem; font-weight: 700; color: #0f172a; margin-bottom: 0.25rem; }
-        .greeting p { color: #64748b; margin-top: 0.25rem; font-family: 'Inter', sans-serif; font-weight: 500; }
+        .greeting h1 { font-size: 1.75rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.25rem; }
+        .greeting p { color: var(--text-muted); margin-top: 0.25rem; font-family: 'Inter', sans-serif; font-weight: 500; }
         
         .header-actions { display: flex; gap: 1rem; }
         
         .btn-outline {
             display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-            padding: 0.6rem 1.25rem; border: 1px solid #e2e8f0; border-radius: 6px;
-            background: white; color: #475569; font-size: 0.875rem; font-weight: 500;
+            padding: 0.6rem 1.25rem; border: 1px solid var(--border-input); border-radius: 6px;
+            background: var(--bg-input); color: var(--text-input); font-size: 0.875rem; font-weight: 500;
             transition: 0.2s; cursor: pointer; text-decoration: none;
         }
-        .btn-outline:hover { background: #f8fafc; border-color: #cbd5e1; color: #0f172a; }
+        .btn-outline:hover { background: var(--inactive-bg); border-color: var(--border-hover); color: var(--text-main); }
 
         /* ===== KPI CARDS (5 Columns) ===== */
         .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1.25rem; margin-bottom: 2rem; }
         .kpi-card {
-            background: white; border: 1px solid #e2e8f0;
+            background: var(--bg-surface); border: 1px solid var(--border);
             border-radius: 12px; padding: 1.25rem;
             display: flex; align-items: center; gap: 1rem;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: 0.3s;
@@ -35,18 +35,18 @@
             display: flex; align-items: center; justify-content: center;
             font-size: 1.25rem; flex-shrink: 0;
         }
-        .kpi-data h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.15rem; color: #0f172a; line-height: 1; }
-        .kpi-data span { display: block; font-size: 0.75rem; color: #64748b; margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em;}
+        .kpi-data h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.15rem; color: var(--text-main); line-height: 1; }
+        .kpi-data span { display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em;}
 
         /* ===== MAIN PANELS ===== */
         .panel {
-            background: white; border: 1px solid #e2e8f0;
+            background: var(--bg-surface); border: 1px solid var(--border);
             border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             padding: 1.5rem; display: flex; flex-direction: column; margin-bottom: 2rem;
         }
         
         .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-        .panel-title { font-size: 1.1rem; font-weight: 700; color: #1e293b; margin: 0; }
+        .panel-title { font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin: 0; }
         .view-all-link { font-size: 0.85rem; color: var(--primary); text-decoration: none; font-weight: 500; transition: 0.2s; }
         .view-all-link:hover { text-decoration: underline; }
 
@@ -55,20 +55,20 @@
         .search-bar { flex: 1; position: relative; min-width: 250px; }
         .search-bar input {
             width: 100%; padding: 0.6rem 1rem 0.6rem 2.5rem;
-            border: 1px solid #e2e8f0; border-radius: 6px;
-            font-size: 0.875rem; color: #1e293b; transition: 0.2s; outline: none;
+            border: 1px solid var(--border-input); border-radius: 6px;
+            font-size: 0.875rem; background: var(--bg-input); color: var(--text-input); transition: 0.2s; outline: none;
         }
         .search-bar input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
-        .search-bar i { position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 1.1rem;}
+        .search-bar i { position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); color: var(--text-light); font-size: 1.1rem;}
         
         .filter-select {
-            padding: 0.6rem 2rem 0.6rem 1rem; border: 1px solid #e2e8f0; border-radius: 6px;
-            font-size: 0.875rem; color: #1e293b; background-color: white; cursor: pointer; outline: none;
+            padding: 0.6rem 2rem 0.6rem 1rem; border: 1px solid var(--border-input); border-radius: 6px;
+            font-size: 0.875rem; color: var(--text-input); background-color: var(--bg-input); cursor: pointer; outline: none;
             appearance: none; background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2364748b%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
             background-repeat: no-repeat; background-position: right 0.7rem top 50%; background-size: 0.65rem auto;
             transition: 0.2s;
         }
-        .filter-select:hover { border-color: #cbd5e1; }
+        .filter-select:hover { border-color: var(--border-hover); }
 
         .btn-reset { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--text-muted); font-size: 0.85rem; font-weight: 500; text-decoration: none; padding: 0.6rem 0.5rem; transition: 0.2s;}
         .btn-reset:hover { color: var(--text-main); }
@@ -92,12 +92,12 @@
         .status-pill::before { content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; }
         
         /* Needs Action / To Examine (Freshly Assigned) */
-        .status-to_examine { background: #fef3c7; color: #b45309; border-color: #fde68a; }
-        .status-to_examine::before { background-color: #b45309; }
+        .status-to_examine { background: var(--pill-to-examine-bg); color: var(--pill-to-examine-text); border-color: var(--pill-to-examine-border); }
+        .status-to_examine::before { background-color: var(--pill-to-examine-dot); }
         
-        /* Currently Under Review */
-        .status-in_review { background: #e0e7ff; color: #4338ca; border-color: #c7d2fe; }
-        .status-in_review::before { background-color: #4338ca; }
+        /* Currently To Examine */
+        .status-in_review { background: var(--pill-to-examine-bg); color: var(--pill-to-examine-text); border-color: var(--pill-to-examine-border); }
+        .status-in_review::before { background-color: var(--pill-to-examine-dot); }
         
         /* Returned / Corrections */
         .status-client_correction, .status-returned { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
@@ -136,10 +136,12 @@
         .drawer-backdrop { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(2px); z-index: 1040; opacity: 0; visibility: hidden; transition: 0.3s ease; }
         .drawer-backdrop.active { opacity: 1; visibility: visible; }
 
+        /* Quick View Drawer */
         .drawer-panel {
             position: fixed; top: 0; right: -550px; width: 500px; max-width: 90vw; height: 100vh;
-            background: white; z-index: 1050; box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1);
+            background: var(--bg-surface); z-index: 1050; box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1);
             transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column;
+            border-left: 1px solid var(--border); color: var(--text-main);
         }
         .drawer-panel.active { right: 0; }
     </style>
@@ -151,13 +153,15 @@
         <div class="greeting">
             <h1>Hi, {{ request.user.first_name|default:"Examiner" }}!</h1>
             <p>
-                <span style="color: #3b82f6; font-weight: 700;">{{ request.user.staff_id|default:"EXM-001" }}</span> 
-                <span style="margin: 0 8px; color: #cbd5e1;">|</span> 
+                <span style="color: var(--primary); font-weight: 700;">{{ request.user.staff_id|default:"EXM-001" }}</span> 
+                <span style="margin: 0 8px; color: var(--border);">|</span> 
                 Capitol Examiner
             </p>
         </div>
         <div class="header-actions">
-            <button onclick="window.location.reload();" class="btn-outline"><i class="ri-refresh-line"></i> Refresh Queue</button>
+            <a href="{% url 'submissions' %}?tab=all" class="btn-outline">
+                <i class="ri-history-line"></i> View History
+            </a>
         </div>
     </div>
 
@@ -174,14 +178,14 @@
             <div class="kpi-icon-box" style="color: #b45309; background: #fef3c7;"><i class="ri-error-warning-line"></i></div>
             <div class="kpi-data">
                 <h2>{{ stats_pending_intake|default:"0" }}</h2>
-                <span {% if stats_pending_intake > 0 %}style="color: #b45309;"{% endif %}>Pending Review</span>
+                <span {% if stats_pending_intake > 0 %}style="color: var(--danger-text);"{% endif %}>To Examine</span>
             </div>
         </div>
         <div class="kpi-card">
             <div class="kpi-icon-box" style="color: #4338ca; background: #e0e7ff;"><i class="ri-eye-line"></i></div>
             <div class="kpi-data">
                 <h2>{{ stats_under_review|default:"0" }}</h2>
-                <span>Under Review</span>
+                <span>To Examine</span>
             </div>
         </div>
         <div class="kpi-card">
@@ -256,14 +260,18 @@
                             </td>
                             <td><span style="color: #64748b;">{{ case.submitted_by.lgu_municipality|default:"—" }}</span></td>
                             <td><span style="color: #64748b;">{{ case.assigned_at|date:"M d, Y"|default:"—" }}</span></td>
-                            <td><span class="status-pill status-{{ case.status }}">{{ case.get_status_display }}</span></td>
+                            <td>
+                                <span class="status-pill status-{{ case.status }}">
+                                    {% if 'Review' in case.get_status_display or 'Examination' in case.get_status_display %}To Examine{% else %}{{ case.get_status_display }}{% endif %}
+                                </span>
+                            </td>
                             <td style="text-align: right;">
                                 <div style="display: flex; justify-content: flex-end; align-items: center;">
                                     <a href="#" onclick="openQuickView('{{ case.tracking_id }}'); return false;" class="action-link secondary">
                                         <i class="ri-eye-line"></i> Quick View
                                     </a>
                                     <a href="{% url 'case_detail' case.tracking_id %}" class="action-link primary">
-                                        {% if case.status == 'to_examine' %}Start Review{% else %}Continue{% endif %}
+                                        {% if case.status == 'to_examine' %}Start Examination{% else %}Continue{% endif %}
                                     </a>
                                 </div>
                             </td>
@@ -287,10 +295,10 @@
     <!-- BOTTOM PANELS -->
     <div class="bottom-grid">
         
-        <!-- Left: Cases Under Review -->
+        <!-- Left: Cases To Examine -->
         <div class="panel" style="margin-bottom: 0;">
             <div class="panel-header">
-                <h3 class="panel-title">In Progress (Under Review)</h3>
+                <h3 class="panel-title">In Progress (To Examine)</h3>
                 <a href="{% url 'submissions' %}?scope=me&tab=under_review" class="view-all-link">View All &rarr;</a>
             </div>
             <div style="overflow-x: auto;">
@@ -299,7 +307,7 @@
                         <tr>
                             <th>Case Number</th>
                             <th>Client & Request</th>
-                            <th>Time in Review</th>
+                            <th>Time to Examine</th>
                             <th style="text-align: right;">Actions</th>
                         </tr>
                     </thead>

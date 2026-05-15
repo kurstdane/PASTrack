@@ -50,7 +50,7 @@
 {% endblock %}
 
 {% block content %}
-    <div class="header">
+    <div class="header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
         <div class="greeting">
             <h1>My Performance Report</h1>
             <span>Account: <strong>{{ request.user.email }}</strong> | Role: <strong>{{ role_display }}</strong></span>

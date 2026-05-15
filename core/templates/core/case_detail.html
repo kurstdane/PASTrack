@@ -60,19 +60,23 @@
     .btn-block { width: 100%; display: flex; margin-bottom: 0.5rem; }
     .btn-primary { background: var(--primary); color: white; }
     .btn-primary:hover { background: var(--primary-hover); }
-    .btn-outline { background: white; color: var(--text-main); border: 1px solid var(--border); }
+    .btn-outline { background: var(--bg-surface); color: var(--text-main); border: 1px solid var(--border); }
     .btn-outline:hover { background: var(--inactive-bg); border-color: var(--border-hover); }
-    .btn-danger { background: #fee2e2; color: #dc2626; }
-    .btn-danger:hover { background: #fecaca; }
+    .btn-danger { background: var(--danger-bg); color: var(--danger-text); }
+    .btn-danger:hover { background: rgba(220, 38, 38, 0.25); }
     .btn-success { background: var(--success-bg); color: var(--success-text); }
 
     .status-pill {
         padding: 0.3rem 0.8rem; border-radius: 99px; font-size: 0.75rem; font-weight: 700; text-transform: capitalize;
         border: 1px solid transparent; background: var(--inactive-bg); color: var(--text-muted);
     }
-    .status-to_examine, .status-in_review { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+    .status-to_examine, .status-in_review { 
+        background: var(--pill-to-examine-bg); 
+        color: var(--pill-to-examine-text); 
+        border-color: var(--pill-to-examine-border); 
+    }
     .status-for_approval { background: #f3e8ff; color: #6b21a8; border-color: #e9d5ff; }
-    .status-client_correction { background: #fee2e2; color: #dc2626; border-color: #fecaca; }
+    .status-client_correction { background: var(--danger-bg); color: var(--danger-text); border-color: var(--border); }
 
     /* ===== SIDEBAR & TIMELINE ===== */
     .sticky-sidebar { position: sticky; top: 1.5rem; }
@@ -86,7 +90,7 @@
         background: var(--bg-surface); border: 2px solid var(--primary); z-index: 1;
     }
     .timeline-time { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem; display: block; }
-    .timeline-content { background: #f8fafc; padding: 0.75rem; border-radius: var(--radius-md); font-size: 0.85rem; color: var(--text-main); border: 1px solid var(--border); }
+    .timeline-content { background: var(--bg-body); padding: 0.75rem; border-radius: var(--radius-md); font-size: 0.85rem; color: var(--text-main); border: 1px solid var(--border); }
 
     /* ===== IMPROVED REMARKS FIELD ===== */
     .remarks-input {
@@ -100,13 +104,21 @@
         resize: vertical;
         outline: none;
         transition: border-color 0.2s, box-shadow 0.2s;
-        background-color: #fff;
+        background-color: var(--bg-surface);
+        color: var(--text-main);
     }
 
     .remarks-input:focus {
         border-color: var(--primary);
         box-shadow: 0 0 0 3px var(--primary-light);
     }
+
+    /* ===== WORKFLOW CARD ===== */
+    .workflow-card {
+        background: var(--bg-surface); border: 1px solid var(--border);
+        border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: 1.5rem; margin-bottom: 1.5rem;
+    }
+    .workflow-card h3 { font-size: 0.9rem; font-weight: 700; color: var(--text-main); margin: 0 0 1rem 0; text-transform: uppercase; letter-spacing: 0.05em; }
 
     .btn-submit-note {
         width: 100%;
@@ -136,7 +148,9 @@
         <div class="header-main">
             <div class="title-block">
                 <h1>{{ case.tracking_id }}</h1>
-                <span class="status-pill status-{{ case.status }}">{{ case.get_status_display }}</span>
+                <span class="status-pill status-{{ case.status }}">
+                    {% if 'Review' in case.get_status_display or 'Examination' in case.get_status_display %}To Examine{% else %}{{ case.get_status_display }}{% endif %}
+                </span>
             </div>
             <div class="header-actions">
                 {% if can_edit %}
@@ -153,10 +167,10 @@
         <div class="main-column">
             
             {% if case.status == 'client_correction' or case.return_reason %}
-            <div class="panel" style="border-left: 4px solid #dc2626; background: #fff5f5;">
+            <div class="panel" style="border-left: 4px solid var(--danger-text); background: var(--danger-bg);">
                 <div class="panel-body">
-                    <div class="info-label" style="color: #dc2626; margin-bottom: 0.5rem;">Correction Required</div>
-                    <div class="info-value" style="color: #991b1b;">{{ case.return_reason|default:"Case was returned for missing or incorrect information." }}</div>
+                    <div class="info-label" style="color: var(--danger-text); margin-bottom: 0.5rem;">Correction Required</div>
+                    <div class="info-value" style="color: var(--danger-text);">{{ case.return_reason|default:"Case was returned for missing or incorrect information." }}</div>
                 </div>
             </div>
             {% endif %}
@@ -167,6 +181,14 @@
                     <div class="info-grid">
                         <div class="info-item"><span class="info-label">Client Name</span><span class="info-value">{{ case.client_display_name }}</span></div>
                         <div class="info-item"><span class="info-label">Transaction Type</span><span class="info-value">{{ case.get_case_type_display }}</span></div>
+                        <div class="info-item">
+                            <span class="info-label">Current Status</span>
+                            <span class="info-value">
+                                <span class="status-pill status-{{ case.status }}">
+                                    {% if 'Review' in case.get_status_display or 'Examination' in case.get_status_display %}To Examine{% else %}{{ case.get_status_display }}{% endif %}
+                                </span>
+                            </span>
+                        </div>
                         <div class="info-item"><span class="info-label">Contact Number</span><span class="info-value">{{ case.client_number|default:"—" }}</span></div>
                         <div class="info-item"><span class="info-label">Email Address</span><span class="info-value">{{ case.client_email|default:"—" }}</span></div>
                         <div class="info-item"><span class="info-label">LGU Origin</span><span class="info-value">{{ case.submitted_by.lgu_municipality|default:case.area }}</span></div>
@@ -309,7 +331,7 @@
                 <span style="margin-left: 0.5rem; color: var(--text-light);" id="modalTrackingId"></span>
             </div>
             <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem; display:block;">Select Examiner</label>
-            <select name="assigned_to" required class="form-control">
+            <select name="assigned_to" required class="form-control" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-input); border-radius: 6px; background: var(--bg-input); color: var(--text-input);">
                 <option value="" disabled selected>Select from active staff...</option>
                 {% for ex in examiners %}
                     <option value="{{ ex.id }}">{{ ex.full_name|default:ex.email }}</option>
@@ -344,7 +366,7 @@
             <textarea name="reason" class="remarks-input" placeholder="Explain what needs to be fixed..." required></textarea>
             <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
                 <button type="button" class="btn btn-outline" style="flex:1" onclick="closeReturnModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary" style="flex:1; background: #dc2626;">Confirm Return</button>
+                <button type="submit" class="btn btn-primary" style="flex:1; background: var(--danger);">Confirm Return</button>
             </div>
         </form>
     </div>

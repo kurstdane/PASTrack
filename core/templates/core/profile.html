@@ -25,13 +25,13 @@
     input, select, textarea {
         width: 100%;
         padding: 0.65rem 0.85rem;
-        border: 1px solid var(--border);
+        border: 1px solid var(--border-input);
         border-radius: var(--radius-md);
         font-size: 0.9rem;
         outline: none;
         transition: var(--transition);
-        background: var(--bg-surface);
-        color: var(--text-main);
+        background: var(--bg-input);
+        color: var(--text-input);
     }
     input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
     input[disabled] { background: var(--inactive-bg); color: var(--text-muted); }
@@ -50,15 +50,15 @@
     .btn-primary:hover { background-color: var(--primary-hover); color: white; transform: translateY(-1px); box-shadow: var(--shadow-md); }
     .btn-outline {
         display: inline-flex; align-items: center; gap: 0.5rem;
-        padding: 0.65rem 1.1rem; border: 1px solid var(--border); border-radius: var(--radius-md);
-        background: var(--bg-surface); color: var(--text-main); font-size: 0.875rem; font-weight: 600;
+        padding: 0.65rem 1.1rem; border: 1px solid var(--border-input); border-radius: var(--radius-md);
+        background: var(--bg-input); color: var(--text-input); font-size: 0.875rem; font-weight: 600;
         cursor: pointer; transition: 0.2s; text-decoration: none;
     }
     .btn-outline:hover { background: var(--inactive-bg); border-color: var(--border-hover); }
 
-    .msg { border: 1px solid var(--border); background: var(--bg-surface); border-radius: var(--radius-md); padding: 0.75rem 0.9rem; margin-bottom: 1rem; font-size: 0.875rem; }
-    .msg.success { border-color: #bbf7d0; background: #f0fdf4; color: #166534; }
-    .msg.error { border-color: #fecaca; background: #fef2f2; color: #991b1b; }
+    .msg { border: 1px solid var(--border); background: var(--bg-surface); border-radius: var(--radius-md); padding: 0.75rem 0.9rem; margin-bottom: 1rem; font-size: 0.875rem; color: var(--text-main); }
+    .msg.success { border-color: var(--pill-approved-border); background: var(--pill-approved-bg); color: var(--pill-approved-text); }
+    .msg.error { border-color: var(--danger); background: var(--danger-bg); color: var(--danger-text); }
 
     .avatar-row { display:flex; align-items:center; gap: 1rem; }
     .avatar { width: 64px; height: 64px; border-radius: 999px; border: 1px solid var(--border); overflow: hidden; background: var(--inactive-bg); flex: 0 0 auto; display:flex; align-items:center; justify-content:center; }
@@ -71,7 +71,7 @@
 
 {% block content %}
 <div class="page-wrap">
-    <div class="header">
+    <div class="header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
         <div>
             <h1>Profile</h1>
             <div class="subtitle">{{ role_display }}</div>

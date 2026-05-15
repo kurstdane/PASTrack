@@ -2,45 +2,45 @@
 
 <style>
     /* Embedded Drawer Styles for bulletproof rendering */
-    .cd-layout { font-family: 'Inter', sans-serif; background: white; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+    .cd-layout { font-family: 'Inter', sans-serif; background: var(--bg-surface); height: 100%; display: flex; flex-direction: column; overflow: hidden; color: var(--text-main); }
     
     /* Header Section */
     .cd-top { padding: 2rem 2rem 1.5rem 2rem; }
-    .cd-back-btn { background: none; border: none; color: #0f172a; font-weight: 600; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; padding: 0; text-decoration: none; }
-    .cd-back-btn:hover { color: #1d4ed8; }
+    .cd-back-btn { background: none; border: none; color: var(--text-main); font-weight: 600; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; padding: 0; text-decoration: none; }
+    .cd-back-btn:hover { color: var(--primary); }
     .cd-title-box { text-align: center; margin-top: 1.5rem; margin-bottom: 1.5rem; }
-    .cd-title-box h2 { color: #1d4ed8; font-size: 1.35rem; font-weight: 700; margin: 0 0 0.25rem 0; }
-    .cd-title-box p { color: #0f172a; font-size: 0.85rem; margin: 0; font-weight: 500; }
+    .cd-title-box h2 { color: var(--primary); font-size: 1.35rem; font-weight: 700; margin: 0 0 0.25rem 0; }
+    .cd-title-box p { color: var(--text-main); font-size: 0.85rem; margin: 0; font-weight: 500; }
     
     /* Scrollable Body */
     .cd-body { flex: 1; overflow-y: auto; padding: 0 2rem 2rem 2rem; }
     
     /* Info Table */
-    .cd-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 2.5rem; border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9;}
-    .cd-table td { padding: 1rem 0; border-bottom: 1px solid #f8fafc; }
+    .cd-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 2.5rem; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);}
+    .cd-table td { padding: 1rem 0; border-bottom: 1px solid var(--border); }
     .cd-table tr:last-child td { border-bottom: none; }
-    .cd-table td:first-child { color: #0f172a; font-weight: 600; width: 35%; }
-    .cd-table td:last-child { color: #475569; }
+    .cd-table td:first-child { color: var(--text-main); font-weight: 600; width: 35%; }
+    .cd-table td:last-child { color: var(--text-muted); }
     
     /* Section Headers */
-    .cd-section-header { display: flex; justify-content: space-between; align-items: flex-end; font-size: 0.9rem; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.75rem;}
-    .cd-section-header span { font-size: 0.75rem; color: #94a3b8; font-weight: 500; }
+    .cd-section-header { display: flex; justify-content: space-between; align-items: flex-end; font-size: 0.9rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;}
+    .cd-section-header span { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
     
     /* Documents & Remarks Lists */
     .cd-list { list-style: none; padding: 0; margin: 0 0 2.5rem 0; }
-    .cd-list-item { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 0.75rem 0; border-bottom: 1px solid #f8fafc; }
-    .cd-doc-name { color: #0f172a; font-weight: 500; }
-    .cd-doc-file { color: #94a3b8; }
+    .cd-list-item { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
+    .cd-doc-name { color: var(--text-main); font-weight: 500; }
+    .cd-doc-file { color: var(--text-muted); }
     
-    .cd-rem-item { display: flex; gap: 1rem; font-size: 0.75rem; padding: 0.75rem 0; border-bottom: 1px solid #f8fafc; align-items: center; }
-    .cd-rem-time { color: #0f172a; font-weight: 600; width: 130px; flex-shrink: 0; }
-    .cd-rem-actor { color: #0f172a; font-weight: 700; width: 60px; flex-shrink: 0;}
-    .cd-rem-text { color: #94a3b8; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cd-rem-item { display: flex; gap: 1rem; font-size: 0.75rem; padding: 0.75rem 0; border-bottom: 1px solid var(--border); align-items: center; }
+    .cd-rem-time { color: var(--text-main); font-weight: 600; width: 130px; flex-shrink: 0; }
+    .cd-rem-actor { color: var(--text-main); font-weight: 700; width: 60px; flex-shrink: 0;}
+    .cd-rem-text { color: var(--text-muted); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     /* Fixed Footer */
-    .cd-footer { padding: 1.5rem 2rem; border-top: 1px solid #e2e8f0; background: white; }
-    .cd-btn-primary { display: block; width: 100%; text-align: center; background: #1e40af; color: white; padding: 0.85rem; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 0.9rem; transition: 0.2s; border: none; cursor: pointer;}
-    .cd-btn-primary:hover { background: #1e3a8a; }
+    .cd-footer { padding: 1.5rem 2rem; border-top: 1px solid var(--border); background: var(--bg-surface); }
+    .cd-btn-primary { display: block; width: 100%; text-align: center; background: var(--primary); color: white; padding: 0.85rem; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 0.9rem; transition: 0.2s; border: none; cursor: pointer;}
+    .cd-btn-primary:hover { background: var(--primary-hover); }
 </style>
 
 <div class="cd-layout">

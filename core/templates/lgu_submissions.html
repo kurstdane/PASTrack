@@ -36,7 +36,7 @@
         .tab:hover { color: var(--text-main); background: var(--inactive-bg); }
         .tab.active { background-color: var(--primary-light); color: var(--primary); }
         .tab-badge {
-            background: var(--border); color: var(--text-muted);
+            background: var(--inactive-bg); color: var(--text-muted);
             font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 10px; font-weight: 600; transition: 0.2s;
         }
         .tab.active .tab-badge { background: white; color: var(--primary); }
@@ -47,16 +47,17 @@
         .search-bar { flex: 1; position: relative; }
         .search-bar input {
             width: 100%; padding: 0.6rem 1rem 0.6rem 2.5rem;
-            border: 1px solid var(--border); border-radius: var(--radius-md);
-            font-size: 0.875rem; color: var(--text-main); transition: 0.2s; outline: none;
+            border: 1px solid var(--border-input); border-radius: var(--radius-md);
+            font-size: 0.875rem; color: var(--text-input); transition: 0.2s; outline: none;
+            background: var(--bg-input);
         }
         .search-bar input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
         .search-bar i { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-light); }
         
         .btn-outline {
             display: inline-flex; align-items: center; gap: 0.5rem;
-            padding: 0.6rem 1rem; border: 1px solid var(--border); border-radius: var(--radius-md);
-            background: white; color: var(--text-main); font-size: 0.875rem; font-weight: 500;
+            padding: 0.6rem 1rem; border: 1px solid var(--border-input); border-radius: var(--radius-md);
+            background: var(--bg-input); color: var(--text-input); font-size: 0.875rem; font-weight: 500;
             cursor: pointer; transition: 0.2s; text-decoration: none;
         }
         .btn-outline:hover { background: var(--inactive-bg); border-color: var(--border-hover); }
@@ -64,8 +65,8 @@
         /* Table */
         table { width: 100%; border-collapse: collapse; text-align: left; }
         th { font-size: 0.75rem; font-weight: 600; color: var(--text-main); padding: 1rem 0.5rem; border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.05em; }
-        td { padding: 1rem 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.875rem; vertical-align: middle; transition: 0.2s; }
-        tbody tr:hover td { background-color: #fafbfc; }
+        td { padding: 1rem 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.875rem; vertical-align: middle; transition: 0.2s; color: var(--text-main); }
+        tbody tr:hover td { background-color: var(--inactive-bg); }
 
         .tracking-link { color: var(--text-main); font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
         .tracking-link:hover { color: var(--primary); }
@@ -88,11 +89,19 @@
         .status-returned, .status-client_correction { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
         .status-returned::before, .status-client_correction::before { background-color: #991b1b; }
         
-        .status-received { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
-        .status-received::before { background-color: #0369a1; }
+        .status-received { 
+            background: var(--pill-received-bg); 
+            color: var(--pill-received-text); 
+            border-color: var(--pill-received-border); 
+        }
+        .status-received::before { background-color: var(--pill-received-text); }
 
-        .status-to_examine, .status-in_review { background: #e0e7ff; color: #4338ca; border-color: #c7d2fe; }
-        .status-to_examine::before, .status-in_review::before { background-color: #4338ca; }
+        .status-to_examine, .status-in_review { 
+            background: var(--pill-to-examine-bg); 
+            color: var(--pill-to-examine-text); 
+            border-color: var(--pill-to-examine-border); 
+        }
+        .status-to_examine::before, .status-in_review::before { background-color: var(--pill-to-examine-text); }
 
         .status-for_taxmapping { background: #ffedd5; color: #c2410c; border-color: #fed7aa; }
         .status-for_taxmapping::before { background-color: #c2410c; }
@@ -110,7 +119,7 @@
         .action-btn:hover { background: var(--inactive-bg); color: var(--primary); }
 
         /* Pagination */
-        .pagination-container { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; font-size: 0.875rem; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 1rem;}
+        .pagination-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-top: 1.5rem; font-size: 0.875rem; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 1rem; }
         .pagination-controls { display: flex; gap: 0.25rem; align-items: center; }
         .page-btn { border: 1px solid transparent; background: transparent; color: var(--text-muted); padding: 0.4rem 0.75rem; border-radius: var(--radius-md); cursor: pointer; font-size: 0.875rem; font-weight: 500; transition: 0.2s; text-decoration: none; }
         .page-btn.active { background: var(--primary); color: white; box-shadow: var(--shadow-sm); border-color: var(--primary); }
@@ -119,12 +128,18 @@
 {% endblock %}
 
 {% block content %}
-    <div class="header">
-        <div class="greeting">
-            <h1>My Submissions</h1>
-            <span>Comprehensive list of all your submitted transactions</span>
+    <div class="header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
+        <div>
+            <h1 style="font-size: 1.75rem; font-weight: 700; color: var(--text-main); margin: 0;">Case Submissions</h1>
+            <p style="color: var(--text-muted); margin-top: 0.25rem; font-family: 'Inter', sans-serif; font-weight: 500;">
+                <span style="color: var(--primary); font-weight: 700;">{{ request.user.lgu_municipality|default:"LGU" }}</span> 
+                <span style="margin: 0 8px; color: var(--text-light);">|</span> 
+                Official Document Registry
+            </p>
         </div>
-        <a href="{% url 'submit_case' %}" class="btn-primary"><i class="ri-file-add-line"></i> Create New Transaction</a>
+        <a href="{% url 'submit_case' %}" class="btn-primary" style="background-color: var(--primary); color: white; padding: 0.6rem 1.25rem; border-radius: 6px; text-decoration: none; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="ri-add-line"></i> New Submission
+        </a>
     </div>
 
     <div class="panel">
@@ -179,9 +194,8 @@
                                 </div>
                             </td>
                             <td>
-                                <!-- Status locked strictly to pending or received -->
                                 <span class="status-pill status-{{ case.status }}">
-                                    {{ case.get_status_display|default:case.status }}
+                                    {% if 'Review' in case.get_status_display or 'Examination' in case.get_status_display %}To Examine{% else %}{{ case.get_status_display|default:case.status }}{% endif %}
                                 </span>
                             </td>
                             <td style="color: var(--text-muted); font-size: 0.8rem;">

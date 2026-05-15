@@ -50,12 +50,12 @@
     .form-group select {
         width: 100%;
         padding: 0.75rem 1rem;
-        border: 1px solid var(--border);
+        border: 1px solid var(--border-input);
         border-radius: var(--radius-md);
         font-size: 0.875rem;
         font-family: 'Inter', sans-serif;
-        color: var(--text-main);
-        background-color: var(--bg-surface);
+        color: var(--text-input);
+        background-color: var(--bg-input);
         transition: var(--transition);
         outline: none;
         appearance: none;
@@ -83,7 +83,7 @@
     .msg.error {
         background-color: var(--danger-bg); color: var(--danger-text);
         padding: 1rem; border-radius: var(--radius-md); font-size: 0.875rem;
-        margin-bottom: 1.5rem; font-weight: 500; border: 1px solid #fca5a5;
+        margin-bottom: 1.5rem; font-weight: 500; border: 1px solid var(--danger);
     }
 
     /* ===== BUTTONS ===== */
@@ -103,19 +103,19 @@
     .btn-primary { background: var(--primary); color: white; border: 1px solid var(--primary); box-shadow: var(--shadow-sm); }
     .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
     
-    .btn-secondary { background: transparent; color: var(--text-main); border: 1px solid var(--border); }
+    .btn-secondary { background: transparent; color: var(--text-main); border: 1px solid var(--border-input); }
     .btn-secondary:hover { background: var(--bg-body); border-color: var(--border-hover); }
 
     /* ===== INFO BOX ===== */
     .info-box {
-        background: var(--info-bg); border: 1px solid var(--info-border);
+        background: var(--bg-surface); border: 1px solid var(--border);
         border-radius: var(--radius-lg); padding: 1.5rem;
         display: flex; gap: 1rem; align-items: flex-start;
     }
     
     .info-icon {
-        color: var(--info-text); font-size: 1.5rem;
-        background: white; width: 40px; height: 40px;
+        color: var(--primary); font-size: 1.5rem;
+        background: var(--bg-body); width: 40px; height: 40px;
         border-radius: 50%; display: flex; align-items: center;
         justify-content: center; box-shadow: var(--shadow-sm); flex-shrink: 0;
     }
@@ -131,9 +131,11 @@
 <div class="page-container">
     
     <!-- Header -->
-    <div class="page-header">
-        <h1 class="page-title">Create New Account</h1>
-        <p class="page-subtitle">Create and assign accounts for LGU's and Capitol Offices.</p>
+    <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
+        <div>
+            <h1 class="page-title">Create New Account</h1>
+            <p class="page-subtitle">Create and assign accounts for LGU's and Capitol Offices.</p>
+        </div>
     </div>
 
     <!-- Form Card -->

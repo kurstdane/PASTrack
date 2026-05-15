@@ -39,20 +39,73 @@
             --radius-md: 0.5rem;
             --radius-lg: 0.75rem;
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+            /* Input Theme Variables */
+            --bg-input: #ffffff;
+            --text-input: #0f172a;
+            --border-input: #e2e8f0;
+
+            /* Status Colors */
+            --pill-to-examine-bg: #f5f3ff;
+            --pill-to-examine-text: #6d28d9;
+            --pill-to-examine-border: #ddd6fe;
+            --pill-to-examine-dot: #7c3aed;
+
+            --pill-received-bg: #ecfdf5;
+            --pill-received-text: #065f46;
+            --pill-received-border: #a7f3d0;
         }
 
-        body[data-theme="dark"] {
+        /* Default state (Light Mode) */
+.logo-dark {
+    display: none !important;
+}
+
+.logo-light {
+    display: block !important;
+}
+
+/* Dark Mode state */
+[data-theme="dark"] .logo-light {
+    display: none !important;
+}
+
+[data-theme="dark"] .logo-dark {
+    display: block !important;
+}
+
+        [data-theme="dark"] {
             --bg-body: #0b1220;
             --bg-surface: #0f172a;
             --text-main: #e5e7eb;
             --text-muted: #94a3b8;
             --text-light: #64748b;
-            --primary: #60a5fa;
-            --primary-hover: #3b82f6;
+            --primary: #3b82f6;
+            --primary-hover: #60a5fa;
             --primary-light: rgba(96, 165, 250, 0.16);
             --border: #1f2a44;
             --border-hover: #334155;
             --inactive-bg: rgba(148, 163, 184, 0.12);
+
+            /* Input Theme Variables Dark */
+            --bg-input: #1e293b;
+            --text-input: #f8fafc;
+            --border-input: #334155;
+
+            --danger-bg: rgba(220, 38, 38, 0.15);
+            --danger-text: #f87171;
+            --success-bg: rgba(22, 101, 52, 0.15);
+            --success-text: #4ade80;
+
+            /* Status Colors Dark */
+            --pill-to-examine-bg: rgba(124, 58, 237, 0.15);
+            --pill-to-examine-text: #a78bfa;
+            --pill-to-examine-border: rgba(124, 58, 237, 0.3);
+            --pill-to-examine-dot: #8b5cf6;
+
+            --pill-received-bg: rgba(6, 95, 70, 0.15);
+            --pill-received-text: #4ade80;
+            --pill-received-border: rgba(6, 95, 70, 0.3);
         }
 
         @media (prefers-color-scheme: dark) {
@@ -62,12 +115,22 @@
                 --text-main: #e5e7eb;
                 --text-muted: #94a3b8;
                 --text-light: #64748b;
-                --primary: #60a5fa;
-                --primary-hover: #3b82f6;
+                --primary: #3b82f6;
+                --primary-hover: #60a5fa;
                 --primary-light: rgba(96, 165, 250, 0.16);
                 --border: #1f2a44;
                 --border-hover: #334155;
                 --inactive-bg: rgba(148, 163, 184, 0.12);
+
+                /* Input Theme Variables System Dark */
+                --bg-input: #1e293b;
+                --text-input: #f8fafc;
+                --border-input: #334155;
+
+                --pill-to-examine-bg: rgba(124, 58, 237, 0.15);
+                --pill-to-examine-text: #a78bfa;
+                --pill-to-examine-border: rgba(124, 58, 237, 0.3);
+                --pill-to-examine-dot: #8b5cf6;
             }
         }
 
@@ -87,11 +150,21 @@
 
         input, select, textarea, button { font-family: inherit; }
         input, select, textarea {
-            background-color: var(--bg-surface);
-            color: var(--text-main);
-            border: 1px solid var(--border);
+            background-color: var(--bg-input);
+            color: var(--text-input);
+            border: 1px solid var(--border-input);
         }
         input::placeholder, textarea::placeholder { color: var(--text-light); }
+
+        /* Dark mode calendar icon fix */
+        [data-theme="dark"] input::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+        }
+        @media (prefers-color-scheme: dark) {
+            body[data-theme="system"] input::-webkit-calendar-picker-indicator {
+                filter: invert(1);
+            }
+        }
 
         /* ===== INTERACTIVE SIDEBAR ===== */
         .sidebar {
@@ -180,7 +253,7 @@
             /* Slide-in Drawer Mechanics */
         .drawer-backdrop { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.4); z-index: 1040; opacity: 0; visibility: hidden; transition: 0.3s; }
         .drawer-backdrop.active { opacity: 1; visibility: visible; }
-        .drawer-panel { position: fixed; top: 0; right: -550px; width: 500px; max-width: 90vw; height: 100vh; background: white; z-index: 1050; box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1); transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; }
+        .drawer-panel { position: fixed; top: 0; right: -550px; width: 500px; max-width: 90vw; height: 100vh; background: var(--bg-surface); z-index: 1050; box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1); transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; color: var(--text-main); }
         .drawer-panel.active { right: 0; }
 
 
@@ -192,8 +265,9 @@
 }
 .assign-modal-backdrop.active { opacity: 1; visibility: visible; }
 .assign-modal-panel {
-    background: white; width: 100%; max-width: 400px; border-radius: 12px;
+    background: var(--bg-surface); width: 100%; max-width: 400px; border-radius: 12px;
     transform: translateY(20px); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--text-main);
 }
 .assign-modal-backdrop.active .assign-modal-panel { transform: translateY(0); }
 
@@ -211,20 +285,25 @@
 }
 
 /* Purple Theme for To Examine */
+.status-to_examine {
+    background: var(--pill-to-examine-bg);
+    color: var(--pill-to-examine-text);
+    border: 1px solid var(--pill-to-examine-border);
+}
 
 .status-to_examine::before {
     content: '';
     width: 6px;
     height: 6px;
-    background: #7c3aed;
+    background: var(--pill-to-examine-dot);
     border-radius: 50%;
 }
 
 /* Ensure Received looks distinct */
 .status-received {
-    background: #ecfdf5;
-    color: #065f46;
-    border: 1px solid #a7f3d0;
+    background: var(--pill-received-bg);
+    color: var(--pill-received-text);
+    border: 1px solid var(--pill-received-border);
 }
 
 /* Table Interaction */
@@ -233,23 +312,23 @@
     transition: background-color 0.2s ease;
 }
 .clickable-row:hover {
-    background-color: #f8fafc !important;
+    background-color: var(--inactive-bg) !important;
 }
 
 /* Typography Improvements */
 .client-name {
     font-weight: 600;
-    color: #1e293b;
+    color: var(--text-main);
     font-size: 0.9rem;
 }
 .request-subtext {
     font-size: 0.75rem;
-    color: #64748b;
+    color: var(--text-muted);
     margin-top: 2px;
 }
 .date-text {
     font-size: 0.85rem;
-    color: #475569;
+    color: var(--text-muted);
 }
 
 /* User Info & Avatar Styling */
@@ -261,8 +340,8 @@
 .avatar-circle {
     width: 32px;
     height: 32px;
-    background: #e0f2fe;
-    color: #0369a1;
+    background: var(--primary-light);
+    color: var(--primary);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -270,7 +349,7 @@
     font-weight: 700;
     font-size: 0.75rem;
     flex-shrink: 0;
-    border: 1px solid #bae6fd;
+    border: 1px solid var(--border);
 }
 .user-details {
     display: flex;
@@ -279,11 +358,11 @@
 .user-name {
     font-size: 0.85rem;
     font-weight: 500;
-    color: #1e293b;
+    color: var(--text-main);
 }
 .user-role {
     font-size: 0.7rem;
-    color: #94a3b8;
+    color: var(--text-light);
     text-transform: uppercase;
     letter-spacing: 0.025em;
 }
@@ -299,36 +378,14 @@
     gap: 6px;
 }
 
-
-.status-to_examine::before {
-    content: '';
-    width: 6px;
-    height: 6px;
-    background: #8b5cf6;
-    border-radius: 50%;
-}
-
 /* View Button */
 .view-btn {
-    color: #94a3b8;
+    color: var(--text-light);
     font-size: 1.2rem;
     transition: color 0.2s;
 }
 .clickable-row:hover .view-btn {
     color: var(--primary);
-}
-
-
-.status-to_examine {
-    background: #f5f3ff;
-    color: #6d28d9;
-    border: 1px solid #ddd6fe;
-}
-
-.status-received {
-    background: #ecfdf5;
-    color: #065f46;
-    border: 1px solid #a7f3d0;
 }
     </style>
 
@@ -337,15 +394,14 @@
 </head>
 <body data-theme="{{ request.user.theme_preference|default:'light' }}">
 
-    <!-- INTERACTIVE SIDEBAR -->
     <aside class="sidebar">
-    <div class="brand-logo" style="display: flex; align-items: center; gap: 2px; padding: 0 ;">
-        <!-- The Logo Mark -->
+    <div class="brand-logo" style="display: flex; align-items: center; gap: 2px; padding: 0;">
         <img src="{% static 'core/logo.png' %}" alt="Logo" style="width: 54px; height: 54px; object-fit: contain;">
         
-        <!-- The Brand Name SVG -->
-        <img src="{% static 'core/sub-logo.png' %}" alt="PAStrack" class="hide-text" style="height: 24px; object-fit: contain;">
+        <img src="{% static 'core/sub-logo.png' %}" alt="PAStrack" class="hide-text logo-light" style="height: 24px; object-fit: contain;">
+        <img src="{% static 'core/sec-logo-dark.png' %}" alt="PAStrack" class="hide-text logo-dark" style="height: 24px; object-fit: contain;">
     </div>
+
         
         <nav class="nav-menu">
             <!-- 1. Universal: Dashboard -->

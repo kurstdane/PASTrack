@@ -15,6 +15,28 @@
         --text-muted: #64748b;
         --bg-white: #ffffff;
         --bg-gray: #f8fafc;
+        --border-color: #e2e8f0;
+        
+        --bg-input: #ffffff;
+        --text-input: #1e293b;
+        --border-input: #d1d9ef;
+    }
+
+    [data-theme="dark"] {
+        --primary-blue: #3b82f6;
+        --secondary-blue: #60a5fa;
+        --light-blue: rgba(59, 130, 246, 0.1);
+        --accent-yellow: #fcd34d;
+        --accent-red: #f87171;
+        --text-dark: #f8fafc;
+        --text-muted: #94a3b8;
+        --bg-white: #0f172a;
+        --bg-gray: #0b1220;
+        --border-color: #1f2a44;
+        
+        --bg-input: #1e293b;
+        --text-input: #f8fafc;
+        --border-input: #334155;
     }
 
     .landing-full-width {
@@ -130,9 +152,9 @@
 
   .pt-wrap {
     font-family: 'DM Sans', sans-serif;
-    background: #f0f4fa;
+    background: var(--bg-gray);
     min-height: 100vh;
-    color: #1a2340;
+    color: var(--text-dark);
   }
 
   /* ════════════════════════════════
@@ -217,8 +239,8 @@
      SEARCH BAR
   ════════════════════════════════ */
   .pt-search-bar {
-    background: #fff;
-    border: 1px solid #e2e8f0;
+    background: var(--bg-white);
+    border: 1px solid var(--border-color);
     border-radius: 16px;
     padding: 20px 28px;
     display: flex;
@@ -241,17 +263,17 @@
   .pt-search-input-row { flex: 1; display: flex; gap: 10px; }
   .pt-search-input {
     flex: 1;
-    border: 1.5px solid #d1d9ef;
+    border: 1.5px solid var(--border-input);
     border-radius: 8px;
     padding: 10px 16px;
     font-size: 14px;
     font-family: inherit;
-    color: #1a2340;
+    color: var(--text-input);
     outline: none;
-    background: #f9fafd;
+    background: var(--bg-input);
     transition: border-color .15s;
   }
-  .pt-search-input:focus { border-color: #2d4fba; background: #fff; }
+  .pt-search-input:focus { border-color: var(--primary-blue); background: var(--bg-white); }
   .pt-btn-primary {
     background: #1e3a9f;
     color: #fff;
@@ -283,8 +305,8 @@
      CARDS
   ════════════════════════════════ */
   .pt-card {
-    background: #fff;
-    border: 1px solid #e2e8f0;
+    background: var(--bg-white);
+    border: 1px solid var(--border-color);
     border-radius: 16px;
     overflow: hidden;
     box-shadow: 0 1px 4px rgba(30,58,159,.05);
@@ -406,11 +428,12 @@
   .pt-step__circle {
     width: 52px; height: 52px;
     border-radius: 50%;
-    border: 2px solid #d1d9ef;
-    background: #fff;
+    border: 2px solid var(--border-input);
+    background: var(--bg-white);
     display: flex; align-items: center; justify-content: center;
     position: relative;
     transition: border-color .3s, box-shadow .3s;
+    color: var(--text-dark);
   }
   .pt-step__circle svg { width: 20px; height: 20px; color: #b0bdd4; transition: color .3s; }
 
@@ -718,7 +741,7 @@
             </div>
 
             <!-- ══ 6-STEP STEPPER ══
-                 Steps: Submitted · Received · In Review · For Approval · For Numbering · For Releasing
+                 Steps: Submitted · Received · To Examine · For Approval · For Numbering · For Releasing
                  The JS below reads data-step on .pt-wrap and fills the bar + marks steps automatically.
             -->
             <div class="pt-stepper" id="pt-stepper">
@@ -760,7 +783,7 @@
                 </span>
               </div>
 
-              <!-- Step 3: In Review -->
+              <!-- Step 3: To Examine -->
               <div class="pt-step" data-step="3">
                 <div class="pt-step__circle">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -771,7 +794,7 @@
                   </span>
                 </div>
                 <span class="pt-step__num">3</span>
-                <span class="pt-step__name">In Review</span>
+                <span class="pt-step__name">To Examine</span>
                 <span class="pt-step__date"></span>
               </div>
 
@@ -907,8 +930,8 @@
     { num: 2, name: 'Received',      estDays: 1,
       desc: 'Your case has been received and logged by the office.',
       icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>' },
-    { num: 3, name: 'In Review',     estDays: 3,
-      desc: 'Your document is currently being reviewed by the concerned office.',
+    { num: 3, name: 'To Examine',     estDays: 3,
+      desc: 'Your document is currently being examined by the concerned office.',
       icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' },
     { num: 4, name: 'For Approval',  estDays: 3,
       desc: 'Your case has been endorsed and is awaiting official approval.',
@@ -929,6 +952,7 @@
     if (/releas/i.test(s))   return 6;
     if (/number/i.test(s))   return 5;
     if (/approv/i.test(s))   return 4;
+    if (/examin/i.test(s))   return 3;
     if (/review/i.test(s))   return 3;
     if (/receiv/i.test(s))   return 2;
     return 1; // default: Submitted

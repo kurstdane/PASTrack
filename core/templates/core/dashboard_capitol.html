@@ -11,7 +11,7 @@
     {% endif %}
     <div x-data="{ open:false }" style="position:relative;">
         <button class="btn btn-link btn-sm" type="button" @click="open=!open">Refresh</button>
-        <div x-cloak x-show="open" @click.outside="open=false" style="position:absolute; right:0; top:42px; background:#fff; border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); padding:8px; min-width:220px;">
+        <div x-cloak x-show="open" @click.outside="open=false" style="position:absolute; right:0; top:42px; background:var(--bg-surface); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); padding:8px; min-width:220px;">
             <button class="btn btn-secondary btn-sm" type="button" style="width:100%;" onclick="window.location.reload()">Refresh Now</button>
             <button class="btn btn-secondary btn-sm" type="button" style="width:100%; margin-top:8px;" onclick="(function(){var k='pastrack_auto_refresh';var v=localStorage.getItem(k)==='1'?'0':'1';localStorage.setItem(k,v);window.location.reload();})()">Toggle Auto Refresh</button>
         </div>
@@ -65,8 +65,8 @@
         <form method="get" class="searchbar m-0">
             <input type="hidden" name="tab" value="{{ tab }}" />
             <div class="grow">
-                <label for="id_q">Search</label>
-                <input id="id_q" name="q" value="{{ filter_q }}" placeholder="Search by Transaction No., Owner Name, LGU Origin, or Transaction Type" />
+                <label for="id_q" style="color: var(--text-muted); font-weight: 700; font-size: 0.9rem;">Search</label>
+                <input id="id_q" name="q" value="{{ filter_q }}" placeholder="Search by Transaction No., Owner Name, LGU Origin, or Transaction Type" style="background: var(--bg-input); color: var(--text-input); border: 1px solid var(--border-input);" />
             </div>
             <div class="filters-row">
                 <div>
@@ -137,8 +137,8 @@
                                 <td class="muted">{{ case.submitted_by.lgu_municipality|default:"—" }}</td>
                                 <td class="muted">{{ case.created_at|date:"m/d/Y" }}</td>
                                 <td class="row" style="gap:8px;">
-                                    <button class="btn btn-link btn-sm" type="button" data-open-drawer="1" data-tracking="{{ case.tracking_id }}" data-mode="preview">Quick View</button>
-                                    <button class="btn btn-link btn-sm" type="button" data-open-drawer="1" data-tracking="{{ case.tracking_id }}" data-mode="documents">Preview Docs</button>
+                                    <button class="btn btn-link btn-sm" type="button" data-open-drawer="1" data-tracking="{{ case.tracking_id }}" data-mode="preview" style="color: var(--primary);">Quick View</button>
+                                    <button class="btn btn-link btn-sm" type="button" data-open-drawer="1" data-tracking="{{ case.tracking_id }}" data-mode="documents" style="color: var(--primary);">Preview Docs</button>
                                     {% if tab == 'pending' %}
                                         <form method="post" action="{% url 'receive_case' case.tracking_id %}" style="margin:0;">
                                             {% csrf_token %}
@@ -335,7 +335,11 @@
                                 <td>{{ case.client_display_name }}</td>
                                 <td class="muted">{{ case.get_case_type_display|default:"—" }}</td>
                                 <td class="muted">{{ case.submitted_by.lgu_municipality|default:"—" }}</td>
-                                <td class="muted">{{ case.get_status_display }}</td>
+                                <td class="muted">
+                                    <span class="status-pill status-{{ case.status }}">
+                                        {% if 'Review' in case.get_status_display or 'Examination' in case.get_status_display %}To Examine{% else %}{{ case.get_status_display }}{% endif %}
+                                    </span>
+                                </td>
                                 <td class="row" style="gap:8px;">
                                     <button class="btn btn-link btn-sm" type="button" data-open-drawer="1" data-tracking="{{ case.tracking_id }}" data-mode="preview">Quick View</button>
                                     <button class="btn btn-link btn-sm" type="button" data-open-drawer="1" data-tracking="{{ case.tracking_id }}" data-mode="documents">Preview Docs</button>
@@ -553,8 +557,8 @@
             <div class="filters" style="margin:0;">
                 <form method="get" class="searchbar m-0">
                     <div class="grow">
-                        <label for="id_lgu">Location (LGU)</label>
-                        <select id="id_lgu" name="lgu">
+                        <label for="id_lgu" style="color: var(--text-muted); font-weight: 700; font-size: 0.9rem;">Location (LGU)</label>
+                        <select id="id_lgu" name="lgu" style="background: var(--bg-input); color: var(--text-input); border: 1px solid var(--border-input);">
                             <option value="">All</option>
                             {% for v,l in numberer_lgu_choices %}
                                 <option value="{{ v }}" {% if filter_lgu == v %}selected{% endif %}>{{ l }}</option>
@@ -562,16 +566,16 @@
                         </select>
                     </div>
                     <div>
-                        <label for="id_date_from">From</label>
-                        <input id="id_date_from" type="date" name="date_from" value="{{ filter_date_from }}" />
+                        <label for="id_date_from" style="color: var(--text-muted); font-weight: 700; font-size: 0.9rem;">From</label>
+                        <input id="id_date_from" type="date" name="date_from" value="{{ filter_date_from }}" style="background: var(--bg-input); color: var(--text-input); border: 1px solid var(--border-input);" />
                     </div>
                     <div>
-                        <label for="id_date_to">To</label>
-                        <input id="id_date_to" type="date" name="date_to" value="{{ filter_date_to }}" />
+                        <label for="id_date_to" style="color: var(--text-muted); font-weight: 700; font-size: 0.9rem;">To</label>
+                        <input id="id_date_to" type="date" name="date_to" value="{{ filter_date_to }}" style="background: var(--bg-input); color: var(--text-input); border: 1px solid var(--border-input);" />
                     </div>
                     <div class="grow">
-                        <label for="id_number">Number / Tracking</label>
-                        <input id="id_number" name="number" value="{{ filter_number }}" placeholder="Search..." />
+                        <label for="id_number" style="color: var(--text-muted); font-weight: 700; font-size: 0.9rem;">Number / Tracking</label>
+                        <input id="id_number" name="number" value="{{ filter_number }}" placeholder="Search..." style="background: var(--bg-input); color: var(--text-input); border: 1px solid var(--border-input);" />
                     </div>
                     <div>
                         <button class="btn btn-primary" type="submit">Filter</button>

@@ -14,7 +14,7 @@
     /* ===== WIZARD LAYOUT (No Scroll) ===== */
     .wizard-page {
         display: flex; justify-content: center; align-items: center;
-        height: 100vh; width: 100vw; overflow: hidden; background-color: #f8fafc;
+        height: 100vh; width: 100vw; overflow: hidden; background-color: var(--bg-body);
     }
     .wizard-inner {
         display: flex; align-items: flex-start; gap: 2.5rem;
@@ -29,10 +29,10 @@
     }
     .back-link:hover { color: #1e3a8a; }
     
-    .wizard-left-card { background-color: #f4f7fb; border-radius: 16px; padding: 2.5rem 2rem; }
+    .wizard-left-card { background-color: var(--bg-surface); border-radius: 16px; padding: 2.5rem 2rem; border: 1px solid var(--border); }
     .brand-logo {
         display: flex; align-items: center; gap: 0.5rem; font-size: 1.5rem;
-        font-weight: 800; color: #0f172a; margin-bottom: 2.5rem;
+        font-weight: 800; color: var(--text-main); margin-bottom: 2.5rem;
     }
     .stepper { display: flex; flex-direction: column; position: relative; }
     .stepper::before {
@@ -62,8 +62,8 @@
     .wizard-right::-webkit-scrollbar { display: none; }
     
     .wizard-right-card {
-        background-color: #ffffff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.03), 0 1px 3px rgba(0,0,0,0.02);
-        border: 1px solid #f1f5f9; padding: 2.5rem 3rem; width: 100%; margin-bottom: 2rem;
+        background-color: var(--bg-surface); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.03), 0 1px 3px rgba(0,0,0,0.02);
+        border: 1px solid var(--border); padding: 2.5rem 3rem; width: 100%; margin-bottom: 2rem;
     }
     
     /* Dynamic widths based on step */
@@ -71,7 +71,7 @@
     .step-2-card { max-width: 950px; }
     .step-3-card { max-width: 1000px; padding: 3rem 4rem; } /* Wider for previewer */
 
-    .card-title { font-size: 1.5rem; font-weight: 700; color: #0f172a; margin-top: 0; margin-bottom: 1.5rem; }
+    .card-title { font-size: 1.5rem; font-weight: 700; color: var(--text-main); margin-top: 0; margin-bottom: 1.5rem; }
 
     /* Shared Forms & Buttons */
     .form-actions { display: flex; justify-content: flex-end; align-items: center; gap: 1rem; margin-top: 2rem; }
@@ -86,9 +86,9 @@
     /* ===== STEP 1 CSS ===== */
     .form-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.25rem 1rem; }
     .col-4 { grid-column: span 4; } .col-2 { grid-column: span 2; } .col-6 { grid-column: span 6; } .col-12 { grid-column: span 12; }
-    .form-group label { display: block; font-size: 0.8rem; font-weight: 600; color: #1e293b; margin-bottom: 0.35rem; }
+    .form-group label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.35rem; }
     .form-group input[type="text"], .form-group input[type="email"], .form-group input[type="number"], .form-group select {
-        width: 100%; padding: 0.6rem 1rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.875rem; color: #0f172a; outline: none; transition: 0.2s; background-color: #ffffff;
+        width: 100%; padding: 0.6rem 1rem; border: 1px solid var(--border-input); border-radius: 8px; font-size: 0.875rem; color: var(--text-input); outline: none; transition: 0.2s; background-color: var(--bg-input);
     }
     .form-group input:focus, .form-group select:focus { border-color: #1e3a8a; box-shadow: 0 0 0 3px #eff6ff; }
     .form-group select { appearance: none; background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right 1rem top 50%; background-size: 0.65rem auto; }
@@ -98,26 +98,26 @@
 
     /* ===== STEP 2 CSS ===== */
     .doc-list { display: flex; flex-direction: column; }
-    .doc-row { border-bottom: 1px solid #f1f5f9; padding: 1.25rem 0; transition: all 0.3s ease; }
+    .doc-row { border-bottom: 1px solid var(--border); padding: 1.25rem 0; transition: all 0.3s ease; }
     .doc-row:last-child { border-bottom: none; }
     .view-pending, .view-dropzone, .view-completed { display: none; }
     .state-pending .view-pending { display: flex; justify-content: space-between; align-items: center; }
     .state-dropzone .view-dropzone { display: block; animation: slideDown 0.3s ease; }
     .state-completed .view-completed { display: flex; justify-content: space-between; align-items: center; }
-    .doc-label { font-size: 0.9rem; color: #0f172a; font-weight: 500; flex: 1; }
+    .doc-label { font-size: 0.9rem; color: var(--text-main); font-weight: 500; flex: 1; }
     .text-success { color: #22c55e !important; }
     .btn-upload-trigger { background-color: #1e3a8a; color: white; border: none; border-radius: 6px; padding: 0.5rem 1.25rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: 0.2s; }
     .btn-upload-trigger:hover { background-color: #1e40af; }
-    .dropzone-area { border: 2px dashed #cbd5e1; border-radius: 12px; padding: 2rem; display: flex; align-items: center; cursor: pointer; transition: 0.2s; background-color: white; margin-top: 0.75rem; }
-    .dropzone-area:hover { border-color: #1e3a8a; background-color: #f8fafc; }
+    .dropzone-area { border: 2px dashed var(--border-input); border-radius: 12px; padding: 2rem; display: flex; align-items: center; cursor: pointer; transition: 0.2s; background-color: var(--bg-input); margin-top: 0.75rem; }
+    .dropzone-area:hover { border-color: var(--primary); background-color: var(--bg-body); }
     .dz-icon { color: #1e3a8a; font-size: 1.75rem; margin-right: 1rem; }
     .dz-text { flex: 1; display: flex; flex-direction: column; }
-    .dz-text strong { color: #0f172a; font-size: 0.9rem; margin-bottom: 0.2rem; }
+    .dz-text strong { color: var(--text-main); font-size: 0.9rem; margin-bottom: 0.2rem; }
     .dz-text span { color: #94a3b8; font-size: 0.75rem; }
-    .dz-btn { border: 1px solid #cbd5e1; color: #1e3a8a; background: white; border-radius: 6px; padding: 0.4rem 1rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; pointer-events: none; }
+    .dz-btn { border: 1px solid var(--border-input); color: var(--primary); background: var(--bg-surface); border-radius: 6px; padding: 0.4rem 1rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; pointer-events: none; }
     .dropzone-area:hover .dz-btn { border-color: #1e3a8a; }
-    .doc-filename { font-size: 0.85rem; color: #0f172a; font-weight: 500; flex: 2; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 1rem; }
-    .doc-meta { font-size: 0.8rem; color: #0f172a; font-weight: 500; text-align: right; margin-right: 1.5rem; flex: 1; }
+    .doc-filename { font-size: 0.85rem; color: var(--text-main); font-weight: 500; flex: 2; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 1rem; }
+    .doc-meta { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; text-align: right; margin-right: 1.5rem; flex: 1; }
     .doc-actions { display: flex; gap: 0.5rem; }
     .icon-btn { width: 32px; height: 32px; border-radius: 6px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
     .edit-btn { background-color: #eff6ff; color: #3b82f6; }
@@ -133,23 +133,23 @@
     /* ===== STEP 3 CSS (NEW REVIEW DESIGN) ===== */
     .summary-header { text-align: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 1.5rem; margin-bottom: 1.5rem; }
     .summary-id { color: #1e3a8a; font-size: 1.5rem; font-weight: 700; margin: 0 0 0.25rem 0; letter-spacing: 0.02em; }
-    .summary-type { color: #0f172a; font-weight: 600; font-size: 1rem; }
+    .summary-type { color: var(--text-main); font-weight: 600; font-size: 1rem; }
     
     .summary-list { display: flex; flex-direction: column; margin-bottom: 3rem; }
-    .summary-row { display: flex; padding: 1rem 0; border-bottom: 1px solid #f1f5f9; }
-    .summary-label { width: 35%; color: #64748b; font-size: 0.875rem; font-weight: 500; }
-    .summary-value { flex: 1; color: #0f172a; font-size: 0.875rem; }
+    .summary-row { display: flex; padding: 1rem 0; border-bottom: 1px solid var(--border); }
+    .summary-label { width: 35%; color: var(--text-muted); font-size: 0.875rem; font-weight: 500; }
+    .summary-value { flex: 1; color: var(--text-main); font-size: 0.875rem; }
 
     /* Split Document Viewer */
     .preview-container { display: flex; gap: 2rem; align-items: stretch; height: 500px; }
     
-    .preview-sidebar { width: 280px; display: flex; flex-direction: column; overflow-y: auto; border-right: 1px solid #e2e8f0; padding-right: 1rem; }
+    .preview-sidebar { width: 280px; display: flex; flex-direction: column; overflow-y: auto; border-right: 1px solid var(--border); padding-right: 1rem; }
     .preview-tab { 
         display: flex; justify-content: space-between; align-items: center; padding: 1rem 0.5rem; 
-        border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: 0.2s; 
+        border-bottom: 1px solid var(--border); cursor: pointer; transition: 0.2s; 
     }
-    .preview-tab:hover { background-color: #f8fafc; }
-    .tab-name { font-size: 0.85rem; color: #0f172a; font-weight: 500; }
+    .preview-tab:hover { background-color: var(--inactive-bg); }
+    .tab-name { font-size: 0.85rem; color: var(--text-main); font-weight: 500; }
     .tab-action { font-size: 0.75rem; color: #94a3b8; }
     
     /* Active Tab State */
@@ -157,9 +157,9 @@
     .preview-tab.active .tab-action { display: none; } /* Hide the word 'Preview' when active */
 
     .preview-viewer { 
-        flex: 1; background-color: #737373; border-radius: 8px; 
+        flex: 1; background-color: #334155; border-radius: 8px; 
         display: flex; justify-content: center; align-items: center; 
-        overflow: hidden; position: relative; border: 1px solid #475569;
+        overflow: hidden; position: relative; border: 1px solid var(--border);
     }
     .preview-iframe { width: 100%; height: 100%; border: none; background: white; }
     .preview-empty { color: #cbd5e1; font-size: 0.9rem; text-align: center; }

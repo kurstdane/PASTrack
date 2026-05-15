@@ -71,15 +71,16 @@
         .search-bar { flex: 1; position: relative; min-width: 250px; }
         .search-bar input {
             width: 100%; padding: 0.6rem 1rem 0.6rem 2.5rem;
-            border: 1px solid var(--border); border-radius: var(--radius-md);
-            font-size: 0.875rem; color: var(--text-main); transition: 0.2s; outline: none;
+            border: 1px solid var(--border-input); border-radius: var(--radius-md);
+            font-size: 0.875rem; color: var(--text-input); transition: 0.2s; outline: none;
+            background: var(--bg-input);
         }
         .search-bar input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
         .search-bar i { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-light); }
         
         .filter-select {
-            padding: 0.6rem 2rem 0.6rem 1rem; border: 1px solid var(--border); border-radius: var(--radius-md);
-            font-size: 0.875rem; color: var(--text-main); background-color: white; cursor: pointer; outline: none;
+            padding: 0.6rem 2rem 0.6rem 1rem; border: 1px solid var(--border-input); border-radius: var(--radius-md);
+            font-size: 0.875rem; color: var(--text-input); background-color: var(--bg-input); cursor: pointer; outline: none;
             appearance: none; background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2364748b%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
             background-repeat: no-repeat; background-position: right 0.7rem top 50%; background-size: 0.65rem auto;
             transition: 0.2s;
@@ -88,8 +89,8 @@
 
         .btn-outline {
             display: flex; align-items: center; gap: 0.5rem;
-            padding: 0.6rem 1rem; border: 1px solid var(--border); border-radius: var(--radius-md);
-            background: white; color: var(--text-main); font-size: 0.875rem; font-weight: 500;
+            padding: 0.6rem 1rem; border: 1px solid var(--border-input); border-radius: var(--radius-md);
+            background: var(--bg-input); color: var(--text-input); font-size: 0.875rem; font-weight: 500;
             cursor: pointer; transition: 0.2s;
         }
         .btn-outline:hover { background: var(--inactive-bg); border-color: var(--border-hover); }
@@ -99,7 +100,7 @@
         table { width: 100%; border-collapse: collapse; text-align: left; }
         th { font-size: 0.75rem; font-weight: 600; color: var(--text-main); padding: 1rem 0.5rem; border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.05em; }
         td { padding: 1rem 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.875rem; vertical-align: middle; transition: 0.2s; }
-        tbody tr:hover td { background-color: #fafbfc; }
+        tbody tr:hover td { background-color: var(--inactive-bg); }
 
         .user-cell { display: flex; align-items: center; gap: 0.75rem; }
         .user-initials {
@@ -183,14 +184,14 @@
 {% block content %}
     <div class="header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
         <div>
-            <h1 style="font-size: 1.75rem; font-weight: 700; color: #0f172a; margin: 0;">Hi, {{ request.user.first_name|default:"Super Admin" }}!</h1>
-            <p style="color: #64748b; margin-top: 0.25rem; font-family: 'Inter', sans-serif; font-weight: 500;">
-                <span style="color: #3b82f6; font-weight: 700;">{{ request.user.staff_id|default:"ADM-001" }}</span> 
-                <span style="margin: 0 8px; color: #cbd5e1;">|</span> 
+            <h1 style="font-size: 1.75rem; font-weight: 700; color: var(--text-main); margin: 0;">Hi, {{ request.user.first_name|default:"Super Admin" }}!</h1>
+            <p style="color: var(--text-muted); margin-top: 0.25rem; font-family: 'Inter', sans-serif; font-weight: 500;">
+                <span style="color: var(--primary); font-weight: 700;">{{ request.user.staff_id|default:"ADM-001" }}</span> 
+                <span style="margin: 0 8px; color: var(--border);">|</span> 
                 System Administrator
             </p>
         </div>
-        <a href="{% url 'create_staff_account' %}" class="btn-primary" style="background-color: #2563eb; color: white; padding: 0.6rem 1.25rem; border-radius: 6px; text-decoration: none; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
+        <a href="{% url 'create_staff_account' %}" class="btn-primary">
             <i class="ri-user-add-line"></i> Create New Account
         </a>
     </div>
@@ -292,14 +293,13 @@
     </div>
 
     <!-- BOTTOM PANELS -->
-<!-- BOTTOM PANELS -->
 <div class="bottom-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: stretch;">
     
     <!-- Chart Panel: Users by Role -->
-    <div class="panel" style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
+    <div class="panel" style="background: var(--bg-surface); border-radius: 12px; border: 1px solid var(--border); padding: 1.5rem; box-shadow: var(--shadow-sm); display: flex; flex-direction: column;">
         <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-            <h3 style="font-weight: 700; color: #1e293b; font-size: 1.1rem; margin: 0;">Users by Role</h3>
-            <a href="{% url 'staff_reports' %}" style="color: #2563eb; font-size: 0.85rem; text-decoration: none; font-weight: 500;">View Report</a>
+            <h3 style="font-weight: 700; color: var(--text-main); font-size: 1.1rem; margin: 0;">Users by Role</h3>
+            <a href="{% url 'staff_reports' %}" style="color: var(--primary); font-size: 0.85rem; text-decoration: none; font-weight: 500;">View Report</a>
         </div>
         
         <div class="chart-container" style="display: flex; align-items: center; justify-content: space-around; flex: 1; padding: 0 1rem;">
@@ -307,27 +307,27 @@
             <div class="chart-wrapper" style="position: relative; width: 180px; height: 180px; flex-shrink: 0;">
                 <canvas id="roleChart"></canvas>
                 <div class="chart-center-text" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
-                    <h3 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: #0f172a;">{{ total_users_count }}</h3>
-                    <span style="font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Total Users</span>
+                    <h3 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--text-main);">{{ total_users_count }}</h3>
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Total Users</span>
                 </div>
             </div>
             
             <!-- Custom Legend -->
             <div class="chart-legend" style="margin-left: 2rem;">
                 <ul style="list-style: none; padding: 0; margin: 0; display: grid; gap: 0.75rem;">
-                    <li style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; font-weight: 500; color: #334155;">
+                    <li style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; font-weight: 500; color: var(--text-main);">
                         <div style="width: 12px; height: 12px; border-radius: 3px; background: #0ea5e9; border: 1px solid rgba(0,0,0,0.05);"></div> LGU Admin
                     </li>
-                    <li style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; font-weight: 500; color: #334155;">
+                    <li style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; font-weight: 500; color: var(--text-main);">
                         <div style="width: 12px; height: 12px; border-radius: 3px; background: #a855f7; border: 1px solid rgba(0,0,0,0.05);"></div> Capitol Receiver
                     </li>
-                    <li style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; font-weight: 500; color: #334155;">
+                    <li style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; font-weight: 500; color: var(--text-main);">
                         <div style="width: 12px; height: 12px; border-radius: 3px; background: #eab308; border: 1px solid rgba(0,0,0,0.05);"></div> Capitol Examiner
                     </li>
-                    <li style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; font-weight: 500; color: #334155;">
+                    <li style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; font-weight: 500; color: var(--text-main);">
                         <div style="width: 12px; height: 12px; border-radius: 3px; background: #22c55e; border: 1px solid rgba(0,0,0,0.05);"></div> Capitol Approver
                     </li>
-                    <li style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; font-weight: 500; color: #334155;">
+                    <li style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; font-weight: 500; color: var(--text-main);">
                         <div style="width: 12px; height: 12px; border-radius: 3px; background: #ef4444; border: 1px solid rgba(0,0,0,0.05);"></div> Capitol Numberer
                     </li>
                 </ul>
@@ -336,30 +336,30 @@
     </div>
 
     <!-- Activity Panel -->
-    <div class="panel" style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
+    <div class="panel" style="background: var(--bg-surface); border-radius: 12px; border: 1px solid var(--border); padding: 1.5rem; box-shadow: var(--shadow-sm); display: flex; flex-direction: column;">
         <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-            <h3 style="font-weight: 700; color: #1e293b; font-size: 1.1rem; margin: 0;">Recent Account Activity</h3>
-            <a href="{% url 'audit_logs' %}" style="color: #2563eb; font-size: 0.85rem; text-decoration: none; font-weight: 500;">View Full History &rarr;</a>
+            <h3 style="font-weight: 700; color: var(--text-main); font-size: 1.1rem; margin: 0;">Recent Account Activity</h3>
+            <a href="{% url 'audit_logs' %}" style="color: var(--primary); font-size: 0.85rem; text-decoration: none; font-weight: 500;">View Full History &rarr;</a>
         </div>
 
         <div class="activity-list" style="display: flex; flex-direction: column; gap: 1.25rem;">
             {% for log in recent_logs %}
-                <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border);">
                     <div style="display: flex; gap: 1rem; align-items: center;">
-                        <div style="width: 36px; height: 36px; border-radius: 50%; background: #f8fafc; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center;">
-                            <i class="ri-user-settings-line" style="color: #64748b; font-size: 1.1rem;"></i>
+                        <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--bg-body); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;">
+                            <i class="ri-user-settings-line" style="color: var(--text-muted); font-size: 1.1rem;"></i>
                         </div>
                         <div>
-                            <div style="font-size: 0.85rem; font-weight: 600; color: #334155;">{{ log.get_action_display }}</div>
-                            <div style="font-size: 0.75rem; color: #64748b; margin-top: 1px;">
+                            <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">{{ log.get_action_display }}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1px;">
                                 by {{ log.actor.get_full_name|default:log.actor.email }}
                             </div>
                         </div>
                     </div>
-                    <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 500;">{{ log.created_at|timesince }} ago</div>
+                    <div style="font-size: 0.7rem; color: var(--text-light); font-weight: 500;">{{ log.created_at|timesince }} ago</div>
                 </div>
             {% empty %}
-                <div style="text-align: center; padding: 2rem; color: #94a3b8;">No recent activity.</div>
+                <div style="text-align: center; padding: 2rem; color: var(--text-light);">No recent activity.</div>
             {% endfor %}
         </div>
     </div>
