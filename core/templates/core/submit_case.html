@@ -278,10 +278,10 @@
                             {% if form.property_title_type.errors %}<span class="error-msg">{{ form.property_title_type.errors.0 }}</span>{% endif %}
                         </div>
 
-                        <div class="form-group col-12" style="margin-top: 0.25rem; display: flex; align-items: center; gap: 0.5rem;">
+                        {% comment %} <div class="form-group col-12" style="margin-top: 0.25rem; display: flex; align-items: center; gap: 0.5rem;">
                             {{ form.needs_taxmapping }}
                             <label for="{{ form.needs_taxmapping.id_for_label }}" style="margin:0; cursor: pointer;">Transaction requires tax mapping?</label>
-                        </div>
+                        </div> {% endcomment %}
                     </div>
 
                     <div class="form-actions" style="justify-content: space-between;">
