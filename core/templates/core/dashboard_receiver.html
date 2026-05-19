@@ -577,17 +577,14 @@ function closeAssignModal() {
 document.addEventListener("DOMContentLoaded", function () {
 
     // ==========================================
-    // 1. INTAKE VOLUME CHART
+    // 1. INTAKE VOLUME CHART (DYNAMIC)
     // ==========================================
     const ctxVol = document.getElementById('volumeChart').getContext('2d');
     let volGrad = ctxVol.createLinearGradient(0, 0, 0, 230);
     volGrad.addColorStop(0, 'rgba(59, 130, 246, 0.22)');
     volGrad.addColorStop(1, 'rgba(59, 130, 246, 0)');
 
-    const volumeData = {
-        weekly:  { labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], data: [120, 150, 140, 210, 180, 80, 50], max: 250 },
-        monthly: { labels: ['Week 1','Week 2','Week 3','Week 4'],       data: [650, 820, 740, 910],               max: 1000 }
-    };
+    const volumeData = {{ volume_chart_data|safe }};
 
     const volChart = new Chart(ctxVol, {
         type: 'line',
@@ -621,7 +618,7 @@ document.addEventListener("DOMContentLoaded", function () {
             },
             scales: {
                 y: {
-                    beginAtZero: true, suggestedMax: 250,
+                    beginAtZero: true, suggestedMax: volumeData.weekly.max,
                     ticks: { color: '#64748b', font: { family: "'Inter', sans-serif", size: 11 } },
                     border: { display: false },
                     grid: { color: 'rgba(226,232,240,0.5)' }
@@ -644,16 +641,9 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // ==========================================
-    // 2. PIPELINE WORKLOAD DOUGHNUT
+    // 2. PIPELINE WORKLOAD DOUGHNUT (DYNAMIC)
     // ==========================================
-    const pipelineData = {
-        all:           { labels: ['Received','To Examine','To Approve','For Numbering','To Release'], data: [156,64,32,15,18], colors: ['#059669','#7c3aed','#3b82f6','#d97706','#0ea5e9'], total: 285, centerLabel: 'Total Active' },
-        received:      { labels: ['Unassigned / Pending Check'], data: [156], colors: ['#059669'], total: 156, centerLabel: 'Received' },
-        to_examine:    { labels: ['Ralph','James','Maria'],       data: [25,20,19], colors: ['#8b5cf6','#a78bfa','#c4b5fd'], total: 64,  centerLabel: 'To Examine' },
-        to_approve:    { labels: ['Director A','Director B'],     data: [20,12],    colors: ['#3b82f6','#93c5fd'],           total: 32,  centerLabel: 'To Approve' },
-        for_numbering: { labels: ['System Queue','Manual Hold'],  data: [12,3],     colors: ['#f59e0b','#fcd34d'],           total: 15,  centerLabel: 'For Numbering' },
-        to_release:    { labels: ['Counter 1','Counter 2'],       data: [10,8],     colors: ['#0ea5e9','#7dd3fc'],           total: 18,  centerLabel: 'To Release' }
-    };
+    const pipelineData = {{ pipeline_chart_data|safe }};
 
     const ctxPipe = document.getElementById('pipelineChart').getContext('2d');
     const pipeChart = new Chart(ctxPipe, {
@@ -703,7 +693,7 @@ document.addEventListener("DOMContentLoaded", function () {
         pipeChart.data.datasets[0].backgroundColor = nd.colors;
         pipeChart.update();
         document.getElementById('pipelineTotal').innerText = nd.total;
-        document.getElementById('pipelineLabel').innerText = nd.centerLabel;
+        document.getElementById('pipelineLabel').innerText = nd.center_label;
         buildLegend(fv);
     });
 });

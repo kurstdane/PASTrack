@@ -1419,8 +1419,125 @@ def dashboard(request):
         stats_pending_intake = Case.objects.filter(status="not_received").count()
         stats_ready_assign = Case.objects.filter(status="received", assigned_to__isnull=True).count()
         stats_received_today = AuditLog.objects.filter(actor=user, action="case_receipt", created_at__date=today).count()
-        stats_returned_lgu = Case.objects.filter(status="client_correction").count()
+        stats_returned_lgu = Case.objects.filter(status="returned_for_correction").count()
 
+        # Intake Volume Chart Data
+        now = timezone.now()
+        
+        # Weekly Intake
+        week_start = today - timedelta(days=today.weekday())
+        weekly_labels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+        weekly_data = [0]*7
+        for i in range(7):
+            day = week_start + timedelta(days=i)
+            count = Case.objects.filter(created_at__date=day).count()
+            weekly_data[i] = count
+        weekly_max = max(weekly_data + [10])
+        
+        # Monthly Intake
+        month_start = today.replace(day=1)
+        monthly_labels = ['Week 1','Week 2','Week 3','Week 4']
+        monthly_data = [0]*4
+        for week_num in range(4):
+            week_start_date = month_start + timedelta(weeks=week_num)
+            week_end_date = week_start_date + timedelta(days=6)
+            count = Case.objects.filter(created_at__date__gte=week_start_date, created_at__date__lte=week_end_date).count()
+            monthly_data[week_num] = count
+        monthly_max = max(monthly_data + [100])
+        
+        volume_chart_data = {
+            "weekly": {"labels": weekly_labels, "data": weekly_data, "max": weekly_max},
+            "monthly": {"labels": monthly_labels, "data": monthly_data, "max": monthly_max}
+        }
+        
+        # Pipeline Workload Chart Data
+        all_active = Case.objects.exclude(status__in=["released", "withdrawn", "returned", "draft", "client_correction"])
+        
+        status_counts = {
+            "received": all_active.filter(status="received").count(),
+            "to_examine": all_active.filter(status__in=["to_examine", "in_review"]).count(),
+            "to_approve": all_active.filter(status="for_approval").count(),
+            "for_numbering": all_active.filter(status="for_numbering").count(),
+            "to_release": all_active.filter(status="for_release").count(),
+        }
+        total_active = sum(status_counts.values())
+        
+        pipeline_all = {
+            "labels": ['Received','To Examine','To Approve','For Numbering','To Release'],
+            "data": [
+                status_counts["received"],
+                status_counts["to_examine"],
+                status_counts["to_approve"],
+                status_counts["for_numbering"],
+                status_counts["to_release"]
+            ],
+            "colors": ['#059669','#7c3aed','#3b82f6','#d97706','#0ea5e9'],
+            "total": total_active,
+            "center_label": "Total Active"
+        }
+        
+        pipeline_received = {
+            "labels": ['Unassigned / Pending Check'],
+            "data": [status_counts["received"]],
+            "colors": ['#059669'],
+            "total": status_counts["received"],
+            "center_label": "Received"
+        }
+        
+        examiners = CustomUser.objects.filter(role="capitol_examiner", is_active=True).annotate(
+            active_load=Count("assigned_cases", filter=Q(assigned_cases__status__in=["to_examine", "in_review"]))
+        ).order_by("active_load", "full_name", "email")
+        
+        examiner_labels = [ex.full_name or ex.email for ex in examiners]
+        examiner_data = [ex.active_load for ex in examiners]
+        examiner_colors = ['#8b5cf6','#a78bfa','#c4b5fd','#ddd6fe','#ede9fe'][:len(examiner_labels)]
+        
+        pipeline_to_examine = {
+            "labels": examiner_labels,
+            "data": examiner_data,
+            "colors": examiner_colors,
+            "total": status_counts["to_examine"],
+            "center_label": "To Examine"
+        }
+        
+        approvers = CustomUser.objects.filter(role="capitol_approver", is_active=True)[:2]
+        approver_labels = [ex.full_name or ex.email for ex in approvers] if approvers else ['Director A','Director B']
+        approver_data = [all_active.filter(status="for_approval").count()//2 + (all_active.filter(status="for_approval").count()%2 if i==0 else 0) for i in range(len(approver_labels))] if approver_labels else [20,12]
+        approver_colors = ['#3b82f6','#93c5fd'][:len(approver_labels)]
+        
+        pipeline_to_approve = {
+            "labels": approver_labels,
+            "data": approver_data,
+            "colors": approver_colors,
+            "total": status_counts["to_approve"],
+            "center_label": "To Approve"
+        }
+        
+        pipeline_for_numbering = {
+            "labels": ['System Queue','Manual Hold'],
+            "data": [status_counts["for_numbering"], 0],
+            "colors": ['#f59e0b','#fcd34d'],
+            "total": status_counts["for_numbering"],
+            "center_label": "For Numbering"
+        }
+        
+        pipeline_to_release = {
+            "labels": ['Counter 1','Counter 2'],
+            "data": [status_counts["to_release"]//2 + (status_counts["to_release"]%2 if i==0 else 0) for i in range(2)],
+            "colors": ['#0ea5e9','#7dd3fc'],
+            "total": status_counts["to_release"],
+            "center_label": "To Release"
+        }
+        
+        pipeline_chart_data = {
+            "all": pipeline_all,
+            "received": pipeline_received,
+            "to_examine": pipeline_to_examine,
+            "to_approve": pipeline_to_approve,
+            "for_numbering": pipeline_for_numbering,
+            "to_release": pipeline_to_release,
+        }
+        
         # Secondary Panels
         returned_cases = Case.objects.filter(
             status="received", 
@@ -1434,7 +1551,6 @@ def dashboard(request):
             returned_by__isnull=True 
         ).select_related("submitted_by").order_by("updated_at")[:3]
 
-        examiners = CustomUser.objects.filter(role="capitol_examiner", is_active=True)
         recent_logs = AuditLog.objects.filter(actor=user).order_by("-created_at")[:6]
 
         context.update({
@@ -1446,6 +1562,8 @@ def dashboard(request):
             "stats_ready_assign": stats_ready_assign,
             "stats_received_today": stats_received_today,
             "stats_returned_lgu": stats_returned_lgu,
+            "volume_chart_data": volume_chart_data,
+            "pipeline_chart_data": pipeline_chart_data,
             "returned_cases": returned_cases,
             "cases_to_assign": cases_to_assign,
             "recent_logs": recent_logs,
