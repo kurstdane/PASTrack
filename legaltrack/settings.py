@@ -19,13 +19,14 @@ import uuid
 import socket
 import tempfile
 
+from dotenv import load_dotenv
+
 from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-DOTENV_PATH = BASE_DIR / ".env"
-
+DOTENV_PATH = BASE_DIR / '.env'
+load_dotenv(DOTENV_PATH)
 
 def _parse_dotenv_file(path: Path) -> dict[str, str]:
     values: dict[str, str] = {}

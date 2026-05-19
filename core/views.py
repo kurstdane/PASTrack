@@ -1,7 +1,10 @@
 # pyright: reportAttributeAccessIssue=false, reportArgumentType=false, reportOperatorIssue=false
 
+import io
+import requests
 import contextlib
 from datetime import timedelta
+import base64
 import json
 import mimetypes
 import os
@@ -2249,95 +2252,96 @@ def _ensure_checklist_item(case: Case, *, doc_type: str, required: bool) -> None
 
 
 def _maybe_convert_office_upload_to_pdf(uploaded_file):
-    name = (getattr(uploaded_file, "name", "") or "").strip()
-    lower = name.lower()
-    if not (lower.endswith(".doc") or lower.endswith(".docx")):
+    """
+    Converts .doc/.docx to .pdf using ConvertAPI REST endpoint.
+    Bypasses SDK path-handling bugs by using direct HTTP POST with memory streams.
+    Extracts Base64 file data directly from the response for faster processing.
+    """
+    filename = getattr(uploaded_file, "name", "").lower()
+    
+    # If it's not a Word document, return it untouched
+    if not filename.endswith((".doc", ".docx")):
         return uploaded_file, {"converted": False}
 
-    soffice = shutil.which("soffice") or shutil.which("soffice.exe")
-    if not soffice and os.name == "nt":
-        candidates = [
-            r"C:\Program Files\LibreOffice\program\soffice.exe",
-            r"C:\Program Files (x86)\LibreOffice\program\soffice.exe",
-        ]
-        for p in candidates:
-            if os.path.exists(p):
-                soffice = p
-                break
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        in_path = os.path.join(tmpdir, os.path.basename(name) or "upload.docx")
-        with open(in_path, "wb") as f:
-            for chunk in uploaded_file.chunks():
-                f.write(chunk)
-
-        base = os.path.splitext(os.path.basename(in_path))[0]
-        out_path = os.path.join(tmpdir, f"{base}.pdf")
-
-        if soffice:
-            cmd = [soffice, "--headless", "--convert-to", "pdf", "--outdir", tmpdir, in_path]
-            try:
-                subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=120)
-            except Exception:
-                try:
-                    uploaded_file.seek(0)
-                except Exception:
-                    pass
-                raise ValueError("DOC/DOCX upload failed to convert to PDF. Please upload a PDF instead or try again.")
-        else:
-            if os.name != "nt":
-                raise ValueError("DOC/DOCX upload requires PDF conversion, but LibreOffice (soffice) is not installed on the server.")
-            try:
-                import pythoncom
-                import win32com.client
-            except Exception:
-                raise ValueError("DOC/DOCX upload requires PDF conversion. Install LibreOffice (recommended) or install MS Word + pywin32 on this machine.")
-
-            pythoncom.CoInitialize()
-            word = None
-            doc = None
-            try:
-                word = win32com.client.DispatchEx("Word.Application")
-                word.Visible = False
-                word.DisplayAlerts = 0
-                doc = word.Documents.Open(in_path, ReadOnly=True)
-                doc.ExportAsFixedFormat(out_path, 17)
-            except Exception:
-                raise ValueError("DOC/DOCX upload failed to convert to PDF. Ensure MS Word is installed (or install LibreOffice).")
-            finally:
-                try:
-                    if doc is not None:
-                        doc.Close(False)
-                except Exception:
-                    pass
-                try:
-                    if word is not None:
-                        word.Quit()
-                except Exception:
-                    pass
-                try:
-                    pythoncom.CoUninitialize()
-                except Exception:
-                    pass
-
-        if not os.path.exists(out_path):
-            try:
-                uploaded_file.seek(0)
-            except Exception:
-                pass
-            raise ValueError("DOC/DOCX upload failed to convert to PDF (output missing). Please upload a PDF instead.")
-
-        with open(out_path, "rb") as f:
-            pdf_bytes = f.read()
+    api_secret = os.getenv("CONVERTAPI_SECRET")
+    if not api_secret:
+        print("[ConvertAPI Debug] Error: CONVERTAPI_SECRET not set in environment variables.")
+        return uploaded_file, {"converted": False}
+    else:
+        # Mask the secret for logging
+        masked_secret = api_secret[:4] + "*" * (len(api_secret) - 8) + api_secret[-4:] if len(api_secret) > 8 else "****"
+        print(f"[ConvertAPI Debug] API Secret found: {masked_secret}")
 
     try:
+        print(f"[ConvertAPI Debug] Starting conversion for: {filename}")
+        
+        # 1. Prepare the format strings
+        ext = os.path.splitext(filename)[1].lower()
+        from_fmt = ext.replace('.', '')
+        
+        # 2. Read file into memory to avoid any pointer/locking issues on Windows
         uploaded_file.seek(0)
-    except Exception:
-        pass
+        file_content = uploaded_file.read()
+        print(f"[ConvertAPI Debug] Input file read into memory: {len(file_content)} bytes")
+        
+        # 3. Call ConvertAPI REST endpoint directly
+        url = f"https://v2.convertapi.com/convert/{from_fmt}/to/pdf?Secret={api_secret}"
+        print(f"[ConvertAPI Debug] URL: {url}")
+        
+        # Using the file content directly
+        files = {
+            'File': (filename, file_content)
+        }
+        
+        response = requests.post(url, files=files, timeout=60)
+        print(f"[ConvertAPI Debug] Response Status: {response.status_code}")
+        
+        if response.status_code != 200:
+            print(f"[ConvertAPI Debug] Response Error Body: {response.text}")
+            
+        response.raise_for_status()
+        
+        data = response.json()
+        
+        # 4. Safely extract the Base64 data from the nested 'Files' array
+        if 'Files' not in data or not data['Files']:
+            print("[ConvertAPI Debug] Error: No 'Files' in response JSON")
+            raise Exception("No converted files returned from ConvertAPI")
+            
+        file_info = data['Files'][0]
+        file_data_b64 = file_info.get('FileData')
+        
+        if not file_data_b64:
+            raise Exception("ConvertAPI returned a file object without 'FileData'.")
+            
+        # Decode the Base64 string back into raw PDF bytes
+        pdf_content = base64.b64decode(file_data_b64)
+        print(f"[ConvertAPI Debug] Decoded PDF Size: {len(pdf_content)} bytes")
+        
+        # 5. Prepare the final ContentFile
+        base_name = os.path.splitext(getattr(uploaded_file, "name", "document"))[0]
+        if not base_name:
+            base_name = "document"
+        new_filename = base_name + ".pdf"
+        
+        final_file = ContentFile(pdf_content, name=new_filename)
+        print(f"[ConvertAPI Debug] Successfully converted to: {new_filename}")
+        
+        # Reset the original file pointer just in case
+        uploaded_file.seek(0)
+        return final_file, {"converted": True}
 
-    pdf_name = f"{os.path.splitext(os.path.basename(name) or 'upload')[0]}.pdf"
-    return ContentFile(pdf_bytes, name=pdf_name), {"converted": True, "original_name": name, "pdf_name": pdf_name}
-
+    except Exception as e:
+        print(f"[ConvertAPI Error] Failed to convert document via REST: {e}", file=sys.stderr)
+        
+        # Ensure pointer is reset before returning original
+        try:
+            uploaded_file.seek(0)
+        except Exception:
+            pass
+            
+        # Fallback to saving original document
+        return uploaded_file, {"converted": False}
 
 def _purge_expired_archived_case_documents(*, case: Case | None = None) -> None:
     now = timezone.now()
