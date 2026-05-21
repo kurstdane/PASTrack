@@ -539,6 +539,7 @@ def track_case_detail(request, tracking_id: str):
         "tracking": case.tracking_id,
         "public_status": public_status,
         "internal_status": internal_status,
+        "status_key": case.status,
         "show_internal_status": show_internal_status,
         "updated_at": case.updated_at,
         "timeline": timeline,
@@ -4663,10 +4664,19 @@ def release_case(request, tracking_id):
         messages.error(request, "Review all uploaded documents and mark them as checked before releasing.")
         return redirect("case_detail", tracking_id=case.tracking_id)
 
+    claimed_by_name = request.POST.get("claimed_by_name", "").strip()
+    claimed_by_contact = request.POST.get("claimed_by_contact", "").strip()
+
+    if not claimed_by_name or not claimed_by_contact:
+        messages.error(request, "Both Claimant Name and Contact Number are required.")
+        return redirect("case_detail", tracking_id=case.tracking_id)
+
     old_status = case.status
     case.status = "released"
     case.released_at = timezone.now()
-    case.save(update_fields=["status", "released_at", "updated_at"])
+    case.claimed_by_name = claimed_by_name
+    case.claimed_by_contact = claimed_by_contact
+    case.save(update_fields=["status", "released_at", "claimed_by_name", "claimed_by_contact", "updated_at"])
     with contextlib.suppress(Exception):
         _purge_all_archived_case_documents(case=case)
 

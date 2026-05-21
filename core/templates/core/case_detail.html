@@ -185,6 +185,16 @@
                             <span class="info-label">Transaction Number</span>
                             <span class="info-value">{{ case.td_number|default:"—" }}</span>
                         </div>
+                        {% if case.claimed_by_name %}
+                        <div class="info-item" style="border-top: 1px dashed var(--border); padding-top: 0.5rem;">
+                            <span class="info-label" style="color: var(--primary);">Claimed By</span>
+                            <span class="info-value">{{ case.claimed_by_name }}</span>
+                        </div>
+                        <div class="info-item" style="border-top: 1px dashed var(--border); padding-top: 0.5rem;">
+                            <span class="info-label" style="color: var(--primary);">Claimant Contact</span>
+                            <span class="info-value">{{ case.claimed_by_contact }}</span>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -214,16 +224,30 @@
                                             </label>
                                         </div>
                                         <div class="doc-meta" style="margin-top: 0.5rem;">
-                                            <input
-                                                type="text"
-                                                name="review_remark_{{ doc.id }}"
-                                                class="doc-review-remark"
-                                                data-doc-id="{{ doc.id }}"
-                                                data-doc-name="{{ doc.doc_type|escapejs }}"
-                                                value="{{ doc.review_remark|default:'' }}"
-                                                placeholder="Remark (optional)"
-                                                style="width:100%; padding:0.5rem 0.75rem; border:1px solid var(--border); border-radius:8px;"
-                                            >
+                                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                                <input
+                                                    type="text"
+                                                    id="review_remark_{{ doc.id }}"
+                                                    name="review_remark_{{ doc.id }}"
+                                                    class="doc-review-remark"
+                                                    data-doc-id="{{ doc.id }}"
+                                                    data-doc-name="{{ doc.doc_type|escapejs }}"
+                                                    value="{{ doc.review_remark|default:'' }}"
+                                                    placeholder="Remark (optional)"
+                                                    style="flex: 1; padding:0.5rem 0.75rem; border:1px solid var(--border); border-radius:8px; transition: all 0.2s;"
+                                                >
+                                                {% if case.returned_by and case.returned_by.role == 'capitol_approver' or doc.review_remark %}
+                                                    <button type="button" class="btn btn-outline" style="padding: 0.4rem 0.6rem; color: #dc2626; border-color: #fca5a5;" onclick="clearExaminerRemark('{{ doc.id }}')" title="Delete Remark">
+                                                        <i class="ri-close-line"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline" style="padding: 0.4rem 0.6rem; color: #16a34a; border-color: #86efac;" onclick="postExaminerRemark('{{ doc.id }}')" title="Post Remark to Receiver">
+                                                        <i class="ri-check-line"></i>
+                                                    </button>
+                                                {% endif %}
+                                            </div>
+                                            <div id="remark_status_{{ doc.id }}" style="font-size: 0.75rem; color: #16a34a; margin-top: 0.25rem; display: none; font-weight: 500;">
+                                                <i class="ri-checkbox-circle-line"></i> Remark confirmed and ready to be posted.
+                                            </div>
                                         </div>
                                         <input type="hidden" name="doc_id" value="{{ doc.id }}">
                                     </td>
@@ -241,6 +265,28 @@
                             </table>
                             
                             <script>
+                            function clearExaminerRemark(docId) {
+                                const input = document.getElementById('review_remark_' + docId);
+                                if (input) {
+                                    input.value = '';
+                                    input.dispatchEvent(new Event('input')); // Triggers updateRowStyle
+                                    document.getElementById('remark_status_' + docId).style.display = 'none';
+                                    input.style.borderColor = 'var(--border)';
+                                    input.style.backgroundColor = '';
+                                }
+                            }
+
+                            function postExaminerRemark(docId) {
+                                const input = document.getElementById('review_remark_' + docId);
+                                if (input && input.value.trim() !== '') {
+                                    input.style.borderColor = '#16a34a';
+                                    input.style.backgroundColor = '#f0fdf4';
+                                    document.getElementById('remark_status_' + docId).style.display = 'block';
+                                } else {
+                                    alert("There is no remark text to post.");
+                                }
+                            }
+
                             document.addEventListener("DOMContentLoaded", function() {
                                 function updateRowStyle(docId) {
                                     const row = document.getElementById('doc_row_' + docId);
@@ -724,12 +770,9 @@
                         {% endif %}
 
                         {% if is_releaser and can_release %}
-                            <form id="releaserForm" method="post" action="{% url 'release_case' case.tracking_id %}" class="btn-block">
-                                {% csrf_token %}
-                                <button class="btn btn-primary" type="button" onclick="openReleaserModal()" style="width:100%;">
-                                    <i class="ri-send-plane-line"></i> Release
-                                </button>
-                            </form>
+                            <button class="btn btn-primary btn-block" type="button" onclick="openReleaserModal()" style="width:100%;">
+                                <i class="ri-send-plane-line"></i> Release
+                            </button>
                         {% endif %}
                     </div>
                 </div>
@@ -1187,13 +1230,26 @@
 
 <!-- Releaser Modal -->
 <div id="releaserSubmitModal" class="drawer-backdrop" style="display:none; justify-content:center; align-items:center; opacity:1; visibility:visible;">
-    <div class="panel" style="width: 400px; padding: 2rem;">
+    <div class="panel" style="width: 450px; padding: 2rem;">
         <h3 class="panel-title" style="margin-bottom: 1rem; text-align: center;">Confirm Release</h3>
-        <p style="text-align: center; color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">Are you sure you are ready to release this case?</p>
-        <div style="display: flex; gap: 0.5rem;">
-            <button type="button" class="btn btn-outline" style="flex:1" onclick="closeReleaserModal()">Cancel</button>
-            <button type="button" class="btn btn-primary" style="flex:1;" onclick="document.getElementById('releaserForm').submit()">Confirm</button>
-        </div>
+        <p style="text-align: center; color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">Please enter the details of the person claiming these documents.</p>
+        
+        <form method="post" action="{% url 'release_case' case.tracking_id %}">
+            {% csrf_token %}
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.5rem; color: var(--text);">Claimed By (Full Name) <span style="color:red;">*</span></label>
+                <input type="text" name="claimed_by_name" class="form-control" required placeholder="e.g. Juan Dela Cruz" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px;">
+            </div>
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.5rem; color: var(--text);">Contact Number <span style="color:red;">*</span></label>
+                <input type="text" name="claimed_by_contact" class="form-control" required placeholder="e.g. 09123456789" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px;">
+            </div>
+            
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="button" class="btn btn-outline" style="flex:1" onclick="closeReleaserModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="flex:1;">Confirm Release</button>
+            </div>
+        </form>
     </div>
 </div>
 

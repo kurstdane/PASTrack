@@ -581,6 +581,10 @@ class Case(TimestampedModel):
 
     released_at = models.DateTimeField(null=True, blank=True)
     lgu_submitted_at = models.DateTimeField(null=True, blank=True)
+    
+    # ---------- Release Info ----------
+    claimed_by_name = models.CharField(max_length=120, blank=True, default="")
+    claimed_by_contact = models.CharField(max_length=120, blank=True, default="")
 
     class Meta:
         ordering = ["-created_at"]
