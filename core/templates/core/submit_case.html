@@ -461,13 +461,24 @@
 
                 </div>
 
-                <form method="post" style="margin-top: 3rem;">
+                <form method="post" style="margin-top: 3rem;" id="step3SubmitForm">
                     {% csrf_token %}
                     <div class="form-actions" style="justify-content: space-between;">
                         <a href="{% url 'draft_wizard' case.draft_id 2 %}" class="btn-text" style="padding-left:0;">Back</a>
                         <button type="submit" class="btn btn-primary" style="background-color: #1e3a8a;">Submit</button>
                     </div>
                 </form>
+
+                <!-- No Documents Warning Modal -->
+                <div id="noDocsModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:9999; justify-content:center; align-items:center;">
+                    <div style="background:white; border-radius:16px; padding:2rem; width:420px; box-shadow:0 20px 60px rgba(0,0,0,0.2); border-top: 4px solid #dc2626;">
+                        <h3 style="margin:0 0 0.75rem 0; font-size:1.1rem; color:#dc2626;"><i class="ri-error-warning-line"></i> Missing Documents</h3>
+                        <p style="margin:0 0 1.5rem 0; font-size:0.9rem; color:#64748b;">
+                            Please upload at least 1 document for this transaction.
+                        </p>
+                        <button onclick="document.getElementById('noDocsModal').style.display='none';" style="width:100%; padding:0.65rem; border-radius:8px; background:#1e3a8a; color:white; border:none; font-weight:600; cursor:pointer; font-size:0.9rem;">OK, Go Back</button>
+                    </div>
+                </div>
             </div>
             {% endif %}
 
@@ -661,6 +672,20 @@
                 emptyState.style.display = "block";
             }
         };
+
+        // Frontend guard: block submission if no documents are attached
+        const step3Form = document.getElementById('step3SubmitForm');
+        if (step3Form) {
+            step3Form.addEventListener('submit', function(e) {
+                // Count preview tabs that have a data-url (real uploaded documents)
+                const docTabs = document.querySelectorAll('#doc-tabs .preview-tab[data-url]');
+                if (docTabs.length === 0) {
+                    e.preventDefault();
+                    const modal = document.getElementById('noDocsModal');
+                    if (modal) modal.style.display = 'flex';
+                }
+            });
+        }
     }
 </script>
 {% endblock %}

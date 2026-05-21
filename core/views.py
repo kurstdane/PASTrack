@@ -21,7 +21,7 @@ from django.conf import settings
 from django import forms
 from django.core.files.base import ContentFile
 from django.core.paginator import Paginator
-from django.db import models, transaction, connection
+from django.db import IntegrityError, models, transaction, connection
 from django.db.models import Q, Count
 from django.utils import timezone
 from django.utils.dateparse import parse_date
@@ -300,7 +300,7 @@ from .forms import (
     StaffSearchForm,
     SupportFeedbackForm,
 )
-from .models import ArchivedCaseDocument, AuditLog, Case, CaseDocument, CaseNumber, CaseRemark, CustomUser, FAQItem, SupportFeedback
+from .models import ArchivedCaseDocument, AuditLog, Case, CaseDocument, DocumentVersion, CaseNumber, CaseRemark, CustomUser, FAQItem, SupportFeedback
 from .notifications import send_case_email, sns_hook
 
 
@@ -2300,7 +2300,7 @@ def _lgu_owns_case(user, case: Case) -> bool:
     role = getattr(user, "role", "") or ""
     if role == "capitol_receiving":
         # Receivers "own" the case if it is in the intake or correction phase
-        return case.status in {"draft", "not_received", "received", "client_correction"} and case.assigned_to_id is None
+        return case.status in {"draft", "not_received", "client_correction"} and case.assigned_to_id is None
     if role != "lgu_admin":
         return False
     user_mun = (getattr(user, "lgu_municipality", "") or "").strip()
@@ -2315,7 +2315,7 @@ def _lgu_can_edit_details(user, case: Case) -> bool:
     
     # Receiver can edit if in intake or correction phase
     if role == "capitol_receiving":
-        return case.status in {"draft", "not_received", "received", "client_correction"}
+        return case.status in {"draft", "not_received", "client_correction"}
         
     # LGU can only edit if NOT yet submitted to capitol
     if role == "lgu_admin":
@@ -2901,7 +2901,7 @@ def case_wizard(request, tracking_id, step: int):
                             d.file.delete(save=False)
                     d.delete()
 
-                if case.status in {"returned", "client_correction"}:
+                if case.status == "returned":
                     case.status = "not_received"
                     case.client_correction_deadline = None
                     case.lgu_submitted_at = None
@@ -2954,7 +2954,7 @@ def case_wizard(request, tracking_id, step: int):
         })
 
     if request.method == "POST":
-        if case.status in {"returned", "client_correction"}:
+        if case.status == "returned":
             case.status = "not_received"
             case.client_correction_deadline = None
 
@@ -3259,7 +3259,14 @@ def draft_wizard(request, draft_id, step: int):
             messages.success(request, "Draft saved.")
             return redirect("drafts")
 
-        case.status = "not_received"
+        # Backend validation: at least 1 document must be uploaded
+        if CaseDocument.objects.filter(case=case).count() < 1:
+            messages.error(request, "Please upload at least 1 document for this transaction.")
+            return redirect("draft_wizard", draft_id=case.draft_id, step=3)
+
+        if case.status != "client_correction":
+            case.status = "not_received"
+            
         case.lgu_submitted_at = timezone.now()
 
         # Priority: 1. case.area, 2. submitted_by.lgu_municipality
@@ -3352,7 +3359,7 @@ def case_detail(request, tracking_id):
 
     can_return = (
         request.user.role == "capitol_receiving" and
-        case.status in {"not_received", "received"} and
+        case.status == "received" and
         case.assigned_to_id is None
     )
 
@@ -3361,6 +3368,11 @@ def case_detail(request, tracking_id):
         case.status == "received" and
         case.assigned_to_id is None
     )
+
+    has_submitted_correction = False
+    if case.status == "client_correction" and case.lgu_submitted_at and case.returned_at:
+        if case.lgu_submitted_at > case.returned_at:
+            has_submitted_correction = True
 
     is_examiner = _is_examiner(request.user)
     is_receiver = _normalized_role(request.user) in {"capitol_receiving", "receiver"} or _normalized_role(request.user).endswith("_receiving")
@@ -3454,6 +3466,12 @@ def case_detail(request, tracking_id):
             and request.user.id == getattr(case, "assigned_to_id", None)
         ):
             show_correction_required_banner = True
+        elif (
+            returned_by_role == "capitol_examiner"
+            and getattr(case, "status", "") == "received"
+            and is_receiver
+        ):
+            show_correction_required_banner = True
 
     remarks = []
     history = []
@@ -3511,6 +3529,7 @@ def case_detail(request, tracking_id):
     response_context = {
         "case": case,
         "documents": list(case.documents.all()),
+        "document_versions": list(DocumentVersion.objects.filter(case=case).order_by("-uploaded_at")),
         "archived_documents": list(ArchivedCaseDocument.objects.filter(case=case).order_by("-archived_at")[:200]),
         "is_examiner": is_examiner,
         "is_receiver": is_receiver,
@@ -3522,6 +3541,7 @@ def case_detail(request, tracking_id):
         "can_receive": can_receive,
         "can_return": can_return,
         "can_assign": can_assign,
+        "has_submitted_correction": has_submitted_correction,
         "can_submit_for_approval": can_submit_for_approval,
         "examiner_docs_blocked": examiner_docs_blocked,
         "examiner_forward_reason": examiner_forward_reason,
@@ -4080,6 +4100,48 @@ def receive_case(request, tracking_id):
 
 @login_required
 @require_POST
+def upload_correction_document(request, tracking_id, doc_id):
+    from django.http import JsonResponse
+    from .models import DocumentVersion
+
+    case = get_object_or_404(Case, tracking_id=tracking_id)
+    doc = get_object_or_404(CaseDocument, id=doc_id, case=case)
+
+    if request.user.role != "capitol_receiving":
+        return JsonResponse({"error": "Only Receiver can upload corrected documents."}, status=403)
+
+    if case.status not in {"client_correction", "not_received"}:
+        return JsonResponse({"error": "Case is not in correction state."}, status=400)
+
+    uploaded_file = request.FILES.get("file")
+    if not uploaded_file:
+        return JsonResponse({"error": "No file uploaded."}, status=400)
+
+    # Archive the old file as a DocumentVersion
+    if doc.file:
+        DocumentVersion.objects.create(
+            case=case,
+            doc_type=doc.doc_type,
+            file=doc.file,
+            uploaded_by=doc.uploaded_by,
+        )
+
+    # Update the CaseDocument with the new file
+    doc.file = uploaded_file
+    doc.uploaded_by = request.user
+    doc.reviewed_ok = False
+    doc.review_remark = ""
+    doc.save(update_fields=["file", "uploaded_by", "reviewed_ok", "review_remark", "updated_at"])
+    
+    # Update lgu_submitted_at so the "Transaction Corrected" logic can pick it up
+    case.lgu_submitted_at = timezone.now()
+    case.save(update_fields=["lgu_submitted_at", "updated_at"])
+
+    return JsonResponse({"success": True, "message": "File uploaded successfully."})
+
+
+@login_required
+@require_POST
 def return_case(request, tracking_id):
     case = get_object_or_404(Case, tracking_id=tracking_id)
 
@@ -4087,8 +4149,8 @@ def return_case(request, tracking_id):
         messages.error(request, "Only Receiver can return cases.")
         return redirect("case_detail", tracking_id=case.tracking_id)
 
-    if case.status not in {"not_received", "received"}:
-        messages.error(request, "Only pending/received cases can be returned to the client.")
+    if case.status != "received":
+        messages.error(request, "Only received cases can be returned to the client.")
         return redirect("case_detail", tracking_id=case.tracking_id)
 
     if case.assigned_to_id is not None:
@@ -4100,9 +4162,7 @@ def return_case(request, tracking_id):
         messages.error(request, "Return reason is required.")
         return redirect("case_detail", tracking_id=case.tracking_id)
 
-    if case.documents.exists() and case.documents.filter(reviewed_ok=False, review_remark="").exists():
-        messages.error(request, "Add remarks to unchecked documents before returning to the client.")
-        return redirect("case_detail", tracking_id=case.tracking_id)
+
 
     case.status = "client_correction"
     case.return_reason = reason
@@ -4161,6 +4221,11 @@ def assign_case(request, tracking_id):
     if request.method == "POST":
         if case.status not in {"received", "client_correction"} or case.assigned_to_id is not None:
             messages.error(request, "This case is not eligible for assignment.")
+            return redirect("case_detail", tracking_id=case.tracking_id)
+
+        # File check before assignment
+        if case.documents.count() == 0:
+            messages.error(request, "Please attach files for the Documents Checklist of the Transaction.")
             return redirect("case_detail", tracking_id=case.tracking_id)
 
         examiner_id = request.POST.get("assigned_to")
@@ -4471,6 +4536,11 @@ def return_to_receiving(request, tracking_id):
         return redirect("case_detail", tracking_id=case.tracking_id)
 
     reason = (request.POST.get("reason") or "").strip()
+    flagged = (request.POST.get("flagged") or "").strip()
+    
+    if flagged:
+        reason = f"{reason}\n\n{flagged}"
+        
     if not reason:
         messages.error(request, "Return reason is required.")
         return redirect("case_detail", tracking_id=case.tracking_id)
@@ -4548,7 +4618,13 @@ def mark_numbered(request, tracking_id):
     if case.status == "for_numbering":
         case.status = "for_release"
         update_fields.append("status")
-    case.save(update_fields=update_fields)
+    try:
+        case.save(update_fields=update_fields)
+    except IntegrityError:
+        return redirect(
+            reverse("case_detail", kwargs={"tracking_id": case.tracking_id})
+            + "?duplicate_error=1"
+        )
 
     AuditLog.objects.create(
         actor=request.user,
@@ -4566,6 +4642,35 @@ def mark_numbered(request, tracking_id):
         messages.success(request, f"Transaction Number saved. Case {case.tracking_id} moved to For Release.")
     else:
         messages.success(request, "Transaction Number updated.")
+    return redirect("case_detail", tracking_id=case.tracking_id)
+
+
+@login_required
+@require_POST
+def transaction_corrected(request, tracking_id):
+    """Capitol Receiver marks a client_correction case as corrected and re-receives it."""
+    case = get_object_or_404(Case, tracking_id=tracking_id)
+
+    if request.user.role != "capitol_receiving":
+        messages.error(request, "Only Receiver can mark a case as corrected.")
+        return redirect("case_detail", tracking_id=case.tracking_id)
+
+    if case.status != "client_correction":
+        messages.error(request, "This case is not in the correction state.")
+        return redirect("case_detail", tracking_id=case.tracking_id)
+
+    old_status = case.status
+    case.status = "received"
+    case.save(update_fields=["status", "updated_at"])
+
+    AuditLog.objects.create(
+        actor=request.user,
+        action="case_status_change",
+        target_object=f"Case: {case.tracking_id}",
+        details={"old_status": old_status, "new_status": "received", "note": "Receiver marked correction as complete."},
+    )
+
+    messages.success(request, f"Case {case.tracking_id} marked as corrected and re-received.")
     return redirect("case_detail", tracking_id=case.tracking_id)
 
 

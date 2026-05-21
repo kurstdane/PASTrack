@@ -156,7 +156,17 @@
             <div class="panel" style="border-left: 4px solid #dc2626; background: #fff5f5;">
                 <div class="panel-body">
                     <div class="info-label" style="color: #dc2626; margin-bottom: 0.5rem;">Correction Required</div>
-                    <div class="info-value" style="color: #991b1b;">{{ case.return_reason|default:"Case was returned for missing or incorrect information." }}</div>
+                    <div class="info-value" style="color: #991b1b; line-height: 1.5;">{{ case.return_reason|default:"Case was returned for missing or incorrect information."|linebreaksbr }}</div>
+                </div>
+            </div>
+            {% elif is_receiver and case.status == 'client_correction' %}
+            <div class="panel" style="border-left: 4px solid #dc2626; background: #fff5f5;">
+                <div class="panel-body">
+                    <div class="info-label" style="color: #dc2626; margin-bottom: 0.5rem;">For Correction — Return Reason</div>
+                    <div class="info-value" style="color: #991b1b; line-height: 1.5;">{{ case.return_reason|default:"Case was returned for missing or incorrect information."|linebreaksbr }}</div>
+                    {% if case.client_correction_deadline %}
+                    <div style="margin-top: 0.5rem; font-size: 0.8rem; color: #b91c1c;">Client deadline: {{ case.client_correction_deadline|date:"M d, Y" }}</div>
+                    {% endif %}
                 </div>
             </div>
             {% endif %}
@@ -187,21 +197,24 @@
                             {% csrf_token %}
                             <table class="doc-table">
                                 {% for doc in documents %}
-                                <tr>
+                                <tr id="doc_row_{{ doc.id }}" class="examiner-doc-row" style="transition: all 0.2s; border-left: 4px solid transparent;">
                                     <td class="doc-icon"><i class="ri-file-pdf-2-line"></i></td>
                                     <td>
-                                        <div class="doc-name">{{ doc.doc_type }}</div>
+                                        <div class="doc-name" style="font-weight: 600;">{{ doc.doc_type }}</div>
                                         <div class="doc-meta">Uploaded {{ doc.uploaded_at|date:"M d, Y" }}</div>
                                         <div class="doc-meta" style="margin-top: 0.5rem;">
-                                            <label style="display:flex; align-items:center; gap:0.5rem;">
-                                                <input type="checkbox" name="reviewed_ok_{{ doc.id }}" value="1" {% if doc.reviewed_ok %}checked{% endif %}>
-                                                Reviewed OK
+                                            <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+                                                <input type="checkbox" name="reviewed_ok_{{ doc.id }}" value="1" class="doc-reviewed-ok" data-doc-id="{{ doc.id }}" {% if doc.reviewed_ok %}checked{% endif %}>
+                                                <span style="font-weight: 500;">Reviewed OK</span>
                                             </label>
                                         </div>
                                         <div class="doc-meta" style="margin-top: 0.5rem;">
                                             <input
                                                 type="text"
                                                 name="review_remark_{{ doc.id }}"
+                                                class="doc-review-remark"
+                                                data-doc-id="{{ doc.id }}"
+                                                data-doc-name="{{ doc.doc_type|escapejs }}"
                                                 value="{{ doc.review_remark|default:'' }}"
                                                 placeholder="Remark (optional)"
                                                 style="width:100%; padding:0.5rem 0.75rem; border:1px solid var(--border); border-radius:8px;"
@@ -209,7 +222,7 @@
                                         </div>
                                         <input type="hidden" name="doc_id" value="{{ doc.id }}">
                                     </td>
-                                    <td style="text-align: right;">
+                                    <td style="text-align: right; vertical-align: top;">
                                         <a href="{% url 'download_case_document' doc.id %}" target="_blank" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
                                             Preview <i class="ri-external-link-line"></i>
                                         </a>
@@ -221,6 +234,53 @@
                                 </tr>
                                 {% endfor %}
                             </table>
+                            
+                            <script>
+                            document.addEventListener("DOMContentLoaded", function() {
+                                function updateRowStyle(docId) {
+                                    const row = document.getElementById('doc_row_' + docId);
+                                    if (!row) return;
+                                    const checkbox = row.querySelector('.doc-reviewed-ok');
+                                    const remark = row.querySelector('.doc-review-remark');
+                                    
+                                    if (remark.value.trim() !== "") {
+                                        row.style.backgroundColor = '#fef2f2';
+                                        row.style.borderLeft = '4px solid #dc2626';
+                                    } else if (checkbox.checked) {
+                                        row.style.backgroundColor = '#f0fdf4';
+                                        row.style.borderLeft = '4px solid #16a34a';
+                                    } else {
+                                        row.style.backgroundColor = '';
+                                        row.style.borderLeft = '4px solid transparent';
+                                    }
+                                }
+                                
+                                document.querySelectorAll('.doc-reviewed-ok').forEach(cb => {
+                                    cb.addEventListener('change', function() {
+                                        const docId = this.dataset.docId;
+                                        const row = document.getElementById('doc_row_' + docId);
+                                        const remark = row.querySelector('.doc-review-remark');
+                                        if (this.checked) {
+                                            remark.value = '';
+                                        }
+                                        updateRowStyle(docId);
+                                    });
+                                    updateRowStyle(cb.dataset.docId);
+                                });
+                                
+                                document.querySelectorAll('.doc-review-remark').forEach(input => {
+                                    input.addEventListener('input', function() {
+                                        const docId = this.dataset.docId;
+                                        const row = document.getElementById('doc_row_' + docId);
+                                        const checkbox = row.querySelector('.doc-reviewed-ok');
+                                        if (this.value.trim() !== "") {
+                                            checkbox.checked = false;
+                                        }
+                                        updateRowStyle(docId);
+                                    });
+                                });
+                            });
+                            </script>
 
                             {% if documents %}
                                 <div style="padding: 1rem 0;">
@@ -231,36 +291,41 @@
                             {% endif %}
                         </form>
                     {% elif show_internal and is_receiver %}
-                        <form method="post" action="{% url 'review_case_documents' case.tracking_id %}">
-                            {% csrf_token %}
+                        <div style="margin-top: 1rem;">
                             <table class="doc-table">
                                 {% for doc in documents %}
-                                <tr>
+                                <tr id="receiver_doc_row_{{ doc.id }}" style="{% if doc.reviewed_ok %}background-color: #f0fdf4; border-left: 4px solid #16a34a;{% elif case.return_reason and not doc.reviewed_ok %}background-color: #fef2f2; border-left: 4px solid #dc2626;{% endif %} transition: all 0.2s;">
                                     <td class="doc-icon"><i class="ri-file-pdf-2-line"></i></td>
                                     <td>
-                                        <div class="doc-name">{{ doc.doc_type }}</div>
+                                        <div class="doc-name" style="font-weight: 600;">{{ doc.doc_type }}</div>
                                         <div class="doc-meta">Uploaded {{ doc.uploaded_at|date:"M d, Y" }}</div>
-                                        <div class="doc-meta" style="margin-top: 0.5rem;">
-                                            <label style="display:flex; align-items:center; gap:0.5rem;">
-                                                <input type="checkbox" {% if doc.reviewed_ok %}checked{% endif %} disabled>
-                                                Reviewed OK
-                                            </label>
+                                        {% if doc.reviewed_ok %}
+                                            <div style="margin-top: 0.5rem; font-size: 0.8rem; color: #15803d; font-weight: 600;">
+                                                <i class="ri-lock-fill"></i> Locked / Final
+                                            </div>
+                                        {% elif case.return_reason and not doc.reviewed_ok %}
+                                            <div style="margin-top: 0.5rem; font-size: 0.8rem; color: #b91c1c; font-weight: 500;">
+                                                <i class="ri-error-warning-line"></i> Flagged: {{ doc.review_remark|default:"Needs correction" }}
+                                            </div>
+                                        {% endif %}
+                                        <div id="receiver_doc_status_{{ doc.id }}" style="margin-top: 0.5rem; font-size: 0.8rem; color: #0284c7; font-weight: 600; display:none;">
+                                            <i class="ri-checkbox-circle-fill"></i> Newly Uploaded
                                         </div>
-                                        <div class="doc-meta" style="margin-top: 0.5rem;">
-                                            <input
-                                                type="text"
-                                                name="review_remark_{{ doc.id }}"
-                                                value="{{ doc.review_remark|default:'' }}"
-                                                placeholder="Remark (optional)"
-                                                style="width:100%; padding:0.5rem 0.75rem; border:1px solid var(--border); border-radius:8px;"
-                                            >
-                                        </div>
-                                        <input type="hidden" name="doc_id" value="{{ doc.id }}">
                                     </td>
-                                    <td style="text-align: right;">
-                                        <a href="{% url 'download_case_document' doc.id %}" target="_blank" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
-                                            Preview <i class="ri-external-link-line"></i>
-                                        </a>
+                                    <td style="text-align: right; vertical-align: middle;">
+                                        <div style="display: flex; gap: 0.5rem; justify-content: flex-end; align-items: center;">
+                                            <a href="{% url 'download_case_document' doc.id %}" target="_blank" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                                                Preview <i class="ri-external-link-line"></i>
+                                            </a>
+                                            {% if case.status == "client_correction" or case.status == "not_received" %}
+                                                {% if case.return_reason and not doc.reviewed_ok %}
+                                                    <label class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; cursor: pointer; margin: 0;">
+                                                        <i class="ri-upload-2-line"></i> Upload New
+                                                        <input type="file" style="display:none;" onchange="uploadCorrectionDocument('{{ case.tracking_id }}', '{{ doc.id }}', this)">
+                                                    </label>
+                                                {% endif %}
+                                            {% endif %}
+                                        </div>
                                     </td>
                                 </tr>
                                 {% empty %}
@@ -269,15 +334,53 @@
                                 </tr>
                                 {% endfor %}
                             </table>
-
-                            {% if documents %}
-                                <div style="padding: 1rem 0;">
-                                    <button class="btn btn-outline" type="submit" style="width:100%;">
-                                        <i class="ri-save-3-line"></i> Save Remarks
-                                    </button>
-                                </div>
-                            {% endif %}
-                        </form>
+                            
+                            <script>
+                            function uploadCorrectionDocument(trackingId, docId, inputElement) {
+                                if (!inputElement.files || inputElement.files.length === 0) return;
+                                
+                                const file = inputElement.files[0];
+                                const formData = new FormData();
+                                formData.append("file", file);
+                                
+                                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '{{ csrf_token }}';
+                                
+                                const label = inputElement.parentElement;
+                                const originalHtml = label.innerHTML;
+                                label.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Uploading...';
+                                label.style.pointerEvents = 'none';
+                                
+                                fetch(`/case/${trackingId}/documents/${docId}/upload-correction/`, {
+                                    method: "POST",
+                                    headers: {
+                                        "X-CSRFToken": csrfToken
+                                    },
+                                    body: formData
+                                })
+                                .then(res => res.json())
+                                .then(data => {
+                                    if(data.success) {
+                                        const row = document.getElementById(`receiver_doc_row_${docId}`);
+                                        row.style.backgroundColor = '#f0f9ff';
+                                        row.style.borderLeft = '4px solid #0ea5e9';
+                                        
+                                        document.getElementById(`receiver_doc_status_${docId}`).style.display = 'block';
+                                        label.style.display = 'none';
+                                    } else {
+                                        alert(data.error || "Upload failed");
+                                        label.innerHTML = originalHtml;
+                                        label.style.pointerEvents = 'auto';
+                                    }
+                                })
+                                .catch(err => {
+                                    console.error(err);
+                                    alert("An error occurred during upload.");
+                                    label.innerHTML = originalHtml;
+                                    label.style.pointerEvents = 'auto';
+                                });
+                            }
+                            </script>
+                        </div>
                     {% elif show_internal and is_approver %}
                         <table class="doc-table">
                             {% for doc in documents %}
@@ -326,6 +429,33 @@
                     {% endif %}
                 </div>
             </div>
+
+            {% if document_versions and show_internal and is_examiner %}
+            <div class="panel">
+                <div class="panel-header"><h2 class="panel-title">Document Version History (Replaced Files)</h2></div>
+                <div class="panel-body" style="padding-top: 0; padding-bottom: 0;">
+                    <table class="doc-table">
+                        {% for ver in document_versions %}
+                        <tr>
+                            <td class="doc-icon"><i class="ri-history-line"></i></td>
+                            <td>
+                                <div class="doc-name">{{ ver.doc_type }}</div>
+                                <div class="doc-meta">Replaced on {{ ver.uploaded_at|date:"M d, Y h:i A" }}</div>
+                                {% if ver.uploaded_by %}
+                                <div class="doc-meta">By {{ ver.uploaded_by.get_full_name }}</div>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: right;">
+                                <a href="{% if ver.file %}{{ ver.file.url }}{% else %}#{% endif %}" target="_blank" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                                    View Older Version <i class="ri-external-link-line"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+            </div>
+            {% endif %}
 
             {% if archived_documents %}
             <div class="panel">
@@ -377,16 +507,27 @@
                         {% endif %}
 
                         {% if is_receiver %}
-                            {% if can_receive %}
-                                <button class="btn btn-primary btn-block" type="button" onclick="openReceiveModal()">
-                                    <i class="ri-inbox-receive-line"></i> Receive transaction
+                            {% if case.status == 'client_correction' %}
+                                <button class="btn btn-primary btn-block" type="button" onclick="openTransactionCorrectedModal()" {% if not has_submitted_correction %}disabled{% endif %}>
+                                    <i class="ri-checkbox-circle-line"></i> Transaction Corrected
                                 </button>
-                            {% endif %}
+                                {% if not has_submitted_correction %}
+                                    <div style="font-size: 0.75rem; color: #64748b; text-align: center; margin-top: 0.25rem;">
+                                        Edit the Case Details first to enable this button.
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                {% if can_receive %}
+                                    <button class="btn btn-primary btn-block" type="button" onclick="openReceiveModal()">
+                                        <i class="ri-inbox-receive-line"></i> Receive transaction
+                                    </button>
+                                {% endif %}
 
-                            {% if can_assign %}
-                                <button class="btn btn-primary btn-block" type="button" onclick="openAssignModal('{{ case.tracking_id }}', '{{ case.client_name|escapejs }}')">
-                                    <i class="ri-user-add-line"></i> Assign to Examiner
-                                </button>
+                                {% if can_assign %}
+                                    <button class="btn btn-primary btn-block" type="button" onclick="openAssignModal('{{ case.tracking_id }}', '{{ case.client_name|escapejs }}')">
+                                        <i class="ri-user-add-line"></i> Assign to Examiner
+                                    </button>
+                                {% endif %}
                                 
                                 {% if can_return %}
                                     <button class="btn btn-danger btn-block" type="button" onclick="openReturnModal()">
@@ -723,11 +864,13 @@
 </script>
 
 <div id="examinerReturnModal" class="drawer-backdrop" style="display:none; justify-content:center; align-items:center; opacity:1; visibility:visible;">
-    <div class="panel" style="width: 400px; padding: 2rem;">
+    <div class="panel" style="width: 450px; padding: 2rem;">
         <h3 class="panel-title" style="margin-bottom: 1rem;">Return to Receiver</h3>
         <form method="post" action="{% url 'return_to_receiving' case.tracking_id %}">
             {% csrf_token %}
-            <textarea name="reason" class="remarks-input" placeholder="Explain what needs to be fixed..." required></textarea>
+            <div id="examinerReturnFlaggedFiles"></div>
+            <input type="hidden" name="flagged" id="examinerReturnFlaggedInput" value="">
+            <textarea name="reason" class="remarks-input" placeholder="General feedback... (Explain what needs to be fixed)" required></textarea>
             <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
                 <button type="button" class="btn btn-outline" style="flex:1" onclick="closeExaminerReturnModal()">Cancel</button>
                 <button type="submit" class="btn btn-primary" style="flex:1;">Confirm</button>
@@ -738,7 +881,38 @@
 
 <script>
     function openExaminerReturnModal() {
-        document.getElementById('examinerReturnModal').style.display = 'flex';
+        const modal = document.getElementById('examinerReturnModal');
+        const flaggedContainer = document.getElementById('examinerReturnFlaggedFiles');
+        const flaggedInput = document.getElementById('examinerReturnFlaggedInput');
+        
+        let flaggedHtml = '';
+        let flaggedText = 'Flagged Documents:\n';
+        let hasFlags = false;
+        
+        document.querySelectorAll('.examiner-doc-row').forEach(row => {
+            const checkbox = row.querySelector('.doc-reviewed-ok');
+            const remark = row.querySelector('.doc-review-remark');
+            if (!checkbox || !remark) return;
+            
+            const docName = remark.dataset.docName;
+            
+            if (!checkbox.checked || remark.value.trim() !== "") {
+                hasFlags = true;
+                const note = remark.value.trim() ? ` - ${remark.value.trim()}` : ' - Not reviewed OK';
+                flaggedHtml += `<li style="margin-bottom:0.25rem;"><strong>${docName}</strong>${note}</li>`;
+                flaggedText += `• ${docName}${note}\n`;
+            }
+        });
+        
+        if (hasFlags) {
+            flaggedContainer.innerHTML = `<div style="font-size: 0.85rem; color: #dc2626; margin-bottom: 0.5rem; font-weight: 600;">Flagged Documents:</div><ul style="font-size: 0.85rem; margin-bottom: 1rem; padding-left: 1.25rem; color: #991b1b;">${flaggedHtml}</ul>`;
+            flaggedInput.value = flaggedText.trim();
+        } else {
+            flaggedContainer.innerHTML = '';
+            flaggedInput.value = '';
+        }
+        
+        modal.style.display = 'flex';
     }
     function closeExaminerReturnModal() {
         document.getElementById('examinerReturnModal').style.display = 'none';
@@ -821,5 +995,57 @@
     function closeTaxmapperAssignModal() {
         document.getElementById('taxmapperAssignModal').style.display = 'none';
     }
+</script>
+
+<!-- Transaction Corrected Modal (Receiver) -->
+<div id="transactionCorrectedModal" class="drawer-backdrop" style="display:none; justify-content:center; align-items:center; opacity:1; visibility:visible;">
+    <div class="panel" style="width: 400px; padding: 2rem;">
+        <h3 class="panel-title" style="margin-bottom: 1.5rem; text-align: center;">Case already corrected?</h3>
+        <form method="post" action="{% url 'transaction_corrected' case.tracking_id %}">
+            {% csrf_token %}
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="button" class="btn btn-outline" style="flex:1" onclick="closeTransactionCorrectedModal()">NO</button>
+                <button type="submit" class="btn btn-primary" style="flex:1;">YES</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openTransactionCorrectedModal() {
+        document.getElementById('transactionCorrectedModal').style.display = 'flex';
+    }
+    function closeTransactionCorrectedModal() {
+        document.getElementById('transactionCorrectedModal').style.display = 'none';
+    }
+</script>
+
+<!-- Duplicate Transaction Number Error Modal -->
+<div id="duplicateErrorModal" class="drawer-backdrop" style="display:none; justify-content:center; align-items:center; opacity:1; visibility:visible;">
+    <div class="panel" style="width: 420px; padding: 2rem; border-top: 4px solid #dc2626;">
+        <h3 class="panel-title" style="margin-bottom: 0.75rem; color: #dc2626;"><i class="ri-error-warning-line"></i> Duplicate Number</h3>
+        <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+            This case number already exists. Please use another format or sequence of numbering.
+        </div>
+        <button type="button" class="btn btn-primary" style="width:100%;" onclick="closeDuplicateErrorModal()">OK, Got it</button>
+    </div>
+</div>
+
+<script>
+    function closeDuplicateErrorModal() {
+        document.getElementById('duplicateErrorModal').style.display = 'none';
+        // Clean the URL param so refreshing doesn't re-trigger
+        const url = new URL(window.location.href);
+        url.searchParams.delete('duplicate_error');
+        window.history.replaceState({}, '', url.toString());
+    }
+
+    // Auto-open if ?duplicate_error=1 is in the URL
+    document.addEventListener('DOMContentLoaded', function () {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('duplicate_error') === '1') {
+            document.getElementById('duplicateErrorModal').style.display = 'flex';
+        }
+    });
 </script>
 {% endblock %}

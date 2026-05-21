@@ -813,6 +813,27 @@ class CaseDocument(TimestampedModel):
         return f"{key} - {self.doc_type}"
 
 
+class DocumentVersion(models.Model):
+    case = models.ForeignKey("Case", on_delete=models.CASCADE, related_name="document_versions")
+    doc_type = models.CharField(max_length=120)
+    file = models.FileField(upload_to=archived_case_document_upload_to, max_length=1024)
+    uploaded_by = models.ForeignKey(
+        "CustomUser",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="uploaded_document_versions",
+    )
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering: ClassVar[list[str]] = ["-uploaded_at"]
+
+    def __str__(self):
+        key = self.case.tracking_id or str(getattr(self.case, "draft_id", ""))
+        return f"{key} - {self.doc_type} (Version)"
+
+
 class ArchivedCaseDocument(models.Model):
     case = models.ForeignKey("Case", on_delete=models.CASCADE, related_name="archived_documents")
     doc_type = models.CharField(max_length=120)
