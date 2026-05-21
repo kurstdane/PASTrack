@@ -290,6 +290,28 @@
                                 </div>
                             {% endif %}
                         </form>
+
+                        {% if document_versions %}
+                        <div style="margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+                            <h3 style="font-size: 1rem; margin-bottom: 0.5rem; color: var(--text-muted);"><i class="ri-history-line"></i> Document Version History</h3>
+                            <table class="doc-table">
+                                {% for version in document_versions %}
+                                <tr>
+                                    <td class="doc-icon"><i class="ri-file-pdf-2-line" style="color: #94a3b8;"></i></td>
+                                    <td>
+                                        <div class="doc-name" style="font-weight: 500; color: #475569;">{{ version.doc_type }}</div>
+                                        <div class="doc-meta">Replaced on {{ version.uploaded_at|date:"M d, Y, h:i A" }}</div>
+                                    </td>
+                                    <td style="text-align: right; vertical-align: top;">
+                                        <a href="{{ version.file.url }}" target="_blank" class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">
+                                            View Old Version <i class="ri-external-link-line"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                        </div>
+                        {% endif %}
                     {% elif show_internal and is_receiver %}
                         <div style="margin-top: 1rem;">
                             <table class="doc-table">
@@ -304,28 +326,23 @@
                                                 <i class="ri-lock-fill"></i> Locked / Final
                                             </div>
                                         {% elif case.return_reason and not doc.reviewed_ok %}
-                                            <div style="margin-top: 0.5rem; font-size: 0.8rem; color: #b91c1c; font-weight: 500;">
+                                            <div class="flagged-badge" style="margin-top: 0.5rem; font-size: 0.8rem; color: #b91c1c; font-weight: 500;">
                                                 <i class="ri-error-warning-line"></i> Flagged: {{ doc.review_remark|default:"Needs correction" }}
                                             </div>
                                         {% endif %}
-                                        <div id="receiver_doc_status_{{ doc.id }}" style="margin-top: 0.5rem; font-size: 0.8rem; color: #0284c7; font-weight: 600; display:none;">
-                                            <i class="ri-checkbox-circle-fill"></i> Newly Uploaded
-                                        </div>
                                     </td>
-                                    <td style="text-align: right; vertical-align: middle;">
-                                        <div style="display: flex; gap: 0.5rem; justify-content: flex-end; align-items: center;">
-                                            <a href="{% url 'download_case_document' doc.id %}" target="_blank" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
-                                                Preview <i class="ri-external-link-line"></i>
-                                            </a>
-                                            {% if case.status == "client_correction" or case.status == "not_received" %}
-                                                {% if case.return_reason and not doc.reviewed_ok %}
-                                                    <label class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; cursor: pointer; margin: 0;">
-                                                        <i class="ri-upload-2-line"></i> Upload New
-                                                        <input type="file" style="display:none;" onchange="uploadCorrectionDocument('{{ case.tracking_id }}', '{{ doc.id }}', this)">
-                                                    </label>
-                                                {% endif %}
+                                    <td style="text-align: right; vertical-align: top;">
+                                        {% if case.status == 'client_correction' or case.status == 'not_received' %}
+                                            {% if case.return_reason and not doc.reviewed_ok %}
+                                                <label class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; margin-right: 0.5rem; cursor: pointer;">
+                                                    <i class="ri-upload-cloud-2-line"></i> Upload New
+                                                    <input type="file" class="correction-upload-input" data-doc-id="{{ doc.id }}" data-tracking-id="{{ case.tracking_id }}" style="display:none;" accept=".pdf,.jpg,.jpeg,.png">
+                                                </label>
                                             {% endif %}
-                                        </div>
+                                        {% endif %}
+                                        <a href="{% url 'download_case_document' doc.id %}" target="_blank" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                                            Preview <i class="ri-external-link-line"></i>
+                                        </a>
                                     </td>
                                 </tr>
                                 {% empty %}
@@ -334,51 +351,61 @@
                                 </tr>
                                 {% endfor %}
                             </table>
-                            
                             <script>
-                            function uploadCorrectionDocument(trackingId, docId, inputElement) {
-                                if (!inputElement.files || inputElement.files.length === 0) return;
-                                
-                                const file = inputElement.files[0];
-                                const formData = new FormData();
-                                formData.append("file", file);
-                                
+                            document.addEventListener("DOMContentLoaded", function() {
                                 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '{{ csrf_token }}';
                                 
-                                const label = inputElement.parentElement;
-                                const originalHtml = label.innerHTML;
-                                label.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Uploading...';
-                                label.style.pointerEvents = 'none';
-                                
-                                fetch(`/case/${trackingId}/documents/${docId}/upload-correction/`, {
-                                    method: "POST",
-                                    headers: {
-                                        "X-CSRFToken": csrfToken
-                                    },
-                                    body: formData
-                                })
-                                .then(res => res.json())
-                                .then(data => {
-                                    if(data.success) {
-                                        const row = document.getElementById(`receiver_doc_row_${docId}`);
-                                        row.style.backgroundColor = '#f0f9ff';
-                                        row.style.borderLeft = '4px solid #0ea5e9';
+                                document.querySelectorAll('.correction-upload-input').forEach(input => {
+                                    input.addEventListener('change', function(e) {
+                                        if (!this.files.length) return;
+                                        const file = this.files[0];
+                                        const docId = this.dataset.docId;
+                                        const trackingId = this.dataset.trackingId;
+                                        const row = document.getElementById('receiver_doc_row_' + docId);
                                         
-                                        document.getElementById(`receiver_doc_status_${docId}`).style.display = 'block';
-                                        label.style.display = 'none';
-                                    } else {
-                                        alert(data.error || "Upload failed");
-                                        label.innerHTML = originalHtml;
-                                        label.style.pointerEvents = 'auto';
-                                    }
-                                })
-                                .catch(err => {
-                                    console.error(err);
-                                    alert("An error occurred during upload.");
-                                    label.innerHTML = originalHtml;
-                                    label.style.pointerEvents = 'auto';
+                                        const formData = new FormData();
+                                        formData.append('file', file);
+                                        
+                                        // UI Feedback
+                                        const btnLabel = this.parentElement;
+                                        const originalText = btnLabel.innerHTML;
+                                        btnLabel.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Uploading...';
+                                        btnLabel.style.pointerEvents = 'none';
+                                        
+                                        fetch(`/case/${trackingId}/upload-correction/${docId}/`, {
+                                            method: 'POST',
+                                            headers: {
+                                                'X-CSRFToken': csrfToken
+                                            },
+                                            body: formData
+                                        })
+                                        .then(response => response.json())
+                                        .then(data => {
+                                            if (data.success) {
+                                                row.style.backgroundColor = '#eff6ff'; // blue background
+                                                row.style.borderLeft = '4px solid #3b82f6'; // blue border
+                                                
+                                                const badge = row.querySelector('.flagged-badge');
+                                                if (badge) {
+                                                    badge.innerHTML = `<i class="ri-check-double-line"></i> New File Uploaded (${data.uploaded_at})`;
+                                                    badge.style.color = '#2563eb';
+                                                }
+                                                btnLabel.innerHTML = '<i class="ri-check-line"></i> Uploaded';
+                                            } else {
+                                                alert(data.error || 'Failed to upload.');
+                                                btnLabel.innerHTML = originalText;
+                                                btnLabel.style.pointerEvents = 'auto';
+                                            }
+                                        })
+                                        .catch(err => {
+                                            console.error(err);
+                                            alert('An error occurred during upload.');
+                                            btnLabel.innerHTML = originalText;
+                                            btnLabel.style.pointerEvents = 'auto';
+                                        });
+                                    });
                                 });
-                            }
+                            });
                             </script>
                         </div>
                     {% elif show_internal and is_approver %}
@@ -429,33 +456,6 @@
                     {% endif %}
                 </div>
             </div>
-
-            {% if document_versions and show_internal and is_examiner %}
-            <div class="panel">
-                <div class="panel-header"><h2 class="panel-title">Document Version History (Replaced Files)</h2></div>
-                <div class="panel-body" style="padding-top: 0; padding-bottom: 0;">
-                    <table class="doc-table">
-                        {% for ver in document_versions %}
-                        <tr>
-                            <td class="doc-icon"><i class="ri-history-line"></i></td>
-                            <td>
-                                <div class="doc-name">{{ ver.doc_type }}</div>
-                                <div class="doc-meta">Replaced on {{ ver.uploaded_at|date:"M d, Y h:i A" }}</div>
-                                {% if ver.uploaded_by %}
-                                <div class="doc-meta">By {{ ver.uploaded_by.get_full_name }}</div>
-                                {% endif %}
-                            </td>
-                            <td style="text-align: right;">
-                                <a href="{% if ver.file %}{{ ver.file.url }}{% else %}#{% endif %}" target="_blank" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
-                                    View Older Version <i class="ri-external-link-line"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </table>
-                </div>
-            </div>
-            {% endif %}
 
             {% if archived_documents %}
             <div class="panel">
@@ -538,11 +538,12 @@
                         {% endif %}
 
                         {% if is_examiner or request.user.id == case.assigned_to_id %}
-                            <form method="post" action="{% url 'submit_for_approval' case.tracking_id %}" class="btn-block">
+                            <form id="examinerForwardForm" method="post" action="{% url 'submit_for_approval' case.tracking_id %}" class="btn-block">
                                 {% csrf_token %}
                                 <button
                                     class="btn btn-primary"
-                                    type="submit"
+                                    type="button"
+                                    onclick="openExaminerForwardModal()"
                                     {% if not can_submit_for_approval or examiner_docs_blocked %}disabled{% endif %}
                                     style="{% if not can_submit_for_approval or examiner_docs_blocked %}opacity:0.6; cursor:not-allowed;{% endif %} width:100%;"
                                 >
@@ -593,10 +594,11 @@
                         {% endif %}
 
                         {% if is_numberer and can_number %}
-                            <form method="post" action="{% url 'mark_numbered' case.tracking_id %}" class="btn-block">
+                            <form id="numbererForm" method="post" action="{% url 'mark_numbered' case.tracking_id %}" class="btn-block">
                                 {% csrf_token %}
                                 <input
                                     type="text"
+                                    id="numberer_transaction_input"
                                     inputmode="numeric"
                                     pattern="[0-9]*"
                                     maxlength="6"
@@ -607,7 +609,7 @@
                                     required
                                     oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6)"
                                 >
-                                <button class="btn btn-primary" type="submit" style="width:100%;">
+                                <button class="btn btn-primary" type="button" onclick="openNumbererModal()" style="width:100%;">
                                     <i class="ri-hashtag"></i> Submit Transaction Number
                                 </button>
                             </form>
@@ -640,9 +642,9 @@
                         {% endif %}
 
                         {% if is_releaser and can_release %}
-                            <form method="post" action="{% url 'release_case' case.tracking_id %}" class="btn-block">
+                            <form id="releaserForm" method="post" action="{% url 'release_case' case.tracking_id %}" class="btn-block">
                                 {% csrf_token %}
-                                <button class="btn btn-primary" type="submit" style="width:100%;">
+                                <button class="btn btn-primary" type="button" onclick="openReleaserModal()" style="width:100%;">
                                     <i class="ri-send-plane-line"></i> Release
                                 </button>
                             </form>
@@ -1048,4 +1050,75 @@
         }
     });
 </script>
-{% endblock %}
+
+<!-- Examiner Forward Modal -->
+<div id="examinerForwardModal" class="drawer-backdrop" style="display:none; justify-content:center; align-items:center; opacity:1; visibility:visible;">
+    <div class="panel" style="width: 400px; padding: 2rem;">
+        <h3 class="panel-title" style="margin-bottom: 1rem; text-align: center;">Confirm Forwarding</h3>
+        <p style="text-align: center; color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">Are you sure you want to forward this case to the Approver?</p>
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="button" class="btn btn-outline" style="flex:1" onclick="closeExaminerForwardModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" style="flex:1;" onclick="document.getElementById('examinerForwardForm').submit()">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openExaminerForwardModal() {
+        document.getElementById('examinerForwardModal').style.display = 'flex';
+    }
+    function closeExaminerForwardModal() {
+        document.getElementById('examinerForwardModal').style.display = 'none';
+    }
+</script>
+
+<!-- Numberer Submit Modal -->
+<div id="numbererSubmitModal" class="drawer-backdrop" style="display:none; justify-content:center; align-items:center; opacity:1; visibility:visible;">
+    <div class="panel" style="width: 400px; padding: 2rem;">
+        <h3 class="panel-title" style="margin-bottom: 1rem; text-align: center;">Confirm TD Number</h3>
+        <p style="text-align: center; color: var(--text-muted); margin-bottom: 0.5rem; font-size: 0.9rem;">You are about to finalize the TD number for this case.</p>
+        <div style="text-align: center; font-size: 1.5rem; font-weight: 700; color: #1e293b; margin-bottom: 1.5rem;" id="numbererModalTDDisplay"></div>
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="button" class="btn btn-outline" style="flex:1" onclick="closeNumbererModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" style="flex:1;" onclick="document.getElementById('numbererForm').submit()">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openNumbererModal() {
+        const input = document.getElementById('numberer_transaction_input');
+        if (input && input.value.trim().length > 0) {
+            document.getElementById('numbererModalTDDisplay').innerText = input.value.trim();
+            document.getElementById('numbererSubmitModal').style.display = 'flex';
+        } else {
+            input.reportValidity();
+        }
+    }
+    function closeNumbererModal() {
+        document.getElementById('numbererSubmitModal').style.display = 'none';
+    }
+</script>
+
+<!-- Releaser Modal -->
+<div id="releaserSubmitModal" class="drawer-backdrop" style="display:none; justify-content:center; align-items:center; opacity:1; visibility:visible;">
+    <div class="panel" style="width: 400px; padding: 2rem;">
+        <h3 class="panel-title" style="margin-bottom: 1rem; text-align: center;">Confirm Release</h3>
+        <p style="text-align: center; color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">Are you sure you are ready to release this case?</p>
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="button" class="btn btn-outline" style="flex:1" onclick="closeReleaserModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" style="flex:1;" onclick="document.getElementById('releaserForm').submit()">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openReleaserModal() {
+        document.getElementById('releaserSubmitModal').style.display = 'flex';
+    }
+    function closeReleaserModal() {
+        document.getElementById('releaserSubmitModal').style.display = 'none';
+    }
+</script>
+
+{% endblock content %}

@@ -300,7 +300,7 @@ from .forms import (
     StaffSearchForm,
     SupportFeedbackForm,
 )
-from .models import ArchivedCaseDocument, AuditLog, Case, CaseDocument, DocumentVersion, CaseNumber, CaseRemark, CustomUser, FAQItem, SupportFeedback
+from .models import ArchivedCaseDocument, AuditLog, Case, CaseDocument, CaseNumber, CaseRemark, CustomUser, FAQItem, SupportFeedback, DocumentVersion
 from .notifications import send_case_email, sns_hook
 
 
@@ -4100,48 +4100,6 @@ def receive_case(request, tracking_id):
 
 @login_required
 @require_POST
-def upload_correction_document(request, tracking_id, doc_id):
-    from django.http import JsonResponse
-    from .models import DocumentVersion
-
-    case = get_object_or_404(Case, tracking_id=tracking_id)
-    doc = get_object_or_404(CaseDocument, id=doc_id, case=case)
-
-    if request.user.role != "capitol_receiving":
-        return JsonResponse({"error": "Only Receiver can upload corrected documents."}, status=403)
-
-    if case.status not in {"client_correction", "not_received"}:
-        return JsonResponse({"error": "Case is not in correction state."}, status=400)
-
-    uploaded_file = request.FILES.get("file")
-    if not uploaded_file:
-        return JsonResponse({"error": "No file uploaded."}, status=400)
-
-    # Archive the old file as a DocumentVersion
-    if doc.file:
-        DocumentVersion.objects.create(
-            case=case,
-            doc_type=doc.doc_type,
-            file=doc.file,
-            uploaded_by=doc.uploaded_by,
-        )
-
-    # Update the CaseDocument with the new file
-    doc.file = uploaded_file
-    doc.uploaded_by = request.user
-    doc.reviewed_ok = False
-    doc.review_remark = ""
-    doc.save(update_fields=["file", "uploaded_by", "reviewed_ok", "review_remark", "updated_at"])
-    
-    # Update lgu_submitted_at so the "Transaction Corrected" logic can pick it up
-    case.lgu_submitted_at = timezone.now()
-    case.save(update_fields=["lgu_submitted_at", "updated_at"])
-
-    return JsonResponse({"success": True, "message": "File uploaded successfully."})
-
-
-@login_required
-@require_POST
 def return_case(request, tracking_id):
     case = get_object_or_404(Case, tracking_id=tracking_id)
 
@@ -4717,3 +4675,52 @@ def release_case(request, tracking_id):
 
     messages.success(request, f"Case {case.tracking_id} marked as Released.")
     return redirect("case_detail", tracking_id=case.tracking_id)
+
+
+@login_required
+@require_POST
+def upload_correction_document(request, tracking_id, doc_id):
+    case = get_object_or_404(Case, tracking_id=tracking_id)
+    doc = get_object_or_404(CaseDocument, id=doc_id, case=case)
+
+    if request.user.role != "capitol_receiving":
+        return JsonResponse({"error": "Only Receiver can upload corrections inline."}, status=403)
+        
+    if case.status not in {"client_correction", "not_received"}:
+        return JsonResponse({"error": "Case is not in correction state."}, status=400)
+        
+    if "file" not in request.FILES:
+        return JsonResponse({"error": "No file uploaded."}, status=400)
+        
+    new_file = request.FILES["file"]
+    
+    # Create DocumentVersion of the old file
+    from .models import DocumentVersion
+    DocumentVersion.objects.create(
+        case=case,
+        doc_type=doc.doc_type,
+        file=doc.file,
+        uploaded_by=doc.uploaded_by,
+        uploaded_at=doc.uploaded_at
+    )
+    
+    # Update the CaseDocument with the new file
+    doc.file = new_file
+    doc.uploaded_by = request.user
+    doc.uploaded_at = timezone.now()
+    doc.reviewed_ok = False
+    doc.review_remark = ""
+    doc.save()
+    
+    AuditLog.objects.create(
+        actor=request.user,
+        action="case_update",
+        target_object=f"Case: {case.tracking_id}",
+        details={"corrected_document": doc.doc_type}
+    )
+    
+    return JsonResponse({
+        "success": True, 
+        "message": "File updated successfully.", 
+        "uploaded_at": doc.uploaded_at.strftime("%b %d, %Y")
+    })

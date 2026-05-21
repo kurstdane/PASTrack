@@ -813,10 +813,10 @@ class CaseDocument(TimestampedModel):
         return f"{key} - {self.doc_type}"
 
 
-class DocumentVersion(models.Model):
+class DocumentVersion(TimestampedModel):
     case = models.ForeignKey("Case", on_delete=models.CASCADE, related_name="document_versions")
     doc_type = models.CharField(max_length=120)
-    file = models.FileField(upload_to=archived_case_document_upload_to, max_length=1024)
+    file = models.FileField(upload_to=case_document_upload_to, max_length=1024)
     uploaded_by = models.ForeignKey(
         "CustomUser",
         on_delete=models.SET_NULL,
