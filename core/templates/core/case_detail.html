@@ -422,29 +422,103 @@
                             </script>
                         </div>
                     {% elif show_internal and is_approver %}
-                        <table class="doc-table">
-                            {% for doc in documents %}
-                            <tr>
-                                <td class="doc-icon"><i class="ri-file-pdf-2-line"></i></td>
-                                <td>
-                                    <div class="doc-name">{{ doc.doc_type }}</div>
-                                    <div class="doc-meta">Uploaded {{ doc.uploaded_at|date:"M d, Y" }}</div>
-                                    <div class="doc-meta" style="margin-top: 0.5rem;">
-                                        <strong>Remark:</strong> {{ doc.review_remark|default:"—" }}
-                                    </div>
-                                </td>
-                                <td style="text-align: right;">
-                                    <a href="{% url 'download_case_document' doc.id %}" target="_blank" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
-                                        Preview <i class="ri-external-link-line"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="3" style="text-align: center; padding: 2rem; color: var(--text-muted);">No documents uploaded for this case.</td>
-                            </tr>
-                            {% endfor %}
-                        </table>
+                        <form method="post" action="{% url 'review_case_documents' case.tracking_id %}">
+                            {% csrf_token %}
+                            <table class="doc-table">
+                                {% for doc in documents %}
+                                <tr id="approver_doc_row_{{ doc.id }}" class="approver-doc-row" style="transition: all 0.2s; border-left: 4px solid transparent;">
+                                    <td class="doc-icon"><i class="ri-file-pdf-2-line"></i></td>
+                                    <td>
+                                        <div class="doc-name" style="font-weight: 600;">{{ doc.doc_type }}</div>
+                                        <div class="doc-meta">Uploaded {{ doc.uploaded_at|date:"M d, Y" }}</div>
+                                        <div class="doc-meta" style="margin-top: 0.5rem;">
+                                            <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+                                                <input type="checkbox" name="reviewed_ok_{{ doc.id }}" value="1" class="doc-reviewed-ok" data-doc-id="{{ doc.id }}" {% if doc.reviewed_ok %}checked{% endif %}>
+                                                <span style="font-weight: 500;">Reviewed OK</span>
+                                            </label>
+                                        </div>
+                                        <div class="doc-meta" style="margin-top: 0.5rem;">
+                                            <input
+                                                type="text"
+                                                name="review_remark_{{ doc.id }}"
+                                                class="doc-review-remark"
+                                                data-doc-id="{{ doc.id }}"
+                                                data-doc-name="{{ doc.doc_type|escapejs }}"
+                                                value="{{ doc.review_remark|default:'' }}"
+                                                placeholder="Remark (optional)"
+                                                style="width:100%; padding:0.5rem 0.75rem; border:1px solid var(--border); border-radius:8px;"
+                                            >
+                                        </div>
+                                        <input type="hidden" name="doc_id" value="{{ doc.id }}">
+                                    </td>
+                                    <td style="text-align: right; vertical-align: top;">
+                                        <a href="{% url 'download_case_document' doc.id %}" target="_blank" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                                            Preview <i class="ri-external-link-line"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" style="text-align: center; padding: 2rem; color: var(--text-muted);">No documents uploaded for this case.</td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                            
+                            <script>
+                            document.addEventListener("DOMContentLoaded", function() {
+                                function updateApproverRowStyle(docId) {
+                                    const row = document.getElementById('approver_doc_row_' + docId);
+                                    if (!row) return;
+                                    const checkbox = row.querySelector('.doc-reviewed-ok');
+                                    const remark = row.querySelector('.doc-review-remark');
+                                    
+                                    if (remark.value.trim() !== "") {
+                                        row.style.backgroundColor = '#fef2f2';
+                                        row.style.borderLeft = '4px solid #dc2626';
+                                    } else if (checkbox.checked) {
+                                        row.style.backgroundColor = '#f0fdf4';
+                                        row.style.borderLeft = '4px solid #16a34a';
+                                    } else {
+                                        row.style.backgroundColor = '';
+                                        row.style.borderLeft = '4px solid transparent';
+                                    }
+                                }
+                                
+                                document.querySelectorAll('.approver-doc-row .doc-reviewed-ok').forEach(cb => {
+                                    cb.addEventListener('change', function() {
+                                        const docId = this.dataset.docId;
+                                        const row = document.getElementById('approver_doc_row_' + docId);
+                                        const remark = row.querySelector('.doc-review-remark');
+                                        if (this.checked) {
+                                            remark.value = '';
+                                        }
+                                        updateApproverRowStyle(docId);
+                                    });
+                                    updateApproverRowStyle(cb.dataset.docId);
+                                });
+                                
+                                document.querySelectorAll('.approver-doc-row .doc-review-remark').forEach(input => {
+                                    input.addEventListener('input', function() {
+                                        const docId = this.dataset.docId;
+                                        const row = document.getElementById('approver_doc_row_' + docId);
+                                        const checkbox = row.querySelector('.doc-reviewed-ok');
+                                        if (this.value.trim() !== "") {
+                                            checkbox.checked = false;
+                                        }
+                                        updateApproverRowStyle(docId);
+                                    });
+                                });
+                            });
+                            </script>
+
+                            {% if documents %}
+                            <div style="margin-top: 1rem; text-align: right;">
+                                <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1rem;">
+                                    <i class="ri-save-line"></i> Save Remarks
+                                </button>
+                            </div>
+                            {% endif %}
+                        </form>
                     {% else %}
                         <table class="doc-table">
                             {% for doc in documents %}
@@ -934,7 +1008,10 @@
         <h3 class="panel-title" style="margin-bottom: 1rem;">Return to Examiner</h3>
         <form method="post" action="{% url 'return_for_correction' case.tracking_id %}">
             {% csrf_token %}
-            <textarea name="reason" class="remarks-input" placeholder="Explain what needs to be fixed..." required></textarea>
+            <div style="font-size: 0.85rem; color: #dc2626; margin-bottom: 1rem; padding: 0.75rem; background-color: #fef2f2; border-left: 3px solid #dc2626;">
+                <strong><i class="ri-error-warning-line"></i> Note:</strong> You must explicitly flag at least one file with a <strong>Remark</strong> and save it before returning.
+            </div>
+            <textarea name="reason" class="remarks-input" placeholder="General instructions for the Examiner..." required></textarea>
             <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
                 <button type="button" class="btn btn-outline" style="flex:1" onclick="closeApproverReturnModal()">Cancel</button>
                 <button type="submit" class="btn btn-primary" style="flex:1;">Confirm</button>

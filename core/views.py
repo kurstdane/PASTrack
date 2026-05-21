@@ -4453,6 +4453,17 @@ def return_for_correction(request, tracking_id):
         messages.error(request, "This case is not assigned to an examiner.")
         return redirect("case_detail", tracking_id=case.tracking_id)
 
+    flagged_docs = [d for d in case.documents.all() if (d.review_remark or "").strip()]
+    if not flagged_docs:
+        messages.error(request, "You must add a remark to at least one file before returning to the Examiner.")
+        return redirect("case_detail", tracking_id=case.tracking_id)
+
+    # Append the list of flagged files to the return reason so the Examiner sees it clearly
+    flagged_details = "\n\nFlagged Documents by Approver:\n" + "\n".join(
+        f"- {d.doc_type}: {d.review_remark}" for d in flagged_docs
+    )
+    reason += flagged_details
+
     old_status = case.status
     case.status = "in_review"
     case.return_reason = reason
