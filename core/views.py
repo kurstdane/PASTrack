@@ -3450,7 +3450,7 @@ def case_detail(request, tracking_id):
         return False
 
     is_capitol = bool(request.user.is_authenticated and (_is_capitol_staff(request.user) or request.user.role == "super_admin"))
-    show_internal = bool(is_capitol and case.status != "client_correction" and _user_is_current_owner_for_internal_sections(request.user, case))
+    show_internal = bool(is_capitol and _is_owner_for_internal_sections(request.user, case))
     role = (getattr(request.user, "role", "") or "").strip()
 
     show_correction_required_banner = False
@@ -4120,7 +4120,9 @@ def return_case(request, tracking_id):
         messages.error(request, "Return reason is required.")
         return redirect("case_detail", tracking_id=case.tracking_id)
 
-
+    # Preserve the Examiner's feedback if it exists
+    if case.return_reason:
+        reason = f"{reason}\n\n---\n\nExaminer Feedback:\n{case.return_reason}"
 
     case.status = "client_correction"
     case.return_reason = reason
