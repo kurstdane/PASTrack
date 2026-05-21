@@ -316,7 +316,7 @@
                         <div style="margin-top: 1rem;">
                             <table class="doc-table">
                                 {% for doc in documents %}
-                                <tr id="receiver_doc_row_{{ doc.id }}" style="{% if doc.reviewed_ok %}background-color: #f0fdf4; border-left: 4px solid #16a34a;{% elif case.return_reason and not doc.reviewed_ok %}background-color: #fef2f2; border-left: 4px solid #dc2626;{% endif %} transition: all 0.2s;">
+                                <tr id="receiver_doc_row_{{ doc.id }}" style="{% if doc.reviewed_ok %}background-color: #f0fdf4; border-left: 4px solid #16a34a;{% elif case.returned_at and doc.uploaded_at > case.returned_at %}background-color: #eff6ff; border-left: 4px solid #3b82f6;{% elif case.return_reason and not doc.reviewed_ok %}background-color: #fef2f2; border-left: 4px solid #dc2626;{% endif %} transition: all 0.2s;">
                                     <td class="doc-icon"><i class="ri-file-pdf-2-line"></i></td>
                                     <td>
                                         <div class="doc-name" style="font-weight: 600;">{{ doc.doc_type }}</div>
@@ -324,6 +324,10 @@
                                         {% if doc.reviewed_ok %}
                                             <div style="margin-top: 0.5rem; font-size: 0.8rem; color: #15803d; font-weight: 600;">
                                                 <i class="ri-lock-fill"></i> Locked / Final
+                                            </div>
+                                        {% elif case.returned_at and doc.uploaded_at > case.returned_at %}
+                                            <div class="flagged-badge" style="margin-top: 0.5rem; font-size: 0.8rem; color: #2563eb; font-weight: 500;">
+                                                <i class="ri-check-double-line"></i> New File Uploaded
                                             </div>
                                         {% elif case.return_reason and not doc.reviewed_ok %}
                                             <div class="flagged-badge" style="margin-top: 0.5rem; font-size: 0.8rem; color: #b91c1c; font-weight: 500;">
@@ -508,14 +512,9 @@
 
                         {% if is_receiver %}
                             {% if case.status == 'client_correction' %}
-                                <button class="btn btn-primary btn-block" type="button" onclick="openTransactionCorrectedModal()" {% if not has_submitted_correction %}disabled{% endif %}>
+                                <button class="btn btn-primary btn-block" type="button" onclick="openTransactionCorrectedModal()">
                                     <i class="ri-checkbox-circle-line"></i> Transaction Corrected
                                 </button>
-                                {% if not has_submitted_correction %}
-                                    <div style="font-size: 0.75rem; color: #64748b; text-align: center; margin-top: 0.25rem;">
-                                        Edit the Case Details first to enable this button.
-                                    </div>
-                                {% endif %}
                             {% else %}
                                 {% if can_receive %}
                                     <button class="btn btn-primary btn-block" type="button" onclick="openReceiveModal()">

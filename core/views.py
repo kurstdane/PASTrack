@@ -4621,7 +4621,8 @@ def transaction_corrected(request, tracking_id):
 
     old_status = case.status
     case.status = "received"
-    case.save(update_fields=["status", "updated_at"])
+    case.return_reason = ""
+    case.save(update_fields=["status", "updated_at", "return_reason"])
 
     AuditLog.objects.create(
         actor=request.user,
