@@ -197,11 +197,16 @@
                             {% csrf_token %}
                             <table class="doc-table">
                                 {% for doc in documents %}
-                                <tr id="doc_row_{{ doc.id }}" class="examiner-doc-row" style="transition: all 0.2s; border-left: 4px solid transparent;">
+                                <tr id="doc_row_{{ doc.id }}" class="examiner-doc-row" data-is-new="{% if case.returned_at and doc.uploaded_at > case.returned_at %}true{% else %}false{% endif %}" style="transition: all 0.2s; border-left: 4px solid transparent;">
                                     <td class="doc-icon"><i class="ri-file-pdf-2-line"></i></td>
                                     <td>
                                         <div class="doc-name" style="font-weight: 600;">{{ doc.doc_type }}</div>
                                         <div class="doc-meta">Uploaded {{ doc.uploaded_at|date:"M d, Y" }}</div>
+                                        {% if case.returned_at and doc.uploaded_at > case.returned_at %}
+                                            <div class="flagged-badge" style="margin-top: 0.5rem; font-size: 0.8rem; color: #2563eb; font-weight: 500;">
+                                                <i class="ri-check-double-line"></i> New File Uploaded
+                                            </div>
+                                        {% endif %}
                                         <div class="doc-meta" style="margin-top: 0.5rem;">
                                             <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
                                                 <input type="checkbox" name="reviewed_ok_{{ doc.id }}" value="1" class="doc-reviewed-ok" data-doc-id="{{ doc.id }}" {% if doc.reviewed_ok %}checked{% endif %}>
@@ -242,6 +247,7 @@
                                     if (!row) return;
                                     const checkbox = row.querySelector('.doc-reviewed-ok');
                                     const remark = row.querySelector('.doc-review-remark');
+                                    const isNew = row.dataset.isNew === 'true';
                                     
                                     if (remark.value.trim() !== "") {
                                         row.style.backgroundColor = '#fef2f2';
@@ -249,6 +255,9 @@
                                     } else if (checkbox.checked) {
                                         row.style.backgroundColor = '#f0fdf4';
                                         row.style.borderLeft = '4px solid #16a34a';
+                                    } else if (isNew) {
+                                        row.style.backgroundColor = '#eff6ff';
+                                        row.style.borderLeft = '4px solid #3b82f6';
                                     } else {
                                         row.style.backgroundColor = '';
                                         row.style.borderLeft = '4px solid transparent';
