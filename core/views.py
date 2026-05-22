@@ -476,13 +476,19 @@ def _build_public_timeline(case: Case) -> list[dict[str, object]]:
                 new_status = details.get("new_status")
             
             if new_status:
+                if isinstance(details, dict) and "returned_to" in details:
+                    returned_to = details["returned_to"]
+                    label = f"Returned - to {returned_to}"
+                    add(label, h.created_at)
+                    continue
+
                 # If the status change is 'received', handle it carefully to avoid duplicates
                 if new_status == "received":
                     if not physically_received_added:
                         add("Received", h.created_at)
                         physically_received_added = True
                     continue
-
+                
                 label = _public_status_label(type("obj", (), {"status": new_status})())
                 add(label, h.created_at)
             continue
@@ -539,7 +545,6 @@ def track_case_detail(request, tracking_id: str):
         "tracking": case.tracking_id,
         "public_status": public_status,
         "internal_status": internal_status,
-        "status_key": case.status,
         "show_internal_status": show_internal_status,
         "updated_at": case.updated_at,
         "timeline": timeline,
@@ -4143,7 +4148,7 @@ def return_case(request, tracking_id):
         actor=request.user,
         action="case_status_change",
         target_object=f"Case: {case.tracking_id}",
-        details={"new_status": case.status, "reason": reason, "deadline": case.client_correction_deadline.isoformat() if case.client_correction_deadline else None}
+        details={"new_status": case.status, "reason": reason, "deadline": case.client_correction_deadline.isoformat() if case.client_correction_deadline else None, "returned_to": "Client"}
     )
 
     email_ok = send_case_email(
@@ -4692,6 +4697,8 @@ def release_case(request, tracking_id):
         subject=f"PAStrack: Case {case.tracking_id} released",
         message=(
             f"Your request {case.tracking_id} has been released.\n\n"
+            f"Name: {case.claimed_by_name}\n"
+            f"Contact Number: {case.claimed_by_contact}\n\n"
             f"Current status: {dict(Case.STATUS_CHOICES).get(case.status, case.status)}\n"
         ),
     )

@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 class LegalTrackLoginView(LoginView):
     template_name = "registration/login.html"
+    redirect_authenticated_user = True
 
     def dispatch(self, request, *args, **kwargs):
         list(messages.get_messages(request))

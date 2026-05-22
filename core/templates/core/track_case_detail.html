@@ -922,31 +922,19 @@
 
   /* ── Read current status injected by Django ── */
   const rawStatus = "{{ public_status|lower|escapejs }}";
-  const statusKey = "{{ status_key|escapejs }}";
 
-  /* Map Django internal status key → step number (1-based) */
-  function detectCurrentStep(key) {
-    switch (key) {
-      case 'not_received': return 1;
-      case 'received': return 2;
-      case 'to_examine':
-      case 'for_taxmapping':
-      case 'client_correction':
-      case 'returned':
-        return 3; // All these fall under the 'In Review' phase generally
-      case 'for_approval': return 4;
-      case 'approved':
-      case 'for_numbering': return 5;
-      case 'for_release':
-      case 'released': return 6;
-      default: return 1;
-    }
+  /* Map Django public_status string → step number (1-based) */
+  function detectCurrentStep(s) {
+    if (/releas/i.test(s))   return 6;
+    if (/number/i.test(s))   return 5;
+    if (/approv/i.test(s))   return 4;
+    if (/review/i.test(s) || /examin/i.test(s))   return 3;
+    if (/receiv/i.test(s))   return 2;
+    return 1; // default: Submitted
   }
 
-  const currentStep = detectCurrentStep(statusKey);
+  const currentStep = detectCurrentStep(rawStatus);
   const TOTAL = STEPS.length;
-  
-  const isReturned = (statusKey === 'client_correction' || statusKey === 'returned');
 
   /* ── Helpers ── */
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -984,26 +972,14 @@
     const n = parseInt(el.dataset.step, 10);
     const check = el.querySelector('.pt-step__check');
     const dateEl = el.querySelector('.pt-step__date');
-    const circle = el.querySelector('.pt-step__circle');
-    const nameEl = el.querySelector('.pt-step__name');
 
-    if (n < currentStep || (n === 6 && statusKey === 'released')) {
+    if (n < currentStep) {
       el.classList.add('pt-step--done');
       if (check) check.style.display = 'flex';
     } else if (n === currentStep) {
       el.classList.add('pt-step--active');
-      if (isReturned) {
-        // Red warning styling for returned cases
-        circle.style.borderColor = '#dc2626';
-        circle.style.boxShadow = '0 0 0 6px #fef2f2';
-        circle.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#dc2626" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>';
-        nameEl.textContent = 'Needs Correction';
-        nameEl.style.color = '#dc2626';
-        if (dateEl) dateEl.innerHTML = '<span style="color:#dc2626;">Action Required</span>';
-      } else {
-        if (dateEl && !dateEl.textContent.trim()) {
-          dateEl.textContent = 'In Progress';
-        }
+      if (dateEl && !dateEl.textContent.trim()) {
+        dateEl.textContent = 'In Progress';
       }
     } else {
       /* pending — show estimated date */
@@ -1020,26 +996,12 @@
 
   /* ── Update stage info box ── */
   const cur = STEPS[currentStep - 1];
-  
-  if (isReturned) {
-    document.getElementById('pt-stage-icon').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#dc2626" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>';
-    document.getElementById('pt-stage-icon').style.backgroundColor = '#fef2f2';
-    document.getElementById('pt-stage-name').textContent = 'Needs Correction';
-    document.getElementById('pt-stage-name').style.color = '#dc2626';
-    document.getElementById('pt-stage-desc').textContent = 'Your case has been flagged for correction. Please review the remarks and resubmit the necessary documents.';
-  } else {
-    document.getElementById('pt-stage-icon').innerHTML = cur.icon;
-    document.getElementById('pt-stage-name').textContent = cur.name;
-    document.getElementById('pt-stage-desc').textContent = cur.desc;
-  }
+  document.getElementById('pt-stage-icon').innerHTML = cur.icon;
+  document.getElementById('pt-stage-name').textContent = cur.name;
+  document.getElementById('pt-stage-desc').textContent = cur.desc;
 
   const nextStep = currentStep < TOTAL ? STEPS[currentStep] : null;
-  if (isReturned) {
-    document.getElementById('pt-next-block').innerHTML = 
-      '<p class="pt-next-step__label" style="color:#dc2626;">Pending Action</p>' +
-      '<h4 style="color:#1a2340;">Awaiting Client</h4>' +
-      '<p class="pt-next-step__note">Please coordinate with your LGU or check your email for remarks.</p>';
-  } else if (nextStep) {
+  if (nextStep) {
     document.getElementById('pt-next-name').textContent = nextStep.name;
     const estD = estDates[nextStep.num];
     // Show a range: estD to estD + estDays - 1
@@ -1056,7 +1018,7 @@
 
   /* ── Append estimated future entries to timeline ── */
   const timeline = document.getElementById('timeline');
-  if (timeline && nextStep && !isReturned) {
+  if (timeline && nextStep) {
     // Add a visual separator
     const sep = document.createElement('li');
     sep.style.cssText = 'padding: 8px 0 16px; list-style:none;';
