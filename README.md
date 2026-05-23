@@ -1,6 +1,6 @@
-# LegalTrack
+# PAStrack (Provincial Assessor's Office Tracking System)
 
-**LegalTrack** is a Django-based case management system designed for Local Government Units (LGUs) in Cebu Province, Philippines. It streamlines the submission, tracking, and processing of legal cases between municipal LGUs and the Provincial Capitol's legal office.
+**PAStrack** (formerly LegalTrack) is a Django-based case management and document tracking system designed for Local Government Units (LGUs) and the Provincial Assessor's Office in Cebu Province, Philippines. It streamlines the submission, tracking, and processing of real property documents and transactions.
 
 ---
 
@@ -23,119 +23,70 @@
 
 ## 🎯 About the Project
 
-LegalTrack is a comprehensive case management platform that digitizes and automates the workflow of legal case submissions from LGUs to the Provincial Capitol. The system provides:
-
-- **For LGU Administrators:** A guided wizard interface to submit legal cases with complete documentation
-- **For Capitol Staff:** Role-based dashboards for receiving, examining, approving, numbering, and releasing cases
-- **For Citizens:** A public portal to track case status using tracking numbers
-- **For Super Admins:** Analytics dashboard, user management, and comprehensive audit logging
+PAStrack digitizes and automates the workflow of real property case submissions from municipal LGUs to the Provincial Capitol. It provides:
+- **For LGU Administrators**: A streamlined wizard interface to submit cases, drafts, and required documents.
+- **For Capitol Staff**: Dedicated dashboards for Receiving, Examining, Tax Mapping, Approving, Numbering, and Releasing documents.
+- **For Citizens**: A transparent public tracking portal to check transaction status securely.
+- **For Super Admins**: Advanced analytics, user administration, and comprehensive audit logs.
 
 ### Problem It Solves
 
-Previously, LGUs had to submit physical documents to the Capitol, leading to:
-
-- Lost or misplaced paperwork
-- Difficulty tracking case status
-- Slow processing times
-- Limited transparency
-
-LegalTrack digitizes this entire workflow, providing real-time tracking, automated notifications, and complete audit trails.
+Previously, LGUs had to submit physical documents to the Capitol, leading to lost paperwork, difficulty tracking case status, and slow processing times. PAStrack centralizes this workflow, providing real-time updates, structured workflows, and automated communication.
 
 ---
 
 ## ✨ Key Features
 
-### Case Management
-
-- **Guided Case Submission Wizard** - Step-by-step interface for LGU staff to submit cases
-- **Document Checklist System** - Ensures all required documents are uploaded before submission
-- **Automated Tracking Numbers** - Unique identifiers in format: `[MUNICIPALITY][YYMMDD][SEQUENCE]`
-- **Status Workflow Management** - Cases move through: Draft → Submitted → Received → Assigned → Under Review → Approved → Numbered → Released
-- **Document Version Control** - All uploaded documents are securely stored with metadata
-
-### Role-Based Access Control
-
-- **Seven Distinct Roles** - Each with specific permissions and dashboards
-- **Two-Factor Authentication** - Email-based account activation for new users
-- **Session Timeout Protection** - Automatic logout after inactivity
-- **Force Password Change** - Admins can require users to change password on first login
-- **Account Lockout** - After 5 failed login attempts (30-minute lockout)
-
-### Public Portal
-
-- **Case Status Tracking** - Search cases by tracking number without authentication
-- **Public Timeline View** - See case progress and status updates
-- **FAQ System** - Frequently asked questions for citizens
-- **Support Feedback** - Submit inquiries and feedback to administrators
-
-### Administrative Features
-
-- **User Management** - Create and manage staff accounts across different roles
-- **Analytics Dashboard** - Real-time metrics on case submissions, processing times, and workload distribution
-- **Audit Logging** - Complete audit trail of all user actions and case modifications
-- **Report Generation** - Export case data and analytics to CSV
-- **Assignment Load Balancing** - View examiner workloads to distribute cases evenly
-
-### Security Features
-
-- **Comprehensive Audit Logs** - Track all CRUD operations, authentication events, and case transitions
-- **Server-Side Validation** - All form inputs validated on backend
-- **Custom Authentication Backends** - Support for Staff ID login and email aliases
-- **Middleware Protection** - Session timeout and forced password change enforcement
-- **Secure File Uploads** - Document uploads stored outside web root with access controls
+- **Comprehensive Case Management** - Track documents from Draft and Submission to Final Release with detailed statuses (e.g., Under Examination, For Taxmapping, For Approval).
+- **Sequential Document Numbering** - Strict database-level locking for robust Tax Declaration number sequence generation for each LGU.
+- **Robust Role-Based Access Control** - Highly specialized roles and granular access controls for each step in the provincial assessor's workflow.
+- **Audit Trails** - Extensive logging of user logins, case creation, status changes, assignments, and approvals.
+- **Security-First Approach** - Configurable session timeouts, forced password changes, account lockouts on failed logins, and Argon2 password hashing.
+- **Email Notifications** - Integrated Brevo API and SMTP configurations to send updates and activation links automatically.
+- **Public Portal** - Check case progress without authentication by entering the unique Tracking ID.
 
 ---
 
 ## 👥 User Roles
 
-| Role                 | Abbreviation        | Responsibilities                                                  |
-| -------------------- | ------------------- | ----------------------------------------------------------------- |
-| **Super Admin**      | `super_admin`       | System administration, user management, analytics, audit logs     |
-| **LGU Admin**        | `lgu_admin`         | Submit cases on behalf of their municipality, track submissions   |
-| **Capitol Receiver** | `capitol_receiving` | Receive incoming cases from LGUs, verify completeness             |
-| **Capitol Examiner** | `capitol_examiner`  | Review case details, conduct legal examination, request revisions |
-| **Capitol Approver** | `capitol_approver`  | Approve or return cases for corrections                           |
-| **Capitol Numberer** | `capitol_numberer`  | Assign official case numbers to approved cases                    |
-| **Capitol Releaser** | `capitol_releaser`  | Mark cases as released and ready for pickup/delivery              |
+| Role | Abbreviation | Responsibilities |
+| --- | --- | --- |
+| **Super Admin** | `super_admin` | System administration, user management, analytics, audit logs |
+| **LGU Admin** | `lgu_admin` | Submit transactions/cases on behalf of their municipality, track submissions |
+| **Receiver** | `capitol_receiving` | Receive incoming physical documents from LGUs, verify completeness |
+| **Examiner** | `capitol_examiner` | Review case details, examine legal and technical documents, request revisions |
+| **Tax Mapper** | `capitol_taxmapper` | Assess boundary and mapping specifics, verify spatial and property records |
+| **Approver** | `capitol_approver` | Approve or return cases for corrections |
+| **Numberer** | `capitol_numberer` | Assign official case numbers and Tax Declaration numbers |
+| **Releaser** | `capitol_releaser` | Mark cases as released and ready for pickup/delivery |
 
 ---
 
 ## 🛠 Tech Stack
 
 ### Backend
-
-- **Django 5.2** - Web framework
+- **Django 5.2.8** - Core web framework
 - **Python 3.11+** - Programming language
-- **Django REST Framework** - API endpoints (optional/future use)
-- **Pillow** - Image processing for uploads
+- **Django REST Framework** - API endpoints
+- **SQLite / PostgreSQL (Supabase)** - Database options
 
 ### Frontend
-
-- **Django Templates** - Server-rendered HTML
-- **React 18** (Optional) - Modern frontend in `frontend/` directory
-- **Vite** - Build tool for React development
+- **Django Templates** - Server-rendered UI elements
+- **React 18** - Interactive components via Vite (`frontend/` folder)
 - **Tailwind CSS** - Utility-first CSS framework
 
-### Database
-
-- **SQLite** - Default for local development
-- **PostgreSQL (Supabase)** - Production-ready option with cloud hosting
-
-### Infrastructure
-
-- **Vercel** - Deployment platform (configured via `vercel.json`)
-- **Media Storage** - Local filesystem (`media/` directory)
-- **Static Files** - Collected to `staticfiles/` for production
+### Infrastructure & Deployment
+- **Vercel & Render** - Cloud deployment platforms
+- **Whitenoise** - Static file serving
 
 ---
 
 ## 📦 Prerequisites
 
 Before you begin, ensure you have the following installed:
-
 - **Git** - Version control
 - **Python 3.11 or higher** - [Download Python](https://www.python.org/downloads/)
-- **Node.js 18+** (optional) - Only needed for React frontend development
+- **Node.js 18+** (Optional) - Only needed for React frontend development
 - **PowerShell** (Windows) or Terminal (macOS/Linux)
 
 ---
@@ -143,39 +94,39 @@ Before you begin, ensure you have the following installed:
 ## 🚀 Installation
 
 ### 1. Clone the Repository
-
-```powershell
+```bash
 git clone https://github.com/Gideon1274/LegalTrack.git
-cd LegalTrack
+cd PASTrack
 ```
 
 ### 2. Create and Activate Virtual Environment
-
 **Windows (PowerShell):**
-
 ```powershell
-py -m venv legaltrack_env
-.\legaltrack_env\Scripts\Activate.ps1
+py -m venv venv
+.\venv\Scripts\Activate.ps1
 ```
-
 **macOS/Linux:**
-
 ```bash
-python3 -m venv legaltrack_env
-source legaltrack_env/bin/activate
+python3 -m venv venv
+source venv/bin/activate
 ```
 
-### 3. Install Python Dependencies
-
+### 3. Install Dependencies
 ```powershell
-py -m pip install --upgrade pip
-py -m pip install -r requirements.txt
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+*For development features (optional):*
+```powershell
+pip install -r requirements-dev.txt
 ```
 
-**For development with additional tools:**
-
+### 4. Install Frontend Dependencies (Optional)
+If working with React components:
 ```powershell
-py -m pip install -r requirements-dev.txt
+cd frontend
+npm install
+cd ..
 ```
 
 ---
@@ -183,323 +134,116 @@ py -m pip install -r requirements-dev.txt
 ## ⚙️ Configuration
 
 ### 1. Create Environment File
-
-Copy the example environment file:
-
-```powershell
-Copy-Item env.example .env
-```
+Copy the example environment file if available, or create a `.env` file in the project root.
 
 ### 2. Configure Environment Variables
-
-Edit `.env` and set the following variables:
-
-#### Required Settings
+Edit `.env` and set the following essential variables:
 
 ```env
 # Security
 DJANGO_SECRET_KEY=your-secret-key-here
 DJANGO_DEBUG=true
-DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost
+DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost,.vercel.app,.onrender.com
 
 # Database Provider (choose one)
 LEGALTRACK_DB_PROVIDER=sqlite
 ```
-
-#### Database Options
-
-**Option A: SQLite (Recommended for Development)**
-
-```env
-LEGALTRACK_DB_PROVIDER=sqlite
-```
-
-- No additional configuration needed
-- Database file: `db.sqlite3`
-- Best for: Local development and testing
-
-**Option B: PostgreSQL via Supabase (Recommended for Production)**
-
+*For production with PostgreSQL, add:*
 ```env
 LEGALTRACK_DB_PROVIDER=supabase
 DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DBNAME
 ```
 
-- Replace `USER`, `PASSWORD`, `HOST`, and `DBNAME` with your Supabase credentials
-- Get connection string from [Supabase Dashboard](https://supabase.com)
-- Optional fallback: `LEGALTRACK_ALLOW_SQLITE_FALLBACK=true`
-
-#### Optional Settings
-
-```env
-# Email (for production)
-EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USE_TLS=true
-EMAIL_HOST_USER=your-email@example.com
-EMAIL_HOST_PASSWORD=your-app-password
-
-# Session timeout (in seconds, default 1800 = 30 minutes)
-SESSION_TIMEOUT=1800
-```
-
 ### 3. Run Database Migrations
-
 ```powershell
 py manage.py migrate
 ```
 
-This creates all necessary database tables for:
-
-- Users and authentication
-- Cases and documents
-- Audit logs
-- FAQ and support feedback
-
 ### 4. Create a Superuser Account
-
 ```powershell
 py manage.py createsuperuser
 ```
-
-Follow the prompts to create your Super Admin account. You'll need:
-
-- Email address
-- Password (minimum 8 characters)
+Follow the prompts to create your Super Admin account.
 
 ---
 
 ## 🏃 Running the Application
 
 ### Start the Django Development Server
-
 ```powershell
 py manage.py runserver
 ```
-
 The application will be available at:
+- **Main Application:** `http://127.0.0.1:8000/`
+- **Admin Panel:** `http://127.0.0.1:8000/admin/`
 
-- **Main Application:** http://127.0.0.1:8000/
-- **Admin Panel:** http://127.0.0.1:8000/admin/
-- **Login Page:** http://127.0.0.1:8000/accounts/login/
-- **Public Tracking:** http://127.0.0.1:8000/track/
-- **Support Portal:** http://127.0.0.1:8000/support/
-
-### Access the Application
-
-1. **Log in as Super Admin:**
-   - Navigate to http://127.0.0.1:8000/accounts/login/
-   - Use the superuser credentials you created
-   - You'll be directed to the Super Admin dashboard
-
-2. **Create Additional Users:**
-   - From Super Admin dashboard, go to "Manage Users"
-   - Create accounts for LGU Admins, Capitol Staff, etc.
-   - Each user receives an activation email (check console in development)
-
-3. **Test Case Submission:**
-   - Log in as an LGU Admin
-   - Navigate to "Submit New Case"
-   - Follow the wizard to submit a test case
-
----
-
-## 🎨 Frontend Setup (Optional)
-
-If you want to work on the React frontend located in `frontend/`:
-
-### 1. Install Node.js Dependencies
-
+### Start the Frontend Development Server (Optional)
+If you are developing React components:
 ```powershell
 cd frontend
-npm install
-```
-
-### 2. Start the React Development Server
-
-```powershell
 npm run dev
 ```
-
-The React app will run on http://127.0.0.1:5173 and automatically proxy API requests to Django at http://127.0.0.1:8000.
-
-**Note:** The React frontend is optional. The Django application is fully functional with server-rendered templates.
 
 ---
 
 ## 🧪 Testing
 
 ### Run All Tests
-
 ```powershell
 py manage.py test
 ```
 
-### Run Tests for Specific App
-
-```powershell
-py manage.py test core
-```
-
 ### Run Tests with Coverage (if installed)
-
 ```powershell
 coverage run --source='.' manage.py test
 coverage report
 coverage html
 ```
-
-View coverage report by opening `htmlcov/index.html` in a browser.
+View the coverage report by opening `htmlcov/index.html` in a browser.
 
 ---
 
 ## 📁 Project Structure
 
 ```
-LegalTrack/
-├── core/                       # Main application
-│   ├── models.py              # Database models (User, Case, AuditLog, etc.)
-│   ├── views.py               # View logic for all pages
-│   ├── auth_views.py          # Authentication views
-│   ├── forms.py               # Django forms
-│   ├── backends.py            # Custom authentication backends
-│   ├── middleware.py          # Session timeout, force password change
-│   ├── signals.py             # Django signals (audit logging)
-│   ├── urls.py                # URL routing
-│   ├── templates/             # HTML templates
-│   │   ├── base.html          # Base template
-│   │   ├── core/              # App-specific templates
-│   │   └── registration/      # Auth templates
-│   └── migrations/            # Database migrations
-│
-├── legaltrack/                # Project settings
-│   ├── settings.py            # Django configuration
-│   ├── urls.py                # Root URL configuration
-│   └── wsgi.py                # WSGI application
-│
-├── frontend/                  # React frontend (optional)
-│   ├── src/                   # React source code
-│   ├── package.json           # Node dependencies
-│   └── vite.config.js         # Vite configuration
-│
-├── media/                     # User-uploaded files
-│   └── cases/                 # Case documents organized by tracking ID
-│
-├── static/                    # Static files (CSS, JS, images)
-├── staticfiles/               # Collected static files for production
-│
-├── scripts/                   # Utility scripts
-│   └── create_case_supabase.py
-│
-├── manage.py                  # Django management script
-├── requirements.txt           # Python dependencies
-├── requirements-dev.txt       # Development dependencies
-├── vercel.json                # Vercel deployment config
-├── env.example                # Example environment variables
-└── README.md                  # This file
+PASTrack/
+├── api/                 # Django REST Framework endpoints
+├── core/                # Main business logic, database models, views, and middleware
+├── frontend/            # React + Vite source code for interactive UI components
+├── legaltrack/          # Django project configuration (settings, urls, wsgi, asgi)
+├── media/               # User-uploaded files and case documents
+├── scripts/             # Utility scripts for deployment and maintenance
+├── staticfiles/         # Collected static assets for deployment
+├── templates/           # Global and app-level HTML templates
+├── manage.py            # Django CLI entrypoint
+├── requirements.txt     # Python production dependencies
+└── README.md            # This documentation file
 ```
 
 ---
 
 ## 🔧 Troubleshooting
 
-### Vercel deploy works but you can't login / tracking doesn't find anything
-
-This usually means Vercel is not connected to your real database and/or your secret key is not stable.
-
-- In Vercel Project → Settings → Environment Variables, set:
-  - `DJANGO_SECRET_KEY` (required when `DJANGO_DEBUG=false`)
-  - `LEGALTRACK_DB_PROVIDER=supabase`
-  - `DATABASE_URL` (Supabase Postgres connection string)
-- Redeploy after setting env vars.
-
-Note: there is an optional `LEGALTRACK_ENABLE_VERCEL_SQLITE_FALLBACK=true` demo-mode, but it is not persistent and will break login/tracking across cold starts.
-
-### PowerShell Script Execution Error
-
-If you get an error activating the virtual environment:
-
-```powershell
-Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
-```
-
-Then try activating again.
-
 ### Database Changes Not Reflected
-
-After modifying models, run:
-
+After modifying models, ensure you generate and run migrations:
 ```powershell
 py manage.py makemigrations
 py manage.py migrate
 ```
 
-### Static Files Not Loading
+### Vercel / Render Deployment Issues
+Ensure your environment variables (like `DJANGO_SECRET_KEY` and `DATABASE_URL`) are properly set in the respective cloud dashboards. If you are experiencing IPv6 resolution issues on Render or Vercel, the app includes fallback mechanisms configured in `settings.py`.
 
-Collect static files:
+### Email Activation Not Working in Dev
+In development mode (`DJANGO_DEBUG=true`), activation emails may be printed directly to your console rather than sent. For production, properly configure your SMTP settings (`EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`) in `.env`.
 
-```powershell
-py manage.py collectstatic
-```
-
-### Port Already in Use
-
-If port 8000 is already in use, specify a different port:
-
-```powershell
-py manage.py runserver 8080
-```
-
-### Email Activation Not Working
-
-In development, activation emails are printed to the console. Check your terminal output for the activation link.
-
-For production, configure SMTP settings in `.env`:
-
-```env
-EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USE_TLS=true
-EMAIL_HOST_USER=your-email@gmail.com
-EMAIL_HOST_PASSWORD=your-app-password
-```
-
-### Supabase Connection Issues
-
-If you can't connect to Supabase:
-
-1. Verify your `DATABASE_URL` is correct
-2. Check that your IP address is allowed in Supabase project settings
-3. Enable SQLite fallback: `LEGALTRACK_ALLOW_SQLITE_FALLBACK=true`
-
-### Media Files Not Accessible
-
-Ensure `MEDIA_ROOT` and `MEDIA_URL` are configured in `settings.py` and that the Django development server is serving media files.
+### Cannot Connect to Database (Supabase)
+1. Verify that your `DATABASE_URL` is exact.
+2. Check that your local IP address is allowed in the Supabase project settings if restricted.
+3. For local troubleshooting, you can fallback to SQLite by setting `LEGALTRACK_ALLOW_SQLITE_FALLBACK=true`.
 
 ---
 
 ## 📄 License
 
-This project is part of a university capstone project. All rights reserved.
-
----
-
-## 👨‍💻 Contributing
-
-This is a capstone project. For questions or issues, please contact the project maintainer.
-
----
-
-## 📞 Support
-
-For technical support or questions about deployment:
-
-- Check the [SDD_LegalTrack.md](SDD_LegalTrack.md) for detailed system documentation
-- Review Django logs in the console
-- Check the Admin panel audit logs for system events
-
----
-
-**Built with ❤️ for the Province of Cebu**
+This project is part of a university capstone project for the Province of Cebu. All rights reserved.
