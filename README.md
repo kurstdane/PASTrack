@@ -2,6 +2,8 @@
 
 **PAStrack** (formerly LegalTrack) is a Django-based case management and document tracking system designed for Local Government Units (LGUs) and the Provincial Assessor's Office in Cebu Province, Philippines. It streamlines the submission, tracking, and processing of real property documents and transactions.
 
+**Live Deployment:** [https://pastrack.onrender.com/](https://pastrack.onrender.com/)
+
 ---
 
 ## 📋 Table of Contents
@@ -9,14 +11,17 @@
 - [About the Project](#about-the-project)
 - [Key Features](#key-features)
 - [User Roles](#user-roles)
+- [Sample Accounts (For Testing)](#sample-accounts-for-testing)
 - [Tech Stack](#tech-stack)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Running the Application](#running-the-application)
+- [Deployment](#deployment)
 - [Testing](#testing)
 - [Project Structure](#project-structure)
 - [Troubleshooting](#troubleshooting)
+- [Team 15 Members](#team-15-members)
 - [License](#license)
 
 ---
@@ -62,21 +67,41 @@ Previously, LGUs had to submit physical documents to the Capitol, leading to los
 
 ---
 
+## 🔑 Sample Accounts (For Testing)
+
+You can use the following dummy accounts to log in and test the different roles in the system:
+
+| Role | Username (Staff ID) | Password |
+| --- | --- | --- |
+| **Super Admin** | `26-ADM-0001` | `team15Admin-Trae_` |
+| **LGU San Remigio** | `26-LGU-0001` | `Admin@1213_Casas03-` |
+| **Capitol Receiver** | `26-REC-0001` | `CapitolR@0302_Fortaleza03-` |
+| **Capitol Examiner** | `26-EXM-0001` | `CapitolE@1207_Yu04-` |
+| **Capitol Examiner 2** | `26-EXM-0005` | `CapitolEx@m1n3r_ForTesting-` |
+| **Capitol Approver** | `26-APR-0001` | `CapitolA@1030_Vestil-` |
+| **Capitol Numberer** | `26-NUM-0001` | `CapitolN@1018_Rubio-` |
+| **Capitol Tax Mapper** | `26-TAX-0001` | `CapitolTM@1018_Sumucad-` *(To be implemented)* |
+| **Capitol Releaser** | `26-REL-0001` | `CapitolR@1231_Laviste-` |
+
+---
+
 ## 🛠 Tech Stack
 
 ### Backend
-- **Django 5.2.8** - Core web framework
-- **Python 3.11+** - Programming language
+- **Django (v5.2.8)** - Core web framework
+- **Python (v3.11+)** - Programming language
 - **Django REST Framework** - API endpoints
 - **SQLite / PostgreSQL (Supabase)** - Database options
 
 ### Frontend
+- **React (v18.3.1)** - Interactive components via Vite (`frontend/` folder)
+- **Vite (v5.4.11)** - Frontend build tool
+- **Tailwind CSS (v3.4.17)** - Utility-first CSS framework
 - **Django Templates** - Server-rendered UI elements
-- **React 18** - Interactive components via Vite (`frontend/` folder)
-- **Tailwind CSS** - Utility-first CSS framework
 
 ### Infrastructure & Deployment
-- **Vercel & Render** - Cloud deployment platforms
+- **Render** - Main production hosting platform
+- **Vercel** - Secondary/alternative hosting
 - **Whitenoise** - Static file serving
 
 ---
@@ -95,7 +120,7 @@ Before you begin, ensure you have the following installed:
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/Gideon1274/LegalTrack.git
+git clone https://github.com/kylesumucad18/PASTrack.git
 cd PASTrack
 ```
 
@@ -134,32 +159,42 @@ cd ..
 ## ⚙️ Configuration
 
 ### 1. Create Environment File
-Copy the example environment file if available, or create a `.env` file in the project root.
-
-### 2. Configure Environment Variables
-Edit `.env` and set the following essential variables:
+Create a `.env` file in the project root and add the following placeholder values. In production, replace these placeholders with your actual credentials.
 
 ```env
 # Security
-DJANGO_SECRET_KEY=your-secret-key-here
-DJANGO_DEBUG=true
+DJANGO_SECRET_KEY=your_secret_key_here
+DJANGO_DEBUG=True
 DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost,.vercel.app,.onrender.com
 
-# Database Provider (choose one)
-LEGALTRACK_DB_PROVIDER=sqlite
-```
-*For production with PostgreSQL, add:*
-```env
+# Database Provider (Options: sqlite, supabase)
 LEGALTRACK_DB_PROVIDER=supabase
-DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DBNAME
+DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DBNAME
+
+# Email Configuration (Brevo/SMTP)
+EMAIL_HOST=smtp-relay.brevo.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=your_email_user@smtp-brevo.com
+EMAIL_HOST_PASSWORD=your_email_password
+EMAIL_USE_TLS=1
+EMAIL_USE_SSL=0
+DEFAULT_FROM_EMAIL=your_sender_email@gmail.com
+
+# Feature Toggles
+LEGALTRACK_SEND_EMAILS=1
+LEGALTRACK_SEND_CASE_EMAILS=1
+LEGALTRACK_SHOW_ACTIVATION_LINK=1
+
+# ConvertAPI
+CONVERTAPI_SECRET=your_convertapi_secret_key
 ```
 
-### 3. Run Database Migrations
+### 2. Run Database Migrations
 ```powershell
 py manage.py migrate
 ```
 
-### 4. Create a Superuser Account
+### 3. Create a Superuser Account
 ```powershell
 py manage.py createsuperuser
 ```
@@ -183,6 +218,22 @@ If you are developing React components:
 cd frontend
 npm run dev
 ```
+
+---
+
+## 🚀 Deployment
+
+This project is configured for deployment on **Render** (via `render.yaml`) and **Vercel** (via `vercel.json`). 
+
+**To deploy to Render:**
+1. Push your code to GitHub.
+2. Go to the [Render Dashboard](https://dashboard.render.com/) and create a new **Blueprint Instance**.
+3. Connect your repository. Render will automatically detect the `render.yaml` file.
+4. Render will provision the web service, run `pip install -r requirements.txt`, collect static files, and execute database migrations.
+5. Ensure you have added the production `.env` variables in your Render environment settings.
+
+*Helpful Deployment Scripts:*
+- `deploy-render.bat` / `deploy-render.ps1`: Scripts included in the repository for pushing updates to Render manually.
 
 ---
 
@@ -241,6 +292,16 @@ In development mode (`DJANGO_DEBUG=true`), activation emails may be printed dire
 1. Verify that your `DATABASE_URL` is exact.
 2. Check that your local IP address is allowed in the Supabase project settings if restricted.
 3. For local troubleshooting, you can fallback to SQLite by setting `LEGALTRACK_ALLOW_SQLITE_FALLBACK=true`.
+
+---
+
+## 👨‍💻 Team 15 Members
+
+- **Kursten Dane M. Casas**
+- **Dale Christian C. Fortaleza**
+- **Rainric Randy P. Yu**
+- **Ross Mikhail A. Vestil**
+- **Joseph Kyle R. Sumucad**
 
 ---
 
