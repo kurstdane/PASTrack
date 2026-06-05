@@ -124,6 +124,22 @@
     .btn-submit-note:hover {
         background-color: var(--primary-hover);
     }
+
+    /* ===== RESPONSIVE FIXES ===== */
+    @media (max-width: 1023px) {
+        .detail-grid { grid-template-columns: 1fr; }
+        .sticky-sidebar { position: static; margin-top: 2rem; }
+        .doc-table { display: block; width: 100%; overflow-x: auto; }
+        .doc-table th, .doc-table td { white-space: nowrap; }
+    }
+    
+    @media (max-width: 767px) {
+        .header-main { flex-direction: column; align-items: flex-start; gap: 1rem; }
+        .header-actions, .header-actions .btn { width: 100%; justify-content: center; }
+        .info-grid { grid-template-columns: 1fr; gap: 1rem; }
+        .doc-table td { display: block; width: 100%; text-align: left !important; }
+        .doc-icon { display: none; }
+    }
 </style>
 {% endblock %}
 

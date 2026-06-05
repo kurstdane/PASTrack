@@ -164,6 +164,31 @@
     .preview-iframe { width: 100%; height: 100%; border: none; background: white; }
     .preview-empty { color: #cbd5e1; font-size: 0.9rem; text-align: center; }
 
+    /* ===== RESPONSIVE FIXES ===== */
+    @media (max-width: 1023px) {
+        .wizard-page { display: block; overflow-y: auto; height: 100vh; }
+        .wizard-inner { flex-direction: column; gap: 1rem; padding: 1rem; align-items: stretch; }
+        .wizard-left { width: 100%; margin-bottom: 0; }
+        .wizard-left-card { padding: 1.5rem; margin-bottom: 1rem; }
+        .stepper { flex-direction: row; gap: 1rem; overflow-x: auto; padding-bottom: 0.5rem; }
+        .stepper::before { display: none; }
+        .step-item { padding-bottom: 0; white-space: nowrap; }
+        .step-text { display: none; } /* Hide text on mobile to save space */
+        .wizard-right { margin-top: 0; height: auto; overflow: visible; width: 100%; }
+        .wizard-right-card { padding: 1.5rem; max-width: 100% !important; margin-bottom: 1rem; }
+        
+        .form-grid { grid-template-columns: 1fr; gap: 1rem; }
+        .col-2, .col-4, .col-6, .col-12 { grid-column: span 1; }
+        
+        .preview-container { flex-direction: column; height: auto; }
+        .preview-sidebar { width: 100%; border-right: none; border-bottom: 1px solid #e2e8f0; padding-right: 0; padding-bottom: 1rem; margin-bottom: 1rem; max-height: 200px; }
+        .preview-viewer { height: 400px; width: 100%; }
+        
+        .doc-actions { flex-direction: column; }
+        .view-completed { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+        .doc-filename { text-align: left; padding: 0; }
+        .doc-meta { text-align: left; margin: 0; }
+    }
 </style>
 {% endblock %}
 
