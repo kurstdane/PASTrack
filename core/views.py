@@ -2630,6 +2630,13 @@ def submit_case(request):
                     _reset_case_uploads_and_checklist(case=case)
                     _seed_case_checklist(case=case)
 
+                AuditLog.objects.create(
+                    actor=request.user,
+                    action="case_update",
+                    target_object=f"Draft: {case.draft_id}",
+                    details={"step": 1, "note": "Draft updated."}
+                )
+
                 if wants_save_draft and not wants_continue:
                     messages.success(request, "Draft saved.")
                     return redirect("drafts")
@@ -2648,6 +2655,13 @@ def submit_case(request):
             
             case.lgu_area_code = _municipality_area_code(effective_mun)
             case.save()
+
+            AuditLog.objects.create(
+                actor=request.user,
+                action="case_create",
+                target_object=f"Draft: {case.draft_id}",
+                details={"step": 1, "note": "Draft initialized."}
+            )
 
             # Seed checklist suggestions (uploads happen in Step 2 only).
             requirements = ["Endorsement Letter", *_case_type_requirements(
@@ -3484,30 +3498,22 @@ def case_detail(request, tracking_id):
     remark_form = None
     can_remark = False
 
-    if show_internal:
-        remarks_qs = CaseRemark.objects.filter(case=case).select_related("created_by")
-        history_qs = (
-            AuditLog.objects.filter(target_object=f"Case: {case.tracking_id}")
-            .filter(action__in=["case_create", "case_update", "case_receipt", "case_assignment", "case_document_review", "case_status_change", "case_approval", "case_rejection", "case_numbered", "case_release", "case_remark"])
-            .select_related("actor")
-            .order_by("-created_at")
+    remarks_qs = CaseRemark.objects.filter(case=case).select_related("created_by")
+    history_qs = (
+        AuditLog.objects.filter(
+            Q(target_object=f"Case: {case.tracking_id}") | 
+            Q(target_object=f"Draft: {case.draft_id}")
         )
+        .filter(action__in=["case_create", "case_update", "case_receipt", "case_assignment", "case_document_review", "case_status_change", "case_approval", "case_rejection", "case_numbered", "case_release", "case_remark"])
+        .select_related("actor")
+        .order_by("-created_at")
+    )
 
-        history = list(history_qs)
-        for h in history:
-            h.details_display = _format_case_history_details(getattr(h, "action", "") or "", getattr(h, "details", None))
+    history = list(history_qs)
+    for h in history:
+        h.details_display = _format_case_history_details(getattr(h, "action", "") or "", getattr(h, "details", None))
 
-        remarks = list(remarks_qs)
-    elif role == "lgu_admin":
-        history_qs = (
-            AuditLog.objects.filter(target_object=f"Case: {case.tracking_id}")
-            .filter(action__in=["case_create", "case_update", "case_remark"], actor=request.user)
-            .select_related("actor")
-            .order_by("-created_at")
-        )
-        history = list(history_qs)
-        for h in history:
-            h.details_display = _format_case_history_details(getattr(h, "action", "") or "", getattr(h, "details", None))
+    remarks = list(remarks_qs)
 
     if role == "super_admin":
         can_remark = True

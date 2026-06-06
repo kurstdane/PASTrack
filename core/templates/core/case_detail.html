@@ -196,6 +196,8 @@
                         <div class="info-item"><span class="info-label">Contact Number</span><span class="info-value">{{ case.client_number|default:"—" }}</span></div>
                         <div class="info-item"><span class="info-label">Email Address</span><span class="info-value">{{ case.client_email|default:"—" }}</span></div>
                         <div class="info-item"><span class="info-label">LGU Origin</span><span class="info-value">{{ case.submitted_by.lgu_municipality|default:case.area }}</span></div>
+                        <div class="info-item"><span class="info-label">Classification</span><span class="info-value">{{ case.get_classification_display|default:"—" }}</span></div>
+                        <div class="info-item"><span class="info-label">Property Area</span><span class="info-value">{% if case.area_value %}{{ case.area_value }} {{ case.get_area_unit_display }}{% else %}—{% endif %}</span></div>
                         <div class="info-item"><span class="info-label">Date Submitted</span><span class="info-value">{{ case.created_at|date:"M d, Y g:i A" }}</span></div>
                         <div class="info-item">
                             <span class="info-label">Transaction Number</span>
@@ -825,7 +827,7 @@
                                 <div class="timeline-icon"></div>
                                 <span class="timeline-time">{{ log.created_at|date:"M d, g:i A" }}</span>
                                 <div class="timeline-content">
-                                    <strong>{{ log.actor.get_role_display|default:"System" }}</strong>
+                                    <strong>{{ log.actor.get_role_display|default:"System" }}{% if log.actor and log.actor.username %} (Staff ID: {{ log.actor.username }}){% endif %}</strong>
                                     <p style="margin: 0.25rem 0 0 0;">
                                         {% if log.action == "case_remark" %}
                                             Added a note

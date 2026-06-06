@@ -70,6 +70,9 @@ class CaseDetailsForm(forms.ModelForm):
             "client_number",
             "client_email",
             "area",
+            "classification",
+            "area_value",
+            "area_unit",
             "case_type",
             "property_title_type",
             "needs_taxmapping",
@@ -88,6 +91,9 @@ class CaseDetailsForm(forms.ModelForm):
             }),
             "client_email": forms.EmailInput(attrs={"placeholder": "Owner email"}),
             "area": forms.Select(),
+            "classification": forms.Select(),
+            "area_value": forms.NumberInput(attrs={"step": "0.0001", "placeholder": "e.g. 250.0000"}),
+            "area_unit": forms.Select(),
             "case_type": forms.Select(),
             "property_title_type": forms.Select(),
         }
@@ -110,6 +116,19 @@ class CaseDetailsForm(forms.ModelForm):
             self.add_error("client_last_name", "Last name is required.")
         if not (cleaned.get("case_type") or "").strip():
             self.add_error("case_type", "Type of transaction is required.")
+        
+        classification = cleaned.get("classification")
+        if not classification:
+            self.add_error("classification", "Classification is required.")
+            
+        area_value = cleaned.get("area_value")
+        area_unit = cleaned.get("area_unit")
+        if area_value is None and not area_unit:
+            self.add_error("area_value", "Property area is required.")
+        elif area_value is not None and not area_unit:
+            self.add_error("area_unit", "Area unit is required.")
+        elif area_value is None and area_unit:
+            self.add_error("area_value", "Area value is required.")
 
         raw_num = (cleaned.get("client_number") or "").strip()
         if raw_num:

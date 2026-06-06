@@ -514,6 +514,43 @@ class Case(TimestampedModel):
         help_text="Required only for Land First Time and Transfer of Ownership cases.",
     )
 
+    CLASSIFICATION_CHOICES: ClassVar[list[tuple[str, str]]] = [
+        ('residential',  'Residential'),
+        ('agricultural', 'Agricultural'),
+        ('commercial',   'Commercial'),
+        ('industrial',   'Industrial'),
+        ('mineral',      'Mineral'),
+        ('timberland',   'Timberland'),
+        ('special',      'Special'),
+    ]
+    classification = models.CharField(
+        max_length=20,
+        choices=CLASSIFICATION_CHOICES,
+        blank=True,
+        null=True,
+    )
+
+    area_value = models.DecimalField(
+        max_digits=10,
+        decimal_places=4,
+        help_text="Numerical area of the property (e.g. 250.0000)",
+        blank=True,
+        null=True,
+    )
+
+    AREA_UNIT_CHOICES: ClassVar[list[tuple[str, str]]] = [
+        ('sqm', 'Square Meters (sq.m.)'),
+        ('ha',  'Hectares (ha.)'),
+    ]
+    area_unit = models.CharField(
+        max_length=10,
+        choices=AREA_UNIT_CHOICES,
+        default='sqm',
+        help_text="Unit of measurement for the property area",
+        blank=True,
+        null=True,
+    )
+
     # ---------- LGU who submitted ----------
     submitted_by = models.ForeignKey(
         CustomUser,
