@@ -23,6 +23,7 @@ from django.core.files.base import ContentFile
 from django.core.paginator import Paginator
 from django.db import IntegrityError, models, transaction, connection
 from django.db.models import Q, Count
+from django.db.models.functions import TruncDate
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 from django.views.decorators.cache import never_cache
@@ -1309,7 +1310,50 @@ def dashboard(request):
             if idx is not None:
                 role_distribution_array[idx] = item["count"]
 
-        # 4. User List (Initial Load - Total Users)
+        # 4. Pipeline Data
+        lgu_staff_count = CustomUser.objects.filter(role="lgu_admin").count()
+        capitol_staff_count = CustomUser.objects.filter(role__startswith="capitol_").count()
+        active_users_count = CustomUser.objects.filter(account_status="active").count()
+
+        # 5. Audit Log System Activity
+        today = timezone.localdate()
+        seven_days_ago_date = today - timedelta(days=6)
+        daily_logs = AuditLog.objects.filter(created_at__date__gte=seven_days_ago_date) \
+            .annotate(date=TruncDate('created_at')) \
+            .values('date') \
+            .annotate(count=Count('id')) \
+            .order_by('date')
+            
+        daily_dict = {item['date']: item['count'] for item in daily_logs}
+        weekly_labels = []
+        weekly_data = []
+        for i in range(7):
+            d = seven_days_ago_date + timedelta(days=i)
+            weekly_labels.append(d.strftime("%a"))
+            weekly_data.append(daily_dict.get(d, 0))
+            
+        weekly_max = max(weekly_data) if weekly_data else 10
+        weekly_max = max(weekly_max + 10, 35)
+
+        twenty_eight_days_ago = today - timedelta(days=27)
+        monthly_labels = ["Week 1", "Week 2", "Week 3", "Week 4"]
+        monthly_data = [0, 0, 0, 0]
+        logs_28 = AuditLog.objects.filter(created_at__date__gte=twenty_eight_days_ago)
+        for log in logs_28:
+            days_ago = (today - timezone.localtime(log.created_at).date()).days
+            if days_ago <= 6:
+                monthly_data[3] += 1
+            elif days_ago <= 13:
+                monthly_data[2] += 1
+            elif days_ago <= 20:
+                monthly_data[1] += 1
+            else:
+                monthly_data[0] += 1
+                
+        monthly_max = max(monthly_data) if monthly_data else 50
+        monthly_max = max(monthly_max + 20, 110)
+
+        # 6. User List (Initial Load - Total Users)
         users_qs = CustomUser.objects.exclude(id=user.id).order_by("-date_joined")
         paginator = Paginator(users_qs, 5)
         page_number = request.GET.get("page", 1)
@@ -1323,11 +1367,20 @@ def dashboard(request):
             "new_users_count": new_users_count,
             "pending_users_count": pending_users_count,
             "deactivated_users_count": deactivated_users_count,
+            "active_users_count": active_users_count,
+            "lgu_staff_count": lgu_staff_count,
+            "capitol_staff_count": capitol_staff_count,
             "recent_logs": recent_logs,
             "role_distribution_array": role_distribution_array,
             "page_obj": page_obj,
             "role_choices": CustomUser.ROLE_CHOICES,
             "lgu_choices": CustomUser.LGU_MUNICIPALITY_CHOICES,
+            "sys_weekly_labels": json.dumps(weekly_labels),
+            "sys_weekly_data": json.dumps(weekly_data),
+            "sys_weekly_max": weekly_max,
+            "sys_monthly_labels": json.dumps(monthly_labels),
+            "sys_monthly_data": json.dumps(monthly_data),
+            "sys_monthly_max": monthly_max,
         })
         template = "core/dashboard_superadmin.html"
 
@@ -1378,6 +1431,53 @@ def dashboard(request):
 
         recent_logs = AuditLog.objects.filter(actor=user).order_by("-created_at")[:5]
 
+        status_counts_dict = {r["status"]: r["count"] for r in raw}
+        not_received = status_counts_dict.get("not_received", 0)
+        received = status_counts_dict.get("received", 0)
+        in_review = sum(status_counts_dict.get(s, 0) for s in ["to_examine", "in_review", "for_taxmapping"])
+        for_approval = status_counts_dict.get("for_approval", 0) + status_counts_dict.get("approved", 0)
+        for_numbering = status_counts_dict.get("for_numbering", 0) + status_counts_dict.get("for_release", 0)
+        released = status_counts_dict.get("released", 0)
+
+        # Volume Chart Data
+        import json
+        today = timezone.localdate()
+        seven_days_ago_date = today - timedelta(days=6)
+        daily_cases = base_qs.filter(lgu_submitted_at__date__gte=seven_days_ago_date) \
+            .annotate(date=TruncDate('lgu_submitted_at')) \
+            .values('date') \
+            .annotate(count=Count('id')) \
+            .order_by('date')
+            
+        daily_dict = {item['date']: item['count'] for item in daily_cases}
+        weekly_labels = []
+        weekly_data = []
+        for i in range(7):
+            d = seven_days_ago_date + timedelta(days=i)
+            weekly_labels.append(d.strftime("%a"))
+            weekly_data.append(daily_dict.get(d, 0))
+            
+        weekly_max = max(weekly_data) if weekly_data else 5
+        weekly_max = max(weekly_max + 5, 25)
+
+        twenty_eight_days_ago = today - timedelta(days=27)
+        monthly_labels = ["Week 1", "Week 2", "Week 3", "Week 4"]
+        monthly_data = [0, 0, 0, 0]
+        cases_28 = base_qs.filter(lgu_submitted_at__date__gte=twenty_eight_days_ago)
+        for case in cases_28:
+            days_ago = (today - timezone.localtime(case.lgu_submitted_at).date()).days
+            if days_ago <= 6:
+                monthly_data[3] += 1
+            elif days_ago <= 13:
+                monthly_data[2] += 1
+            elif days_ago <= 20:
+                monthly_data[1] += 1
+            else:
+                monthly_data[0] += 1
+                
+        monthly_max = max(monthly_data) if monthly_data else 20
+        monthly_max = max(monthly_max + 10, 80)
+
         context.update({
             "section": "lgu_admin",
             "tab": tab,
@@ -1392,6 +1492,21 @@ def dashboard(request):
             "total_cases_count": total_cases_count,
             "todays_cases_count": todays_cases_count,
             "recent_logs": recent_logs,
+            "pending_count": pending_count,
+            "processing_count": processing_count,
+            "released_count": released_count,
+            "status_not_received": not_received,
+            "status_received": received,
+            "status_in_review": in_review,
+            "status_for_approval": for_approval,
+            "status_for_numbering": for_numbering,
+            "status_released": released,
+            "lgu_weekly_labels": json.dumps(weekly_labels),
+            "lgu_weekly_data": json.dumps(weekly_data),
+            "lgu_weekly_max": weekly_max,
+            "lgu_monthly_labels": json.dumps(monthly_labels),
+            "lgu_monthly_data": json.dumps(monthly_data),
+            "lgu_monthly_max": monthly_max,
         })
         template = "core/dashboard_lgu.html"
 

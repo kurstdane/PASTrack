@@ -311,7 +311,7 @@
         </div>
         <div class="kpi-value">{{ total_cases_count|default:"0" }}</div>
         <div class="kpi-meta"><i class="ri-stack-line"></i>&nbsp;<span>Lifetime total</span></div>
-        <a href="{% url 'my_submissions' %}?tab=all" class="kpi-cta">
+        <a href="/my-submissions/?tab=all" class="kpi-cta">
             View All <i class="ri-arrow-right-line"></i>
         </a>
     </div>
@@ -324,7 +324,7 @@
         </div>
         <div class="kpi-value">{{ todays_cases_count|default:"0" }}</div>
         <div class="kpi-meta" style="color:#059669;"><i class="ri-calendar-line"></i>&nbsp;<span>New activity</span></div>
-        <a href="{% url 'my_submissions' %}?tab=pending" class="kpi-cta">Submitted <i class="ri-arrow-right-line"></i></a>
+        <a href="/my-submissions/?tab=pending" class="kpi-cta">Submitted <i class="ri-arrow-right-line"></i></a>
     </div>
 
     <!-- Processing -->
@@ -335,7 +335,7 @@
         </div>
         <div class="kpi-value">{{ processing_count|default:"0" }}</div>
         <div class="kpi-meta" style="color:#0369a1;"><i class="ri-time-line"></i>&nbsp;<span>In capitol queue</span></div>
-        <a href="{% url 'my_submissions' %}?tab=processing" class="kpi-cta">Track Status <i class="ri-arrow-right-line"></i></a>
+        <a href="/my-submissions/?tab=processing" class="kpi-cta">Track Status <i class="ri-arrow-right-line"></i></a>
     </div>
 
     <!-- Released -->
@@ -346,7 +346,7 @@
         </div>
         <div class="kpi-value">{{ released_count|default:"0" }}</div>
         <div class="kpi-meta" style="color:#166534;"><i class="ri-calendar-check-line"></i>&nbsp;<span>Ready for pickup</span></div>
-        <a href="{% url 'my_submissions' %}?tab=released" class="kpi-cta">View Released <i class="ri-arrow-right-line"></i></a>
+        <a href="/my-submissions/?tab=released" class="kpi-cta">View Released <i class="ri-arrow-right-line"></i></a>
     </div>
 
     <!-- ===== SUBMISSION VOLUME CHART (span-8) ===== -->
@@ -492,8 +492,8 @@ document.addEventListener("DOMContentLoaded", function () {
     volGrad.addColorStop(1, 'rgba(59, 130, 246, 0)');
 
     const volumeData = {
-        weekly:  { labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], data: [8, 14, 11, 18, 15, 5, 2],   max: 25  },
-        monthly: { labels: ['Week 1','Week 2','Week 3','Week 4'],       data: [42, 58, 51, 67],             max: 80  }
+        weekly:  { labels: {{ lgu_weekly_labels|safe }}, data: {{ lgu_weekly_data|safe }},   max: {{ lgu_weekly_max }}  },
+        monthly: { labels: {{ lgu_monthly_labels|safe }}, data: {{ lgu_monthly_data|safe }}, max: {{ lgu_monthly_max }}  }
     };
 
     const volChart = new Chart(ctxVol, {
@@ -556,27 +556,27 @@ document.addEventListener("DOMContentLoaded", function () {
     const pipelineData = {
         all: {
             labels: ['Not Received','Received','In Review','For Approval','For Numbering','Released'],
-             data:   [12, 28, 18, 9, 6, 35],
+             data:   [{{ status_not_received|default:"0" }}, {{ status_received|default:"0" }}, {{ status_in_review|default:"0" }}, {{ status_for_approval|default:"0" }}, {{ status_for_numbering|default:"0" }}, {{ status_released|default:"0" }}],
              colors: ['#f59e0b','#0ea5e9','#6366f1','#7c3aed','#ec4899','#059669'],
-            total: 113, centerLabel: 'Total Cases'
+            total: {{ total_cases_count|default:"0" }}, centerLabel: 'Total Cases'
         },
         pending: {
              labels: ['Not Received'],
-             data:   [12],
+             data:   [{{ status_not_received|default:"0" }}],
              colors: ['#f59e0b'],
-             total: 12, centerLabel: 'Pending'
+             total: {{ status_not_received|default:"0" }}, centerLabel: 'Pending'
          },
         in_progress: {
             labels: ['Received','In Review','For Approval','For Numbering'],
-            data:   [28, 18, 9, 6],
+            data:   [{{ status_received|default:"0" }}, {{ status_in_review|default:"0" }}, {{ status_for_approval|default:"0" }}, {{ status_for_numbering|default:"0" }}],
             colors: ['#0ea5e9','#6366f1','#7c3aed','#ec4899'],
-            total: 61, centerLabel: 'In Progress'
+            total: {{ processing_count|default:"0" }}, centerLabel: 'In Progress'
         },
         completed: {
             labels: ['Released / Approved'],
-            data:   [35],
+            data:   [{{ status_released|default:"0" }}],
             colors: ['#059669'],
-            total: 35, centerLabel: 'Completed'
+            total: {{ released_count|default:"0" }}, centerLabel: 'Completed'
         }
     };
 

@@ -301,7 +301,7 @@
             </div>
             <div class="kpi-value">{{ total_lgus_count }}</div>
             <div class="kpi-meta" style="color:#6b21a8;"><i class="ri-subtract-line"></i>&nbsp;<span>Connected offices</span></div>
-            <a href="{% url 'user_management' %}" class="kpi-cta">View LGUs <i class="ri-arrow-right-line"></i></a>
+            <a href="/users/?q=&role=lgu_admin" class="kpi-cta">View LGUs <i class="ri-arrow-right-line"></i></a>
         </div>
 
         <!-- 3. Active Cases -->
@@ -641,8 +641,8 @@
         volGrad.addColorStop(1, 'rgba(59, 130, 246, 0)');
 
         const volumeData = {
-            weekly:  { labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], data: [12, 19, 15, 27, 22, 8, 4],  max: 35  },
-            monthly: { labels: ['Week 1','Week 2','Week 3','Week 4'],       data: [68, 84, 76, 95],             max: 110 }
+            weekly:  { labels: {{ sys_weekly_labels|safe }}, data: {{ sys_weekly_data|safe }},  max: {{ sys_weekly_max }}  },
+            monthly: { labels: {{ sys_monthly_labels|safe }}, data: {{ sys_monthly_data|safe }}, max: {{ sys_monthly_max }} }
         };
 
         const volChart = new Chart(ctxVol, {
@@ -698,21 +698,21 @@
         const pipelineData = {
             all: {
                 labels: ['LGU Admin','Receiver','Examiner','Approver','Numberer'],
-                data:   [42, 8, 15, 6, 4],
+                data:   JSON.parse('{{ role_distribution_array|default:"[0,0,0,0,0]"|safe }}'),
                 colors: ['#0ea5e9','#a855f7','#eab308','#22c55e','#ef4444'],
-                total: 75, centerLabel: 'Total Users'
+                total: {{ total_users_count }}, centerLabel: 'Total Users'
             },
             status: {
                 labels: ['Active','Pending','Deactivated'],
-                data:   [60, 10, 5],
+                data:   [{{ active_users_count }}, {{ pending_users_count }}, {{ deactivated_users_count }}],
                 colors: ['#059669','#f59e0b','#94a3b8'],
-                total: 75, centerLabel: 'By Status'
+                total: {{ total_users_count }}, centerLabel: 'By Status'
             },
             lgu: {
                 labels: ['LGU Staff','Capitol Staff'],
-                data:   [42, 33],
+                data:   [{{ lgu_staff_count }}, {{ capitol_staff_count }}],
                 colors: ['#0ea5e9','#7c3aed'],
-                total: 75, centerLabel: 'By Type'
+                total: {{ lgu_staff_count|add:capitol_staff_count }}, centerLabel: 'By Type'
             }
         };
 
