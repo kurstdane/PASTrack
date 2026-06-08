@@ -758,8 +758,7 @@
             <div class="hero-text">
                 <h1>Hi, {{ request.user.first_name|default:"LGU Admin" }}!</h1>
                 <p>
-                    <span style="color: var(--primary, #3b82f6); font-weight: 700;">{{
-                        request.user.staff_id|default:"LGU-001" }}</span>
+                    <span style="color: var(--primary, #3b82f6); font-weight: 700;">{{ request.user.staff_id|default:"LGU-001" }}</span>
                     <span style="margin: 0 8px; color: #cbd5e1;">|</span>
                     {{ request.user.lgu_municipality|default:"Municipality" }} Admin
                 </p>
@@ -972,10 +971,9 @@
         volGrad.addColorStop(1, 'rgba(59, 130, 246, 0)');
 
         const volumeData = {
-            weekly: { labels: {{ lgu_weekly_labels| safe
-    }}, data: {{ lgu_weekly_data| safe }}, max: {{ lgu_weekly_max }}  },
-        monthly: { labels: {{ lgu_monthly_labels| safe }}, data: {{ lgu_monthly_data| safe }}, max: {{ lgu_monthly_max }}  }
-    };
+            weekly: { labels: {{ lgu_weekly_labels|safe }}, data: {{ lgu_weekly_data|safe }}, max: {{ lgu_weekly_max }}  },
+            monthly: { labels: {{ lgu_monthly_labels|safe }}, data: {{ lgu_monthly_data|safe }}, max: {{ lgu_monthly_max }}  }
+        };
 
     const volChart = new Chart(ctxVol, {
         type: 'line',
@@ -1037,29 +1035,27 @@
     const pipelineData = {
         all: {
             labels: ['Not Received', 'Received', 'In Review', 'For Approval', 'For Numbering', 'Released'],
-            data: [{{ status_not_received|default: "0"
-        }
-    }, {{ status_received|default: "0" }}, { { status_in_review |default: "0" } }, { { status_for_approval |default: "0" } }, { { status_for_numbering |default: "0" } }, { { status_released |default: "0" } }],
-    colors: ['#f59e0b', '#0ea5e9', '#6366f1', '#7c3aed', '#ec4899', '#059669'],
-        total: { { total_cases_count |default: "0" } }, centerLabel: 'Total Cases'
+            data: [{{ status_not_received|default:"0" }}, {{ status_received|default:"0" }}, {{ status_in_review|default:"0" }}, {{ status_for_approval|default:"0" }}, {{ status_for_numbering|default:"0" }}, {{ status_released|default:"0" }}],
+            colors: ['#f59e0b', '#0ea5e9', '#6366f1', '#7c3aed', '#ec4899', '#059669'],
+            total: {{ total_cases_count|default:"0" }}, centerLabel: 'Total Cases'
         },
-    pending: {
-        labels: ['Not Received'],
-            data: [{{ status_not_received|default: "0" }}],
-    colors: ['#f59e0b'],
-        total: { { status_not_received |default: "0" } }, centerLabel: 'Pending'
-         },
-    in_progress: {
-        labels: ['Received', 'In Review', 'For Approval', 'For Numbering'],
-            data: [{{ status_received|default: "0" }}, { { status_in_review |default: "0" } }, { { status_for_approval |default: "0" } }, { { status_for_numbering |default: "0" } }],
-    colors: ['#0ea5e9', '#6366f1', '#7c3aed', '#ec4899'],
-        total: { { processing_count |default: "0" } }, centerLabel: 'In Progress'
+        pending: {
+            labels: ['Not Received'],
+            data: [{{ status_not_received|default:"0" }}],
+            colors: ['#f59e0b'],
+            total: {{ status_not_received|default:"0" }}, centerLabel: 'Pending'
         },
-    completed: {
-        labels: ['Released / Approved'],
-            data: [{{ status_released|default: "0" }}],
-    colors: ['#059669'],
-        total: { { released_count |default: "0" } }, centerLabel: 'Completed'
+        in_progress: {
+            labels: ['Received', 'In Review', 'For Approval', 'For Numbering'],
+            data: [{{ status_received|default:"0" }}, {{ status_in_review|default:"0" }}, {{ status_for_approval|default:"0" }}, {{ status_for_numbering|default:"0" }}],
+            colors: ['#0ea5e9', '#6366f1', '#7c3aed', '#ec4899'],
+            total: {{ processing_count|default:"0" }}, centerLabel: 'In Progress'
+        },
+        completed: {
+            labels: ['Released / Approved'],
+            data: [{{ status_released|default:"0" }}],
+            colors: ['#059669'],
+            total: {{ released_count|default:"0" }}, centerLabel: 'Completed'
         }
     };
 

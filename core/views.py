@@ -1540,7 +1540,7 @@ def dashboard(request):
         stats_pending_intake = Case.objects.filter(status="not_received").count()
         stats_ready_assign = Case.objects.filter(status="received", assigned_to__isnull=True).count()
         stats_received_today = AuditLog.objects.filter(actor=user, action="case_receipt", created_at__date=today).count()
-        stats_returned_lgu = Case.objects.filter(status="returned_for_correction").count()
+        stats_returned_from_examiner = Case.objects.filter(status="received", assigned_to__isnull=True, returned_by__role="capitol_examiner").count()
 
         # Intake Volume Chart Data
         now = timezone.now()
@@ -1551,7 +1551,7 @@ def dashboard(request):
         weekly_data = [0]*7
         for i in range(7):
             day = week_start + timedelta(days=i)
-            count = Case.objects.filter(created_at__date=day).count()
+            count = Case.objects.filter(lgu_submitted_at__date=day).count()
             weekly_data[i] = count
         weekly_max = max(weekly_data + [10])
         
@@ -1562,7 +1562,7 @@ def dashboard(request):
         for week_num in range(4):
             week_start_date = month_start + timedelta(weeks=week_num)
             week_end_date = week_start_date + timedelta(days=6)
-            count = Case.objects.filter(created_at__date__gte=week_start_date, created_at__date__lte=week_end_date).count()
+            count = Case.objects.filter(lgu_submitted_at__date__gte=week_start_date, lgu_submitted_at__date__lte=week_end_date).count()
             monthly_data[week_num] = count
         monthly_max = max(monthly_data + [100])
         
@@ -1621,15 +1621,10 @@ def dashboard(request):
             "center_label": "To Examine"
         }
         
-        approvers = CustomUser.objects.filter(role="capitol_approver", is_active=True)[:2]
-        approver_labels = [ex.full_name or ex.email for ex in approvers] if approvers else ['Director A','Director B']
-        approver_data = [all_active.filter(status="for_approval").count()//2 + (all_active.filter(status="for_approval").count()%2 if i==0 else 0) for i in range(len(approver_labels))] if approver_labels else [20,12]
-        approver_colors = ['#3b82f6','#93c5fd'][:len(approver_labels)]
-        
         pipeline_to_approve = {
-            "labels": approver_labels,
-            "data": approver_data,
-            "colors": approver_colors,
+            "labels": ['Pending Approval'],
+            "data": [status_counts["to_approve"]],
+            "colors": ['#3b82f6'],
             "total": status_counts["to_approve"],
             "center_label": "To Approve"
         }
@@ -1682,7 +1677,7 @@ def dashboard(request):
             "stats_pending_intake": stats_pending_intake,
             "stats_ready_assign": stats_ready_assign,
             "stats_received_today": stats_received_today,
-            "stats_returned_lgu": stats_returned_lgu,
+            "stats_returned_from_examiner": stats_returned_from_examiner,
             "volume_chart_data": volume_chart_data,
             "pipeline_chart_data": pipeline_chart_data,
             "returned_cases": returned_cases,
@@ -1706,11 +1701,73 @@ def dashboard(request):
         stats_assigned_today = base_qs.filter(assigned_at__date=today).count()
         stats_pending_intake = base_qs.filter(status="to_examine").count()
         stats_under_review = base_qs.filter(status="in_review").count()
-        stats_returned = base_qs.filter(status="client_correction").count()
+        stats_returned = base_qs.filter(status="in_review", returned_by__role="capitol_approver").count()
         stats_total_handled = AuditLog.objects.filter(actor=user, action="case_status_change", details__new_status="for_approval").count()
+
+        # Volume Chart Data
+        week_start = today - timedelta(days=today.weekday())
+        weekly_labels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+        weekly_data = [0]*7
+        for i in range(7):
+            day = week_start + timedelta(days=i)
+            weekly_data[i] = AuditLog.objects.filter(actor=user, action="case_status_change", details__new_status="for_approval", created_at__date=day).count()
+        weekly_max = max(weekly_data + [25])
+        
+        month_start = today.replace(day=1)
+        monthly_labels = ['Week 1','Week 2','Week 3','Week 4']
+        monthly_data = [0]*4
+        for week_num in range(4):
+            week_start_date = month_start + timedelta(weeks=week_num)
+            week_end_date = week_start_date + timedelta(days=6)
+            monthly_data[week_num] = AuditLog.objects.filter(actor=user, action="case_status_change", details__new_status="for_approval", created_at__date__gte=week_start_date, created_at__date__lte=week_end_date).count()
+        monthly_max = max(monthly_data + [100])
+        
+        volume_chart_data = {
+            "weekly": {"labels": weekly_labels, "data": weekly_data, "max": weekly_max},
+            "monthly": {"labels": monthly_labels, "data": monthly_data, "max": monthly_max}
+        }
 
         # Main Table Queue
         active_qs = base_qs.filter(status__in=["to_examine", "in_review", "client_correction"]).order_by("-assigned_at")
+        
+        # Workload Chart Data
+        total_active_all = active_qs.count()
+        workload_all = {
+            "labels": ['Pending Review', 'Under Review', 'Returned to LGU', 'Completed'],
+            "data": [
+                stats_pending_intake,
+                stats_under_review,
+                base_qs.filter(status="client_correction").count(),
+                stats_total_handled
+            ],
+            "colors": ['#f59e0b', '#6366f1', '#ef4444', '#22c55e'],
+            "total": total_active_all + stats_total_handled,
+            "centerLabel": 'All Cases'
+        }
+        
+        type_counts = list(active_qs.values('case_type').annotate(count=Count('id')).order_by('-count'))
+        workload_type = {
+            "labels": [dict(Case.CASE_TYPE_CHOICES).get(t['case_type'], t['case_type']) for t in type_counts] or ["No Data"],
+            "data": [t['count'] for t in type_counts] or [1],
+            "colors": ['#3b82f6', '#8b5cf6', '#f59e0b', '#10b981', '#ef4444', '#06b6d4'][:max(len(type_counts), 1)],
+            "total": total_active_all,
+            "centerLabel": 'By Type'
+        }
+        
+        lgu_counts = list(active_qs.values('submitted_by__lgu_municipality').annotate(count=Count('id')).order_by('-count')[:5])
+        workload_lgu = {
+            "labels": [t['submitted_by__lgu_municipality'] or "Unknown" for t in lgu_counts] or ["No Data"],
+            "data": [t['count'] for t in lgu_counts] or [1],
+            "colors": ['#0ea5e9', '#8b5cf6', '#f97316', '#94a3b8', '#10b981'][:max(len(lgu_counts), 1)],
+            "total": total_active_all,
+            "centerLabel": 'By LGU'
+        }
+        
+        workload_chart_data = {
+            "all": workload_all,
+            "by_type": workload_type,
+            "by_lgu": workload_lgu
+        }
         
         if q:
             active_qs = active_qs.filter(
@@ -1740,6 +1797,8 @@ def dashboard(request):
             "page_obj": page_obj,
             "under_review_cases": under_review_cases,
             "recent_logs": recent_logs,
+            "volume_chart_data": volume_chart_data,
+            "workload_chart_data": workload_chart_data,
             "filter_q": q,
             "filter_case_type": case_type_filter,
             "filter_lgu": lgu_filter,

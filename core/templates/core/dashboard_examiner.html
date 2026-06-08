@@ -292,7 +292,7 @@
             </div>
             <div class="kpi-value">{{ stats_pending_intake|default:"0" }}</div>
             <div class="kpi-meta"><i class="ri-time-line"></i>&nbsp;<span>Awaiting review</span></div>
-            <a href="{% url 'submissions' %}?scope=me&tab=to_examine" class="kpi-cta">Start Examining <i class="ri-arrow-right-line"></i></a>
+            <a href="/submissions/?scope=me&tab=to_examine" class="kpi-cta">Start Examining <i class="ri-arrow-right-line"></i></a>
         </div>
 
         <!-- 2. Under Examination — alert card if > 0 -->
@@ -303,7 +303,7 @@
             </div>
             <div class="kpi-value" {% if stats_under_review > 0 %}style="color:#1e40af;"{% endif %}>{{ stats_under_review|default:"0" }}</div>
             <div class="kpi-meta" {% if stats_under_review > 0 %}style="color:#4338ca;"{% endif %}><i class="ri-loader-2-line"></i>&nbsp;<span>In progress</span></div>
-            <a href="{% url 'submissions' %}?scope=me&tab=under_review" class="kpi-cta">View In Progress <i class="ri-arrow-right-line"></i></a>
+            <a href="/submissions/?tab=under_review&scope=me" class="kpi-cta">View In Progress <i class="ri-arrow-right-line"></i></a>
         </div>
 
         <!-- 3. Returned -->
@@ -314,7 +314,7 @@
             </div>
             <div class="kpi-value">{{ stats_returned|default:"0" }}</div>
             <div class="kpi-meta" style="color:#dc2626;"><i class="ri-error-warning-line"></i>&nbsp;<span>Returned from Approver</span></div>
-            <a href="{% url 'submissions' %}?scope=me&tab=returned" class="kpi-cta">View Returned <i class="ri-arrow-right-line"></i></a>
+            <a href="/submissions/?scope=me&tab=returned" class="kpi-cta">View Returned <i class="ri-arrow-right-line"></i></a>
         </div>
 
         <!-- 4. Total Handled -->
@@ -325,7 +325,7 @@
             </div>
             <div class="kpi-value">{{ stats_total_handled|default:"0" }}</div>
             <div class="kpi-meta" style="color:#059669;"><i class="ri-arrow-up-line"></i>&nbsp;<span>All time completed</span></div>
-            <a href="{% url 'submissions' %}?scope=me" class="kpi-cta">View History <i class="ri-arrow-right-line"></i></a>
+            <a href="/submissions/?scope=me&tab=all_assigned" class="kpi-cta">View History <i class="ri-arrow-right-line"></i></a>
         </div>
 
         <!-- 5. Assigned Today -->
@@ -336,7 +336,7 @@
             </div>
             <div class="kpi-value">{{ stats_assigned_today|default:"0" }}</div>
             <div class="kpi-meta" style="color:#475569;"><i class="ri-stack-line"></i>&nbsp;<span>New cases today</span></div>
-            <a href="{% url 'submissions' %}?scope=me" class="kpi-cta">View Assigned <i class="ri-arrow-right-line"></i></a>
+            <a href="/submissions/?scope=me&tab=all_assigned" class="kpi-cta">View Assigned <i class="ri-arrow-right-line"></i></a>
         </div>
 
     </div>
@@ -589,10 +589,7 @@ document.addEventListener("DOMContentLoaded", function () {
     volGrad.addColorStop(0, 'rgba(59, 130, 246, 0.22)');
     volGrad.addColorStop(1, 'rgba(59, 130, 246, 0)');
 
-    const volumeData = {
-        weekly:  { labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], data: [8, 14, 11, 18, 15, 5, 3],  max: 25  },
-        monthly: { labels: ['Week 1','Week 2','Week 3','Week 4'],       data: [52, 68, 61, 74],            max: 100 }
-    };
+    const volumeData = {{ volume_chart_data|safe }};
 
     const volChart = new Chart(ctxVol, {
         type: 'line',
@@ -647,26 +644,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // ==========================================
     // 2. MY WORKLOAD DOUGHNUT
     // ==========================================
-    const workloadData = {
-        all: {
-            labels: ['Pending Review', 'Under Review', 'Returned to LGU', 'Completed'],
-            data: [12, 8, 3, 47],
-            colors: ['#f59e0b', '#6366f1', '#ef4444', '#22c55e'],
-            total: 70, centerLabel: 'Active Cases'
-        },
-        by_type: {
-            labels: ['Consolidation', 'Subdivision', 'Transfer', 'Annotation'],
-            data: [18, 14, 22, 16],
-            colors: ['#3b82f6', '#8b5cf6', '#f59e0b', '#10b981'],
-            total: 70, centerLabel: 'By Type'
-        },
-        by_lgu: {
-            labels: ['Cebu City', 'Consolacion', 'Liloan', 'Others'],
-            data: [28, 15, 12, 15],
-            colors: ['#0ea5e9', '#8b5cf6', '#f97316', '#94a3b8'],
-            total: 70, centerLabel: 'By LGU'
-        }
-    };
+    const workloadData = {{ workload_chart_data|safe }};
 
     const ctxWork = document.getElementById('workloadChart').getContext('2d');
     const workChart = new Chart(ctxWork, {
