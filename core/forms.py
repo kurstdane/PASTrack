@@ -63,6 +63,10 @@ class CaseDetailsForm(forms.ModelForm):
     class Meta:
         model = Case
         fields: ClassVar[list[str]] = [
+            "ownership_type",
+            "spouse_name",
+            "corporation_name",
+            "co_owners",
             "client_first_name",
             "client_last_name",
             "client_middle_name",
@@ -78,6 +82,10 @@ class CaseDetailsForm(forms.ModelForm):
             "needs_taxmapping",
         ]
         widgets: ClassVar[dict] = {
+            "ownership_type": forms.Select(attrs={"id": "id_ownership_type"}),
+            "spouse_name": forms.TextInput(attrs={"placeholder": "Full name of spouse", "id": "id_spouse_name"}),
+            "corporation_name": forms.TextInput(attrs={"placeholder": "Company / Corporation Name", "id": "id_corporation_name"}),
+            "co_owners": forms.TextInput(attrs={"placeholder": "Enter co-owner name(s)", "id": "id_co_owners"}),
             "client_first_name": forms.TextInput(attrs={"placeholder": "First name"}),
             "client_last_name": forms.TextInput(attrs={"placeholder": "Last name"}),
             "client_middle_name": forms.TextInput(attrs={"placeholder": "Middle name"}),
@@ -109,11 +117,24 @@ class CaseDetailsForm(forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean() or {}
-        # Enforce required fields for the new request form.
+        
+        ownership_type = cleaned.get('ownership_type')
+
         if not (cleaned.get("client_first_name") or "").strip():
             self.add_error("client_first_name", "First name is required.")
         if not (cleaned.get("client_last_name") or "").strip():
             self.add_error("client_last_name", "Last name is required.")
+
+        if ownership_type == 'corporation':
+            if not cleaned.get('corporation_name'):
+                self.add_error('corporation_name', 'Corporation name is required.')
+        elif ownership_type == 'married':
+            if not cleaned.get('spouse_name'):
+                self.add_error('spouse_name', 'Spouse name is required.')
+        elif ownership_type == 'others':
+            if not cleaned.get('co_owners'):
+                self.add_error('co_owners', 'At least one co-owner must be added.')
+
         if not (cleaned.get("case_type") or "").strip():
             self.add_error("case_type", "Type of transaction is required.")
         
@@ -506,43 +527,53 @@ class StaffAccountUpdateForm(forms.ModelForm):
         required=False,
         choices=CustomUser.LGU_MUNICIPALITY_CHOICES,
         widget=forms.Select(),
-        help_text="Assigned LGU municipality (used for dashboard visibility).",
+        label="LGU Assigned Location",
+    )
+    capitol_role = forms.ChoiceField(
+        required=False,
+        choices=[
+            ("capitol_receiving", "Receiver"),
+            ("capitol_examiner", "Examiner"),
+            ("capitol_approver", "Approver"),
+            ("capitol_numberer", "Numberer"),
+            ("capitol_releaser", "Releaser"),
+        ],
+        widget=forms.Select(),
+        label="Capitol Assigned Role",
+    )
+
+    account_status = forms.ChoiceField(
+        required=True,
+        choices=CustomUser.ACCOUNT_STATUS_CHOICES,
+        widget=forms.Select(),
+        label="Account Status",
     )
 
     class Meta:
         model = CustomUser
-        fields: ClassVar[list[str]] = ["full_name", "designation", "position"]
+        fields: ClassVar[list[str]] = ["first_name", "middle_initial", "last_name", "suffix", "lgu_municipality", "account_status"]
 
-    # Inside your CaseDetailsForm in forms.py
     def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        
-        if user:
-            if user.role == 'lgu_admin':
-                # LGU Admins have their origin locked to their own municipality
-                if user.lgu_municipality:
-                    self.fields['area'].initial = user.lgu_municipality
-                    self.fields['area'].widget = forms.HiddenInput()
-            
-            elif user.role == 'capitol_receiving':
-                # Receivers MUST choose an origin from the dropdown
-                self.fields['area'].required = True
-                self.fields['area'].label = "LGU Origin"
-                self.fields['area'].help_text = "Select the municipality where this property is located."
-
-    def clean_full_name(self):
-        cleaned = self.cleaned_data or {}
-        return (cleaned.get("full_name") or "").strip()
+        self.fields['first_name'].required = True
+        self.fields['last_name'].required = True
+        if self.instance and self.instance.pk:
+            if self.instance.role == "lgu_admin":
+                self.fields["capitol_role"].widget = forms.HiddenInput()
+                self.fields["lgu_municipality"].initial = self.instance.lgu_municipality
+            else:
+                self.fields["lgu_municipality"].widget = forms.HiddenInput()
+                self.fields["capitol_role"].initial = self.instance.role
 
     def save(self, commit=True):
         user: CustomUser = super().save(commit=False)
-        if "lgu_municipality" in self.cleaned_data:
+        if user.role == "lgu_admin":
             user.lgu_municipality = str(self.cleaned_data.get("lgu_municipality") or "")
         else:
-            # If not in form, it might be a capitol user, so ensure it's empty
-            if user.role != "lgu_admin":
-                user.lgu_municipality = ""
+            user.lgu_municipality = ""
+            new_role = self.cleaned_data.get("capitol_role")
+            if new_role:
+                user.role = new_role
         if commit:
             user.save()
         return user

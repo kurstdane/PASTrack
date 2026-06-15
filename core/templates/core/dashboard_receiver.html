@@ -806,8 +806,7 @@
                                 <span class="t-main">{{ case.client_name }}</span>
                                 <span class="t-sub">{{ case.get_case_type_display }}</span>
                             </td>
-                            <td style="color:#64748b; font-size:0.875rem;">{{
-                                case.submitted_by.lgu_municipality|default:"—" }}</td>
+                            <td style="color:#64748b; font-size:0.875rem;">{{ case.submitted_by.lgu_municipality|default:"—" }}</td>
                             <td>
                                 <span class="badge
                                 {% if case.status == 'not_received' %}badge-pending

@@ -65,6 +65,8 @@ class CustomUser(AbstractUser):
     ]
 
     email = models.EmailField(unique=True, blank=False, null=False)
+    middle_initial = models.CharField(max_length=10, blank=True)
+    suffix = models.CharField(max_length=20, blank=True)
     full_name = models.CharField(max_length=255, blank=True)
     designation = models.CharField(max_length=120, blank=True)
     position = models.CharField(max_length=120, blank=True)
@@ -280,9 +282,15 @@ class CustomUser(AbstractUser):
 
         temp_password: str | None = None
 
-        computed = f"{(self.first_name or '').strip()} {(self.last_name or '').strip()}".strip()
-        if computed:
-            self.full_name = computed
+        last_name = (self.last_name or "").strip()
+        first_name = (self.first_name or "").strip()
+        middle_initial = (self.middle_initial or "").strip()
+        suffix = (self.suffix or "").strip()
+
+        if last_name or first_name or middle_initial or suffix:
+            main = ", ".join([p for p in [last_name, first_name] if p])
+            rest = " ".join([p for p in [middle_initial, suffix] if p])
+            self.full_name = (main + (" " + rest if rest else "")).strip().strip(",")
 
         if is_new:
             # Generate Staff ID
@@ -480,6 +488,42 @@ class Case(TimestampedModel):
     ]
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="not_received")
 
+    OWNERSHIP_TYPE_CHOICES: ClassVar[list[tuple[str, str]]] = [
+        ('single',      'Single Owner'),
+        ('married',     'Married / Spouses'),
+        ('corporation', 'Corporation'),
+        ('others',      'Co-ownership'),
+    ]
+
+    ownership_type = models.CharField(
+        max_length=20,
+        choices=OWNERSHIP_TYPE_CHOICES,
+        default='single',
+        help_text="Ownership classification of the property owner"
+    )
+
+    # For Married / Spouses
+    spouse_name = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="Full name of spouse (if Married/Spouses)"
+    )
+
+    # For Corporation
+    corporation_name = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="Company or corporation name"
+    )
+
+    # For Others
+    co_owners = models.TextField(
+        blank=True,
+        null=True,
+        help_text="List of co-owners (one per line)"
+    )
     # ---------- Client info ----------
     client_name = models.CharField(max_length=255, blank=True, default="")
     client_contact = models.CharField(max_length=100, blank=True, default="")   # phone / email
@@ -637,6 +681,11 @@ class Case(TimestampedModel):
         if self.tracking_id:
             return f"{self.tracking_id} - {self.client_name}"
         return f"Draft {self.draft_id} - {self.client_name}"
+    @property
+    def co_owners_list(self) -> list[str]:
+        if self.co_owners:
+            return [name.strip() for name in self.co_owners.split(',') if name.strip()]
+        return []
 
     @property
     def client_display_name(self) -> str:
@@ -674,12 +723,17 @@ class Case(TimestampedModel):
         now = timezone.localtime(timezone.now())
         yy = now.strftime("%y")
         
+        prefix = "PAS"
+        if self.submitted_by and self.submitted_by.role == "lgu_admin" and self.area:
+            lgu_code = self.area[:3].upper()
+            prefix = f"LGU{lgu_code}-PAS"
+            
         # PAS + YY + 6 random alphanumeric characters
         chars = string.ascii_uppercase + string.digits
         
         for _ in range(10):
             random_part = "".join(secrets.choice(chars) for _ in range(6))
-            tid = f"PAS{yy}{random_part}"
+            tid = f"{prefix}{yy}{random_part}"
             if not Case.objects.filter(tracking_id=tid).exists():
                 return tid
         

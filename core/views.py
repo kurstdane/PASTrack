@@ -3,6 +3,10 @@
 import io
 import requests
 import contextlib
+import secrets
+import string
+import sys
+from django.core.mail import send_mail
 from datetime import timedelta
 import base64
 import json
@@ -315,8 +319,16 @@ def _municipality_area_code(name: str) -> str:
     return letters
 
 
-def _build_checklist_rows(formset, documents: list[CaseDocument]):
+def _build_checklist_rows(formset, documents: list[CaseDocument], requirements=None):
     docs_by_key = {((d.doc_type or "").strip().lower()): d for d in (documents or [])}
+    req_keys = set()
+    if requirements:
+        for req in requirements:
+            if isinstance(req, dict):
+                req_keys.add(req.get("doc_type", "").strip().lower())
+            elif isinstance(req, str):
+                req_keys.add(req.strip().lower())
+    req_keys.add("endorsement letter")
     rows: list[dict[str, object]] = []
     for f in formset:
         selected = ((f["doc_type"].value() or "").strip())
@@ -327,11 +339,15 @@ def _build_checklist_rows(formset, documents: list[CaseDocument]):
         filename = ""
         if doc and getattr(doc, "file", None):
             filename = os.path.basename(getattr(doc.file, "name", "") or "")
+            
+        is_custom = selected == "__custom__" or (key and key not in req_keys)
+        
         rows.append({
             "form": f,
             "doc": doc,
             "doc_type": effective_doc_type,
             "filename": filename,
+            "is_custom": is_custom,
         })
     return rows
 
@@ -1440,7 +1456,6 @@ def dashboard(request):
         released = status_counts_dict.get("released", 0)
 
         # Volume Chart Data
-        import json
         today = timezone.localdate()
         seven_days_ago_date = today - timedelta(days=6)
         daily_cases = base_qs.filter(lgu_submitted_at__date__gte=seven_days_ago_date) \
@@ -1973,34 +1988,7 @@ def assign_td_number(request, tracking_id):
 
 
 
-@login_required
-def release_case(request, tracking_id):
-    """Marks a case as officially released to the client/LGU."""
-    # Ensure only releasers or superadmins can do this
-    if request.user.role not in ["capitol_releaser", "super_admin"]:
-        messages.error(request, "Unauthorized access.")
-        return redirect("dashboard")
 
-    case = get_object_or_404(Case, tracking_id=tracking_id, status="for_release")
-
-    if request.method == "POST":
-        # 1. Update Status and Timestamp
-        case.status = "released"
-        case.released_at = timezone.now()
-        case.save()
-
-        # 2. Create Audit Log for the Activity Feed
-        AuditLog.objects.create(
-            actor=request.user,
-            action="case_released",
-            target_object=f"Case: {case.tracking_id}",
-            details={"client": case.client_name, "td_number": case.td_number}
-        )
-
-        messages.success(request, f"Case {case.tracking_id} has been successfully released!")
-            
-    return redirect("dashboard")
-    
 @login_required
 def user_management(request):
     denial = _require_super_admin(request)
@@ -3000,7 +2988,7 @@ def case_wizard(request, tracking_id, step: int):
                     "is_edit": True,
                     "documents": docs,
                     "documents_by_type": {d.doc_type: d for d in docs},
-                    "rows": _build_checklist_rows(formset, docs),
+                    "rows": _build_checklist_rows(formset, docs, requirements=requirements),
                     "case_type_requirements": requirements,
                 })
 
@@ -3030,7 +3018,7 @@ def case_wizard(request, tracking_id, step: int):
                             "is_edit": True,
                             "documents": docs,
                             "documents_by_type": {d.doc_type: d for d in docs},
-                            "rows": _build_checklist_rows(formset, docs),
+                            "rows": _build_checklist_rows(formset, docs, requirements=requirements),
                             "case_type_requirements": requirements,
                         })
                     seen.add(key)
@@ -3058,7 +3046,7 @@ def case_wizard(request, tracking_id, step: int):
                                 "is_edit": True,
                                 "documents": docs,
                                 "documents_by_type": {d.doc_type: d for d in docs},
-                                "rows": _build_checklist_rows(formset, docs),
+                                "rows": _build_checklist_rows(formset, docs, requirements=requirements),
                                 "case_type_requirements": requirements,
                             })
                         if isinstance(change, dict):
@@ -3070,6 +3058,11 @@ def case_wizard(request, tracking_id, step: int):
                             })
 
                     has_doc = CaseDocument.objects.filter(case=case, doc_type=doc_type).exists()
+                    
+                    is_custom = cd.get("doc_type") == "__custom__" or doc_type not in requirements
+                    if is_custom and doc_type != "Endorsement Letter" and (is_deleted or not has_doc):
+                        continue
+                        
                     new_checklist.append({
                         "doc_type": doc_type,
                         "required": False,
@@ -3125,7 +3118,7 @@ def case_wizard(request, tracking_id, step: int):
             "is_edit": True,
             "documents": docs,
             "documents_by_type": {d.doc_type: d for d in docs},
-            "rows": _build_checklist_rows(formset, docs),
+            "rows": _build_checklist_rows(formset, docs, requirements=requirements),
             "case_type_requirements": requirements,
         })
 
@@ -3311,7 +3304,7 @@ def draft_wizard(request, draft_id, step: int):
                     "is_edit": True,
                     "documents": docs,
                     "documents_by_type": {d.doc_type: d for d in docs},
-                    "rows": _build_checklist_rows(formset, docs),
+                    "rows": _build_checklist_rows(formset, docs, requirements=requirements),
                     "case_type_requirements": requirements,
                 })
 
@@ -3340,7 +3333,7 @@ def draft_wizard(request, draft_id, step: int):
                             "is_edit": True,
                             "documents": docs,
                             "documents_by_type": {d.doc_type: d for d in docs},
-                            "rows": _build_checklist_rows(formset, docs),
+                            "rows": _build_checklist_rows(formset, docs, requirements=requirements),
                             "case_type_requirements": requirements,
                         })
                     seen.add(key)
@@ -3368,11 +3361,16 @@ def draft_wizard(request, draft_id, step: int):
                                 "is_edit": True,
                                 "documents": docs,
                                 "documents_by_type": {d.doc_type: d for d in docs},
-                                "rows": _build_checklist_rows(formset, docs),
+                                "rows": _build_checklist_rows(formset, docs, requirements=requirements),
                                 "case_type_requirements": requirements,
                             })
 
                     has_doc = CaseDocument.objects.filter(case=case, doc_type=doc_type).exists()
+                    
+                    is_custom = cd.get("doc_type") == "__custom__" or doc_type not in requirements
+                    if is_custom and doc_type != "Endorsement Letter" and (is_deleted or not has_doc):
+                        continue
+                        
                     new_checklist.append({
                         "doc_type": doc_type,
                         "required": False,
@@ -3426,7 +3424,7 @@ def draft_wizard(request, draft_id, step: int):
             "is_edit": True,
             "documents": docs,
             "documents_by_type": {d.doc_type: d for d in docs},
-            "rows": _build_checklist_rows(formset, docs),
+            "rows": _build_checklist_rows(formset, docs, requirements=requirements),
             "case_type_requirements": requirements,
         })
 
@@ -3877,28 +3875,6 @@ def add_case_remark(request, tracking_id):
     messages.success(request, "Internal note added.")
     return redirect("case_detail", tracking_id=case.tracking_id)
 
-@login_required
-@require_POST
-def delete_user(request, user_id):
-    denial = _require_super_admin(request)
-    if denial:
-        return denial
-
-    target = get_object_or_404(CustomUser, id=user_id)
-    if target.id == request.user.id:
-        messages.error(request, "You cannot delete your own account.")
-        return redirect("user_management")
-
-    AuditLog.objects.create(
-        actor=request.user,
-        action="delete_user",
-        target_object=f"User Deleted: {target.email} ({target.username})",
-        details={"full_name": target.full_name, "role": target.role}
-    )
-    
-    target.delete()
-    messages.success(request, "User account has been permanently deleted.")
-    return redirect("user_management")
 
 @login_required
 @require_POST

@@ -310,7 +310,7 @@
             </td>
             <td><span class="date-text">{{ case.updated_at|date:"M d, Y" }}</span></td>
         {% else %}
-            <td><span class="date-text">{{ case.submitted_by.lgu_municipality|default:"Direct" }}</span></td>
+            <td><span class="date-text">{{ case.area|default:"Direct" }}</span></td>
             <td><span class="date-text">{{ case.created_at|date:"M d, Y" }}</span></td>
         {% endif %}
 

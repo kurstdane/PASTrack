@@ -61,6 +61,28 @@
                 <td>Full Name</td>
                 <td>{{ case.client_display_name|default:case.client_name }}</td>
             </tr>
+            {% if case.ownership_type and case.ownership_type != 'single' %}
+            <tr>
+                <td>Ownership Type</td>
+                <td>{{ case.get_ownership_type_display }}</td>
+            </tr>
+            {% if case.ownership_type == 'married' and case.spouse_name %}
+            <tr>
+                <td>Spouse Name</td>
+                <td>{{ case.spouse_name }}</td>
+            </tr>
+            {% elif case.ownership_type == 'corporation' and case.corporation_name %}
+            <tr>
+                <td>Corporation Name</td>
+                <td>{{ case.corporation_name }}</td>
+            </tr>
+            {% elif case.ownership_type == 'others' and case.co_owners %}
+            <tr>
+                <td>Co-owners</td>
+                <td style="white-space: pre-wrap;">{{ case.co_owners }}</td>
+            </tr>
+            {% endif %}
+            {% endif %}
             <tr>
                 <td>Phone Number</td>
                 <td>{{ case.client_number|default:"—" }}</td>

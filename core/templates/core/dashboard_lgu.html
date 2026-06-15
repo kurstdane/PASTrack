@@ -896,8 +896,7 @@
                         {% for case in page_obj.object_list %}
                         <tr>
                             <td>
-                                <a href="{% url 'case_detail' case.tracking_id %}" class="tracking-mono">{{
-                                    case.tracking_id }}</a>
+                                <a href="{% url 'case_detail' case.tracking_id %}" class="tracking-mono">{{ case.tracking_id }}</a>
                             </td>
                             <td>
                                 <span class="t-main">{{ case.client_display_name }}</span>

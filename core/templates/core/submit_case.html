@@ -861,10 +861,19 @@
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="form-grid">
-                        <div class="form-group col-4">
-                            <label for="{{ form.client_first_name.id_for_label }}">First Name<span
-                                    class="text-danger">*</span></label>
-                            {{ form.client_first_name }}
+                        <!-- Ownership Type -->
+                        <div class="form-group col-12" id="ownership-type-group">
+                            <label for="id_ownership_type">Ownership Type<span class="text-danger">*</span></label>
+                            {{ form.ownership_type }}
+                            {% if form.ownership_type.errors %}<span class="error-msg">{{ form.ownership_type.errors.0 }}</span>{% endif %}
+                        </div>
+
+                        <!-- Standard Name Fields (visible by default) -->
+                        <div id="standard-name-fields" style="display: contents;">
+                            <div class="form-group col-4">
+                                <label for="{{ form.client_first_name.id_for_label }}">First Name<span
+                                        class="text-danger">*</span></label>
+                                {{ form.client_first_name }}
                             {% if form.client_first_name.errors %}<span class="error-msg">{{ form.client_first_name.errors.0 }}</span>{% endif %}
                         </div>
                         <div class="form-group col-2">
@@ -881,8 +890,42 @@
                         <div class="form-group col-2">
                             <label for="{{ form.client_suffix.id_for_label }}">Suffix</label>
                             {{ form.client_suffix }}
-                            {% if form.client_suffix.errors %}<span class="error-msg">{{ form.client_suffix.errors.0
-                                }}</span>{% endif %}
+                            {% if form.client_suffix.errors %}<span class="error-msg">{{ form.client_suffix.errors.0 }}</span>{% endif %}
+                        </div>
+                        </div> <!-- End Standard Name Fields -->
+
+                        <!-- Spouse Name (hidden by default) -->
+                        <div class="form-group col-12" id="spouse-name-group" style="display: none;">
+                            <label for="id_spouse_name">Name of Spouse<span class="text-danger">*</span></label>
+                            {{ form.spouse_name }}
+                            {% if form.spouse_name.errors %}<span class="error-msg">{{ form.spouse_name.errors.0 }}</span>{% endif %}
+                        </div>
+
+                        <!-- Corporation Name (hidden by default) -->
+                        <div class="form-group col-12" id="corporation-name-group" style="display: none;">
+                            <label for="id_corporation_name">Company / Corporation Name<span class="text-danger">*</span></label>
+                            {{ form.corporation_name }}
+                            {% if form.corporation_name.errors %}<span class="error-msg">{{ form.corporation_name.errors.0 }}</span>{% endif %}
+                        </div>
+
+                        <!-- Co-owners (hidden by default) -->
+                        <div class="form-group col-12" id="co-owners-group" style="display: none;">
+                            <div style="display: none;">
+                                {{ form.co_owners }}
+                            </div>
+                            
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem;">
+                                <label style="display: block; font-size: 0.9rem; font-weight: 600; color: #0f172a; margin-bottom: 0.75rem;">Co-Owners</label>
+                                
+                                <div id="co-owners-container" style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem;">
+                                    <!-- Dynamic rows will be inserted here -->
+                                </div>
+                                
+                                <button type="button" onclick="addCoOwnerRow()" style="background: transparent; color: #3b82f6; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; width: 100%; transition: all 0.2s;" onmouseover="this.style.borderColor='#3b82f6'; this.style.backgroundColor='#eff6ff'" onmouseout="this.style.borderColor='#cbd5e1'; this.style.backgroundColor='transparent'">
+                                    + Add Co-Owner
+                                </button>
+                            </div>
+                            {% if form.co_owners.errors %}<span class="error-msg" style="display:block; margin-top:0.5rem;">{{ form.co_owners.errors.0 }}</span>{% endif %}
                         </div>
 
                         <div class="form-group col-6">
@@ -959,6 +1002,27 @@
                         </div>
                         <button type="submit" name="save_continue" value="1" class="btn btn-primary">Continue</button>
                     </div>
+                    <!-- Minimalistic Co-Owner Delete Modal -->
+                    <div id="removeCoOwnerModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:9999; justify-content:center; align-items:center;">
+                        <div style="background:white; border-radius:12px; padding:1.5rem; width:340px; box-shadow:0 10px 40px rgba(0,0,0,0.15); text-align: center; animation: slideDown 0.2s ease;">
+                            <i class="ri-user-unfollow-line" style="font-size: 2.5rem; color: #ef4444; margin-bottom: 0.25rem; display: block;"></i>
+                            <h3 style="margin:0 0 0.5rem 0; font-size:1.1rem; color:#0f172a;">Remove Co-Owner?</h3>
+                            <p style="margin:0 0 1.25rem 0; font-size:0.9rem; color:#64748b;">
+                                Are you sure you want to remove this co-owner?
+                            </p>
+                            <input type="hidden" id="remove_coowner_target_row">
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button type="button" onclick="document.getElementById('removeCoOwnerModal').style.display='none';"
+                                    style="flex: 1; padding:0.6rem; border-radius:6px; background:#f1f5f9; color:#0f172a; border:none; font-weight:600; cursor:pointer; font-size:0.9rem; transition: 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                                    Cancel
+                                </button>
+                                <button type="button" onclick="executeRemoveCoOwner()"
+                                    style="flex: 1; padding:0.6rem; border-radius:6px; background:#ef4444; color:white; border:none; font-weight:600; cursor:pointer; font-size:0.9rem; transition: 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </form>
             </div>
 
@@ -985,18 +1049,21 @@
                     <div class="doc-list">
                         {% for row in rows %}
                         <div class="doc-row {% if row.doc and row.doc.file %}state-completed{% else %}state-pending{% endif %}"
-                            id="row-{{ forloop.counter0 }}">
+                            id="row-{{ forloop.counter0 }}" data-is-custom="{{ row.is_custom|yesno:'true,false' }}">
 
                             <div style="display: none;">
                                 {{ row.form.doc_type }}
+                                {{ row.form.custom_doc_type }}
                                 {{ row.form.file }}
                                 {{ row.form.is_deleted }}
                             </div>
 
                             <!-- STATE A: PENDING -->
                             <div class="view-pending">
-                                <div class="doc-label">{% if row.form.doc_type.value == '__custom__' %}<span
-                                        style="color: #94a3b8; font-style: italic;">Custom Document</span>{% else %}{{ row.doc_type }}{% endif %}</div>
+                                <div class="doc-label">
+                                    <span class="custom-name-display" style="{% if not row.is_custom %}display: none;{% endif %}; color: #94a3b8; font-style: italic;">{{ row.form.custom_doc_type.value|default:row.doc_type|default:"Custom Document" }}</span>
+                                    <span class="standard-name-display" style="{% if row.is_custom %}display: none;{% endif %}">{{ row.doc_type }}</span>
+                                </div>
                                 <button type="button" class="btn-upload-trigger"
                                     onclick="openDropzone('row-{{ forloop.counter0 }}')"><i class="ri-add-line"></i>
                                     Upload</button>
@@ -1004,7 +1071,10 @@
 
                             <!-- STATE B: DROPZONE -->
                             <div class="view-dropzone">
-                                <div class="doc-label">{% if row.form.doc_type.value == '__custom__' %}{{ row.form.custom_doc_type }}{% else %}{{ row.doc_type }}{% endif %}</div>
+                                <div class="doc-label">
+                                    <span class="custom-name-display" style="{% if not row.is_custom %}display: none;{% endif %}">{{ row.form.custom_doc_type.value|default:row.doc_type|default:"Custom Document" }}</span>
+                                    <span class="standard-name-display" style="{% if row.is_custom %}display: none;{% endif %}">{{ row.doc_type }}</span>
+                                </div>
                                 <label class="dropzone-area" for="{{ row.form.file.id_for_label }}">
                                     <div class="dz-icon"><i class="ri-cloud-upload-line"></i></div>
                                     <div class="dz-text">
@@ -1017,7 +1087,10 @@
 
                             <!-- STATE C: COMPLETED -->
                             <div class="view-completed">
-                                <div class="doc-label text-success">{% if row.form.doc_type.value == '__custom__' %}<span id="custom-name-{{ forloop.counter0 }}">{{ row.form.custom_doc_type.value|default:"Custom Document" }}</span>{% else %}{{ row.doc_type }}{% endif %}</div>
+                                <div class="doc-label text-success">
+                                    <span class="custom-name-display" style="{% if not row.is_custom %}display: none;{% endif %}">{{ row.form.custom_doc_type.value|default:row.doc_type|default:"Custom Document" }}</span>
+                                    <span class="standard-name-display" style="{% if row.is_custom %}display: none;{% endif %}">{{ row.doc_type }}</span>
+                                </div>
                                 <div class="doc-filename" id="filename-{{ forloop.counter0 }}" title="{% if row.doc and row.doc.file %}{{ row.filename|default:row.doc.file.name|cut:'cases/' }}{% endif %}">
                                     {% if row.doc and row.doc.file %}{{ row.filename|default:row.doc.file.name|cut:"cases/" }}{% endif %}
                                 </div>
@@ -1025,11 +1098,12 @@
                                     {% if row.doc and row.doc.file %}{{ row.doc.uploaded_at|date:"Y-m-d g:i A" }}{% else %}Ready to save{% endif %}
                                 </div>
                                 <div class="doc-actions">
+                                    <button type="button" class="icon-btn rename-btn" style="{% if not row.is_custom %}display: none;{% endif %}" onclick="renameCustomDoc('row-{{ forloop.counter0 }}')" title="Rename Document"><i class="ri-edit-line"></i></button>
                                     <button type="button" class="icon-btn edit-btn"
-                                        onclick="document.getElementById('{{ row.form.file.id_for_label }}').click();"><i
+                                        onclick="document.getElementById('{{ row.form.file.id_for_label }}').click();" title="Replace File"><i
                                             class="ri-pencil-fill"></i></button>
                                     <button type="button" class="icon-btn delete-btn"
-                                        onclick="clearFile('row-{{ forloop.counter0 }}', '{{ row.form.file.id_for_label }}')"><i
+                                        onclick="confirmDeleteDoc('row-{{ forloop.counter0 }}', '{{ row.form.file.id_for_label }}')" title="Remove"><i
                                             class="ri-delete-bin-fill"></i></button>
                                 </div>
                             </div>
@@ -1038,8 +1112,27 @@
                         {% endfor %}
                     </div>
 
-                    <button type="submit" name="add_row" value="1" class="btn-add-custom"><i class="ri-add-line"></i>
-                        Add</button>
+                    <div id="custom-add-container" class="doc-row" style="border-bottom: none; padding-top: 1.5rem;">
+                        <div id="btn-show-custom-input" style="display: flex; justify-content: flex-start; align-items: center; width: 100%;">
+                            <button type="button" onclick="this.parentElement.style.display='none'; document.getElementById('custom-input-wrapper').style.display='flex'; document.getElementById('custom_attachment_name').focus();" style="background: transparent; color: #1e3a8a; border: none; font-weight: 600; padding: 0.5rem 0; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; font-size: 0.95rem;">
+                                <i class="ri-add-line"></i> Add Document
+                            </button>
+                        </div>
+                        
+                        <div id="custom-input-wrapper" style="display: none; justify-content: space-between; align-items: center; width: 100%;">
+                            <div class="doc-label" style="display: flex; align-items: center;">
+                                <input type="text" id="custom_attachment_name" placeholder="Name of the Attachment" style="padding: 0.6rem 0.8rem; border: 2px solid #cbd5e1; border-radius: 6px; font-family: inherit; font-size: 0.9rem; min-width: 320px; outline: none; transition: 0.2s;" onfocus="this.style.borderColor='#1e3a8a'" onblur="this.style.borderColor='#cbd5e1'" />
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <button type="button" class="btn-upload-trigger" onclick="triggerCustomUpload()">
+                                    <i class="ri-upload-cloud-2-line"></i> Upload
+                                </button>
+                                <button type="button" onclick="cancelCustomAdd()" title="Cancel" style="background: #f1f5f9; color: #0f172a; border: none; width: 36px; height: 36px; border-radius: 6px; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; transition: 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                                    <i class="ri-close-line"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="form-actions" style="margin-top: 3rem; justify-content: space-between;">
                         <div style="display: flex; gap: 1rem; align-items: center;">
@@ -1049,6 +1142,66 @@
                                 style="border: 1px solid var(--border);">Save as Draft</button>
                         </div>
                         <button type="submit" class="btn btn-primary">Continue</button>
+                    </div>
+
+                    <!-- Minimalistic Validation Modal -->
+                    <div id="nameRequiredModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:9999; justify-content:center; align-items:center;">
+                        <div style="background:white; border-radius:12px; padding:1.5rem; width:340px; box-shadow:0 10px 40px rgba(0,0,0,0.15); text-align: center; animation: slideDown 0.2s ease;">
+                            <i class="ri-information-line" style="font-size: 2.5rem; color: #3b82f6; margin-bottom: 0.25rem; display: block;"></i>
+                            <h3 style="margin:0 0 0.5rem 0; font-size:1.1rem; color:#0f172a;">Name Required</h3>
+                            <p style="margin:0 0 1.25rem 0; font-size:0.9rem; color:#64748b;">
+                                Please specify the name of the attachment before uploading.
+                            </p>
+                            <button type="button" onclick="document.getElementById('nameRequiredModal').style.display='none'; document.getElementById('custom_attachment_name').focus();"
+                                style="width:100%; padding:0.6rem; border-radius:6px; background:#3b82f6; color:white; border:none; font-weight:600; cursor:pointer; font-size:0.9rem; transition: 0.2s;" onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">
+                                Okay
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Minimalistic Rename Modal -->
+                    <div id="renameDocModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:9999; justify-content:center; align-items:center;">
+                        <div style="background:white; border-radius:12px; padding:1.5rem; width:340px; box-shadow:0 10px 40px rgba(0,0,0,0.15); text-align: center; animation: slideDown 0.2s ease;">
+                            <i class="ri-edit-line" style="font-size: 2.5rem; color: #3b82f6; margin-bottom: 0.25rem; display: block;"></i>
+                            <h3 style="margin:0 0 0.5rem 0; font-size:1.1rem; color:#0f172a;">Rename Document</h3>
+                            <p style="margin:0 0 1.25rem 0; font-size:0.9rem; color:#64748b;">
+                                Enter a new name for this document.
+                            </p>
+                            <input type="text" id="rename_attachment_name" class="form-input" style="width: 100%; margin-bottom: 1.25rem; text-align: center;" placeholder="Document Name" onkeypress="if(event.key === 'Enter'){ submitRename(); event.preventDefault(); }">
+                            <input type="hidden" id="rename_target_row">
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button type="button" onclick="document.getElementById('renameDocModal').style.display='none';"
+                                    style="flex: 1; padding:0.6rem; border-radius:6px; background:#f1f5f9; color:#0f172a; border:none; font-weight:600; cursor:pointer; font-size:0.9rem; transition: 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                                    Cancel
+                                </button>
+                                <button type="button" onclick="submitRename()"
+                                    style="flex: 1; padding:0.6rem; border-radius:6px; background:#3b82f6; color:white; border:none; font-weight:600; cursor:pointer; font-size:0.9rem; transition: 0.2s;" onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">
+                                    Save
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Minimalistic Delete Modal -->
+                    <div id="deleteDocModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:9999; justify-content:center; align-items:center;">
+                        <div style="background:white; border-radius:12px; padding:1.5rem; width:340px; box-shadow:0 10px 40px rgba(0,0,0,0.15); text-align: center; animation: slideDown 0.2s ease;">
+                            <i class="ri-alert-line" style="font-size: 2.5rem; color: #ef4444; margin-bottom: 0.25rem; display: block;"></i>
+                            <h3 style="margin:0 0 0.5rem 0; font-size:1.1rem; color:#0f172a;">Remove Document?</h3>
+                            <p style="margin:0 0 1.25rem 0; font-size:0.9rem; color:#64748b;">
+                                Are you sure you want to remove this document?
+                            </p>
+                            <input type="hidden" id="delete_target_row">
+                            <input type="hidden" id="delete_target_input">
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button type="button" onclick="document.getElementById('deleteDocModal').style.display='none';"
+                                    style="flex: 1; padding:0.6rem; border-radius:6px; background:#f1f5f9; color:#0f172a; border:none; font-weight:600; cursor:pointer; font-size:0.9rem; transition: 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                                    Cancel
+                                </button>
+                                <button type="button" onclick="executeDelete()"
+                                    style="flex: 1; padding:0.6rem; border-radius:6px; background:#ef4444; color:white; border:none; font-weight:600; cursor:pointer; font-size:0.9rem; transition: 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -1262,7 +1415,124 @@
                 input.classList.add('custom-doc-input');
                 input.placeholder = "Enter document name...";
             });
+            
+            // Setup Add+ interactions
+            const btnShow = document.getElementById('btn-show-custom-input');
+            if (btnShow) {
+                btnShow.addEventListener('click', function() {
+                    this.style.display = 'none';
+                    document.getElementById('custom-input-wrapper').style.display = 'flex';
+                    document.getElementById('custom_attachment_name').focus();
+                });
+            }
         });
+
+        window.cancelCustomAdd = function() {
+            document.getElementById('custom-input-wrapper').style.display = 'none';
+            document.getElementById('btn-show-custom-input').style.display = 'flex';
+            document.getElementById('custom_attachment_name').value = '';
+        };
+
+        window.triggerCustomUpload = function() {
+            const nameInput = document.getElementById('custom_attachment_name');
+            const customName = nameInput.value.trim();
+            if (!customName) {
+                document.getElementById('nameRequiredModal').style.display = 'flex';
+                return;
+            }
+
+            const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
+            let totalForms = parseInt(totalFormsInput.value);
+            
+            const rows = document.querySelectorAll('.doc-list .doc-row');
+            if (rows.length === 0) {
+                // Fallback to server side submission if no rows exist
+                const submitBtn = document.createElement('button');
+                submitBtn.type = 'submit';
+                submitBtn.name = 'add_row';
+                submitBtn.value = '1';
+                document.querySelector('form[method="post"]').appendChild(submitBtn);
+                submitBtn.click();
+                return;
+            }
+            
+            const templateRow = rows[rows.length - 1];
+            const newRow = templateRow.cloneNode(true);
+            
+            const oldIndex = templateRow.id.split('-')[1];
+            const newIndex = totalForms;
+            
+            newRow.id = `row-${newIndex}`;
+            
+            const updateAttrs = (elem) => {
+                const regex1 = new RegExp(`-${oldIndex}-`, 'g');
+                const regex2 = new RegExp(`-${oldIndex}`, 'g');
+                if (elem.id) elem.id = elem.id.replace(regex1, `-${newIndex}-`).replace(regex2, `-${newIndex}`);
+                if (elem.name) elem.name = elem.name.replace(regex1, `-${newIndex}-`);
+                if (elem.htmlFor) elem.htmlFor = elem.htmlFor.replace(regex1, `-${newIndex}-`);
+                if (elem.getAttribute('onclick')) {
+                    elem.setAttribute('onclick', elem.getAttribute('onclick').replace(regex2, `-${newIndex}`));
+                }
+                Array.from(elem.children).forEach(updateAttrs);
+            };
+            updateAttrs(newRow);
+            
+            // Reset input values
+            const inputs = newRow.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                if (input.type === 'checkbox' || input.type === 'radio') {
+                    input.checked = false;
+                } else if (input.type !== 'hidden') {
+                    input.value = '';
+                }
+            });
+
+            document.querySelector('.doc-list').appendChild(newRow);
+            
+            newRow.classList.remove('state-completed', 'state-dropzone');
+            newRow.classList.add('state-pending');
+            
+            const docTypeSelect = newRow.querySelector(`select[name="form-${newIndex}-doc_type"]`);
+            if (docTypeSelect) {
+                docTypeSelect.value = '__custom__';
+            }
+            
+            const customDocInput = newRow.querySelector(`input[name="form-${newIndex}-custom_doc_type"]`);
+            if (customDocInput) {
+                customDocInput.value = customName;
+            }
+            
+            const isDeletedInput = newRow.querySelector(`input[name="form-${newIndex}-is_deleted"]`);
+            if (isDeletedInput) isDeletedInput.value = 'false';
+
+            newRow.setAttribute('data-is-custom', 'true');
+
+            const customDisplays = newRow.querySelectorAll('.custom-name-display');
+            customDisplays.forEach(d => {
+                d.textContent = customName;
+                d.style.display = 'inline';
+                d.style.fontStyle = 'normal';
+                d.style.color = 'var(--text-main)';
+            });
+            
+            const standardDisplays = newRow.querySelectorAll('.standard-name-display');
+            standardDisplays.forEach(d => {
+                d.style.display = 'none';
+            });
+            
+            const renameBtns = newRow.querySelectorAll('.rename-btn');
+            renameBtns.forEach(btn => btn.style.display = 'inline-flex');
+
+            totalFormsInput.value = totalForms + 1;
+            
+            cancelCustomAdd();
+            
+            // Open file dialog automatically
+            const fileInput = newRow.querySelector(`input[type="file"][name="form-${newIndex}-file"]`);
+            if (fileInput) {
+                fileInput.click();
+            }
+        };
 
         window.openDropzone = function (rowId) {
             document.querySelectorAll('.doc-row.state-dropzone').forEach(function (row) {
@@ -1276,6 +1546,19 @@
             }
         };
 
+        window.confirmDeleteDoc = function(rowId, inputId) {
+            document.getElementById('delete_target_row').value = rowId;
+            document.getElementById('delete_target_input').value = inputId;
+            document.getElementById('deleteDocModal').style.display = 'flex';
+        };
+
+        window.executeDelete = function() {
+            const rowId = document.getElementById('delete_target_row').value;
+            const inputId = document.getElementById('delete_target_input').value;
+            document.getElementById('deleteDocModal').style.display = 'none';
+            clearFile(rowId, inputId);
+        };
+
         window.clearFile = function (rowId, inputId) {
             const fileInput = document.getElementById(inputId);
             const row = document.getElementById(rowId);
@@ -1286,8 +1569,14 @@
             if (isDeletedInput) isDeletedInput.value = 'true';
 
             if (row) {
-                row.classList.remove('state-completed');
-                row.classList.add('state-pending');
+                const isCustom = row.getAttribute('data-is-custom') === 'true';
+                
+                if (isCustom) {
+                    row.style.display = 'none';
+                } else {
+                    row.classList.remove('state-completed');
+                    row.classList.add('state-pending');
+                }
             }
         };
 
@@ -1304,7 +1593,7 @@
                     const rowIndex = row.id.split('-')[1];
                     const nameDisplay = document.getElementById('filename-' + rowIndex);
                     const metaDisplay = document.getElementById('filemeta-' + rowIndex);
-                    const customLabelDisplay = document.getElementById('custom-name-' + rowIndex);
+                    const customLabelDisplays = row.querySelectorAll('.custom-name-display');
 
                     if (nameDisplay) nameDisplay.textContent = fileName;
                     if (metaDisplay) {
@@ -1314,12 +1603,45 @@
                         metaDisplay.textContent = now.getFullYear() + '-' + (now.getMonth() + 1).toString().padStart(2, '0') + '-' + now.getDate().toString().padStart(2, '0') + ' ' + hours + ':' + mins + ' ' + ampm;
                     }
                     const customInput = row.querySelector('input[name$="-custom_doc_type"]');
-                    if (customInput && customInput.value.trim() !== '' && customLabelDisplay) { customLabelDisplay.textContent = customInput.value.trim(); }
+                    if (customInput && customInput.value.trim() !== '') {
+                        customLabelDisplays.forEach(d => d.textContent = customInput.value.trim());
+                    }
                     row.classList.remove('state-pending', 'state-dropzone');
                     row.classList.add('state-completed');
                 }
             }
         });
+        
+        window.renameCustomDoc = function(rowId) {
+            const row = document.getElementById(rowId);
+            if (!row) return;
+            const input = row.querySelector('input[name$="-custom_doc_type"]');
+            const currentName = input && input.value ? input.value : '';
+            
+            document.getElementById('rename_attachment_name').value = currentName;
+            document.getElementById('rename_target_row').value = rowId;
+            document.getElementById('renameDocModal').style.display = 'flex';
+            setTimeout(() => document.getElementById('rename_attachment_name').focus(), 50);
+        };
+        
+        window.submitRename = function() {
+            const newName = document.getElementById('rename_attachment_name').value;
+            const rowId = document.getElementById('rename_target_row').value;
+            
+            if (newName.trim() === '') {
+                document.getElementById('rename_attachment_name').focus();
+                return;
+            }
+            
+            const row = document.getElementById(rowId);
+            if (row) {
+                const input = row.querySelector('input[name$="-custom_doc_type"]');
+                if (input) input.value = newName.trim();
+                const displays = row.querySelectorAll('.custom-name-display');
+                displays.forEach(d => d.textContent = newName.trim());
+            }
+            document.getElementById('renameDocModal').style.display = 'none';
+        };
 
         document.addEventListener('dragover', function (e) {
             if (e.target.closest('.dropzone-area')) {
@@ -1420,5 +1742,131 @@
             }
         });
     }
+</script>
+
+<script>
+(function () {
+  const ownershipSelect = document.getElementById('id_ownership_type');
+  if (!ownershipSelect) return;
+
+  const standardFields  = document.getElementById('standard-name-fields');
+  const spouseGroup     = document.getElementById('spouse-name-group');
+  const corpGroup       = document.getElementById('corporation-name-group');
+  const coOwnersGroup   = document.getElementById('co-owners-group');
+
+  function applyOwnershipUI(value) {
+    // Reset all to hidden first
+    standardFields.style.display  = 'none';
+    spouseGroup.style.display     = 'none';
+    corpGroup.style.display       = 'none';
+    coOwnersGroup.style.display   = 'none';
+
+    if (value === 'single') {
+      standardFields.style.display = 'contents';
+    }
+    else if (value === 'married') {
+      standardFields.style.display = 'contents';
+      spouseGroup.style.display    = 'block';
+    }
+    else if (value === 'corporation') {
+      // Show standard name fields AND corporation name
+      standardFields.style.display = 'contents';
+      corpGroup.style.display = 'block';
+    }
+    else if (value === 'others') {
+      standardFields.style.display = 'contents';
+      coOwnersGroup.style.display  = 'block';
+    }
+  }
+
+  // Apply on page load (handles back-navigation and edit state)
+  applyOwnershipUI(ownershipSelect.value);
+
+  // Listen for changes
+  ownershipSelect.addEventListener('change', function(e) {
+    applyOwnershipUI(e.target.value);
+  });
+})();
+</script>
+
+<script>
+    // --- Co-Owners Dynamic Rows ---
+    window.addCoOwnerRow = function(firstName = '', lastName = '') {
+        const container = document.getElementById('co-owners-container');
+        if(!container) return;
+        const rowId = 'co-owner-' + Date.now() + Math.floor(Math.random() * 1000);
+        
+        const rowHTML = `
+            <div id="${rowId}" style="display: flex; gap: 0.5rem; align-items: center; animation: fadeIn 0.2s ease-in-out;">
+                <div style="flex: 1;">
+                    <input type="text" class="custom-input co-owner-first" placeholder="First Name" value="${firstName.replace(/"/g, '&quot;')}" oninput="updateCoOwnersInput()" required>
+                </div>
+                <div style="flex: 1;">
+                    <input type="text" class="custom-input co-owner-last" placeholder="Last Name" value="${lastName.replace(/"/g, '&quot;')}" oninput="updateCoOwnersInput()" required>
+                </div>
+                <button type="button" onclick="confirmRemoveCoOwner('${rowId}')" style="background: transparent; color: #ef4444; border: none; cursor: pointer; padding: 0.5rem; border-radius: 4px; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.backgroundColor='#fee2e2'" onmouseout="this.style.backgroundColor='transparent'" title="Remove Co-Owner">
+                    <i class="ri-close-line" style="font-size: 1.25rem;"></i>
+                </button>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', rowHTML);
+        updateCoOwnersInput();
+    }
+
+    window.confirmRemoveCoOwner = function(rowId) {
+        document.getElementById('remove_coowner_target_row').value = rowId;
+        document.getElementById('removeCoOwnerModal').style.display = 'flex';
+    };
+
+    window.executeRemoveCoOwner = function() {
+        const rowId = document.getElementById('remove_coowner_target_row').value;
+        document.getElementById('removeCoOwnerModal').style.display = 'none';
+        
+        const row = document.getElementById(rowId);
+        if (row) {
+            row.remove();
+            updateCoOwnersInput();
+        }
+    };
+
+    window.updateCoOwnersInput = function() {
+        const rows = document.querySelectorAll('#co-owners-container > div');
+        const coOwners = [];
+        rows.forEach(row => {
+            const first = row.querySelector('.co-owner-first').value.trim();
+            const last = row.querySelector('.co-owner-last').value.trim();
+            if (first || last) {
+                coOwners.push(`${first} ${last}`.trim());
+            }
+        });
+        const coOwnersInput = document.getElementById('id_co_owners');
+        if(coOwnersInput) {
+            coOwnersInput.value = coOwners.join(', ');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const coOwnersInput = document.getElementById('id_co_owners');
+        if (coOwnersInput) {
+            if (coOwnersInput.value.trim()) {
+                const names = coOwnersInput.value.split(',');
+                names.forEach(name => {
+                    name = name.trim();
+                    if (name) {
+                        const parts = name.split(' ');
+                        if (parts.length > 1) {
+                            const last = parts.pop();
+                            const first = parts.join(' ');
+                            addCoOwnerRow(first, last);
+                        } else {
+                            addCoOwnerRow(name, '');
+                        }
+                    }
+                });
+            } else {
+                addCoOwnerRow();
+            }
+        }
+    });
 </script>
 {% endblock %}
