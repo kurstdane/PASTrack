@@ -776,7 +776,8 @@
             <div class="hero-text">
                 <h1>Hi, {{ request.user.first_name|default:request.user.full_name|default:"Super Admin" }}!</h1>
                 <p>
-                    <span style="color: var(--primary, #3b82f6); font-weight: 700;">{{ request.user.username|default:"ADM-001" }}</span>
+                    <span style="color: var(--primary, #3b82f6); font-weight: 700;">{{
+                        request.user.username|default:"ADM-001" }}</span>
                     <span style="margin: 0 8px; color: #cbd5e1;">|</span>
                     System Administrator
                 </p>
@@ -891,9 +892,12 @@
 
             <!-- Tabs -->
             <div class="tab-bar">
-                <div class="tab-link active" data-tab="total">Total Users <span class="tab-badge">{{ total_users_count }}</span></div>
-                <div class="tab-link" data-tab="pending">Pending Activation <span class="tab-badge">{{ pending_users_count }}</span></div>
-                <div class="tab-link" data-tab="deactivated">Deactivated <span class="tab-badge">{{ deactivated_users_count }}</span></div>
+                <div class="tab-link active" data-tab="total">Total Users <span class="tab-badge">{{ total_users_count
+                        }}</span></div>
+                <div class="tab-link" data-tab="pending">Pending Activation <span class="tab-badge">{{
+                        pending_users_count }}</span></div>
+                <div class="tab-link" data-tab="deactivated">Deactivated <span class="tab-badge">{{
+                        deactivated_users_count }}</span></div>
             </div>
 
             <!-- Toolbar -->
@@ -1173,8 +1177,9 @@
         volGrad.addColorStop(1, 'rgba(59, 130, 246, 0)');
 
         const volumeData = {
-            weekly: { labels: {{ sys_weekly_labels|safe }}, data: {{ sys_weekly_data|safe }}, max: {{ sys_weekly_max }} },
-            monthly: { labels: {{ sys_monthly_labels|safe }}, data: {{ sys_monthly_data|safe }}, max: {{ sys_monthly_max }} }
+            weekly: { labels: {{ sys_weekly_labels| safe
+    }}, data: {{ sys_weekly_data| safe }}, max: {{ sys_weekly_max }} },
+        monthly: { labels: {{ sys_monthly_labels| safe }}, data: {{ sys_monthly_data| safe }}, max: {{ sys_monthly_max }} }
         };
 
     const volChart = new Chart(ctxVol, {
@@ -1236,15 +1241,15 @@
             },
     status: {
         labels: ['Active', 'Pending', 'Deactivated'],
-        data: [{{ active_users_count }}, {{ pending_users_count }}, {{ deactivated_users_count }}],
-        colors: ['#059669', '#f59e0b', '#94a3b8'],
-        total: {{ total_users_count }}, centerLabel: 'By Status'
+            data: [{{ active_users_count }}, { { pending_users_count } }, { { deactivated_users_count } }],
+    colors: ['#059669', '#f59e0b', '#94a3b8'],
+        total: { { total_users_count } }, centerLabel: 'By Status'
     },
     lgu: {
         labels: ['LGU Staff', 'Capitol Staff'],
-        data: [{{ lgu_staff_count }}, {{ capitol_staff_count }}],
-        colors: ['#0ea5e9', '#7c3aed'],
-        total: {{ lgu_staff_count|add:capitol_staff_count }}, centerLabel: 'By Type'
+            data: [{{ lgu_staff_count }}, { { capitol_staff_count } }],
+    colors: ['#0ea5e9', '#7c3aed'],
+        total: { { lgu_staff_count | add: capitol_staff_count } }, centerLabel: 'By Type'
     }
         };
 
