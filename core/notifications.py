@@ -18,6 +18,11 @@ def _sns_enabled() -> bool:
 
 
 def send_case_email(*, to_email: str, subject: str, message: str) -> bool:
+    with open("email_log.txt", "a") as f:
+        f.write(f"Attempting to send email to: {to_email}\n")
+        f.write(f"LEGALTRACK_SEND_CASE_EMAILS: {getattr(settings, 'LEGALTRACK_SEND_CASE_EMAILS', False)}\n")
+        f.write(f"LEGALTRACK_SEND_EMAILS: {getattr(settings, 'LEGALTRACK_SEND_EMAILS', True)}\n")
+        
     if not to_email:
         return False
     if not bool(getattr(settings, "LEGALTRACK_SEND_CASE_EMAILS", False)):
@@ -32,9 +37,13 @@ def send_case_email(*, to_email: str, subject: str, message: str) -> bool:
             [to_email],
             fail_silently=False,
         )
+        with open("email_log.txt", "a") as f:
+            f.write("Email sent successfully!\n")
     except Exception as e:
         import sys
         print(f"[SMTP-CASE-EMAIL] FAILED: {e}", file=sys.stderr)
+        with open("email_log.txt", "a") as f:
+            f.write(f"SMTP FAILED: {type(e).__name__}: {e}\n")
         return False
     return True
 

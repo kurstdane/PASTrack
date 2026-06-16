@@ -1,0 +1,20 @@
+Attempting to send email to: josephkylesumucad@gmail.com
+LEGALTRACK_SEND_CASE_EMAILS: True
+LEGALTRACK_SEND_EMAILS: True
+Email sent successfully!
+Attempting to send email to: josephkylesumucad@gmail.com
+LEGALTRACK_SEND_CASE_EMAILS: True
+LEGALTRACK_SEND_EMAILS: True
+Email sent successfully!
+Attempting to send email to: josephkylesumucad@gmail.com
+LEGALTRACK_SEND_CASE_EMAILS: True
+LEGALTRACK_SEND_EMAILS: True
+Email sent successfully!
+Attempting to send email to: josephkylesumucad@gmail.com
+LEGALTRACK_SEND_CASE_EMAILS: True
+LEGALTRACK_SEND_EMAILS: True
+Email sent successfully!
+Attempting to send email to: josephkylesumucad@gmail.com
+LEGALTRACK_SEND_CASE_EMAILS: True
+LEGALTRACK_SEND_EMAILS: True
+Email sent successfully!

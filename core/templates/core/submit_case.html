@@ -1799,10 +1799,10 @@
         const rowHTML = `
             <div id="${rowId}" style="display: flex; gap: 0.5rem; align-items: center; animation: fadeIn 0.2s ease-in-out;">
                 <div style="flex: 1;">
-                    <input type="text" class="custom-input co-owner-first" placeholder="First Name" value="${firstName.replace(/"/g, '&quot;')}" oninput="updateCoOwnersInput()" required>
+                    <input type="text" class="custom-input co-owner-first" placeholder="First Name" value="${firstName.replace(/"/g, '&quot;')}" oninput="updateCoOwnersInput()">
                 </div>
                 <div style="flex: 1;">
-                    <input type="text" class="custom-input co-owner-last" placeholder="Last Name" value="${lastName.replace(/"/g, '&quot;')}" oninput="updateCoOwnersInput()" required>
+                    <input type="text" class="custom-input co-owner-last" placeholder="Last Name" value="${lastName.replace(/"/g, '&quot;')}" oninput="updateCoOwnersInput()">
                 </div>
                 <button type="button" onclick="confirmRemoveCoOwner('${rowId}')" style="background: transparent; color: #ef4444; border: none; cursor: pointer; padding: 0.5rem; border-radius: 4px; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.backgroundColor='#fee2e2'" onmouseout="this.style.backgroundColor='transparent'" title="Remove Co-Owner">
                     <i class="ri-close-line" style="font-size: 1.25rem;"></i>
