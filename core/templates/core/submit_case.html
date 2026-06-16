@@ -934,14 +934,12 @@
                                 <span class="prefix-text">+63</span>
                                 {{ form.client_number }}
                             </div>
-                            {% if form.client_number.errors %}<span class="error-msg">{{ form.client_number.errors.0
-                                }}</span>{% endif %}
+                            {% if form.client_number.errors %}<span class="error-msg">{{ form.client_number.errors.0 }}</span>{% endif %}
                         </div>
                         <div class="form-group col-6">
                             <label for="{{ form.client_email.id_for_label }}">Email</label>
                             {{ form.client_email }}
-                            {% if form.client_email.errors %}<span class="error-msg">{{ form.client_email.errors.0
-                                }}</span>{% endif %}
+                            {% if form.client_email.errors %}<span class="error-msg">{{ form.client_email.errors.0 }}</span>{% endif %}
                         </div>
 
                         <div class="form-group col-12">
@@ -968,8 +966,7 @@
                             <label for="{{ form.classification.id_for_label }}">Classification<span
                                     class="text-danger">*</span></label>
                             {{ form.classification }}
-                            {% if form.classification.errors %}<span class="error-msg">{{ form.classification.errors.0
-                                }}</span>{% endif %}
+                            {% if form.classification.errors %}<span class="error-msg">{{ form.classification.errors.0 }}</span>{% endif %}
                         </div>
 
                         <div class="form-group col-12">
@@ -1769,8 +1766,6 @@
       spouseGroup.style.display    = 'block';
     }
     else if (value === 'corporation') {
-      // Show standard name fields AND corporation name
-      standardFields.style.display = 'contents';
       corpGroup.style.display = 'block';
     }
     else if (value === 'others') {

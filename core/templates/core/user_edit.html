@@ -288,24 +288,34 @@
             {% endif %}
 
             <div class="form-grid">
-                <!-- Name Row: First Name, Middle Initial, Last Name, Suffix -->
-                <div class="form-group span-2" style="display: flex; gap: 1rem;">
-                    <div style="flex: 2;">
-                        <label for="{{ form.first_name.id_for_label }}">First Name</label>
+                <!-- Username -->
+                <div class="form-group span-2">
+                    <label for="{{ form.username.id_for_label }}">Username / Staff ID</label>
+                    {{ form.username }}
+                    {{ form.username.errors }}
+                    {% if form.username.help_text %}
+                    <span class="help-text">{{ form.username.help_text }}</span>
+                    {% endif %}
+                </div>
+
+                <!-- Name Fields Horizontal Row -->
+                <div class="form-group span-2" style="display: grid; grid-template-columns: 3fr 1.5fr 3fr 1.5fr; gap: 1rem;">
+                    <div>
+                        <label for="{{ form.first_name.id_for_label }}">First Name <span style="color: #ef4444;">*</span></label>
                         {{ form.first_name }}
                         {{ form.first_name.errors }}
                     </div>
-                    <div style="flex: 1;">
+                    <div>
                         <label for="{{ form.middle_initial.id_for_label }}">Middle Initial</label>
                         {{ form.middle_initial }}
                         {{ form.middle_initial.errors }}
                     </div>
-                    <div style="flex: 2;">
-                        <label for="{{ form.last_name.id_for_label }}">Last Name</label>
+                    <div>
+                        <label for="{{ form.last_name.id_for_label }}">Last Name <span style="color: #ef4444;">*</span></label>
                         {{ form.last_name }}
                         {{ form.last_name.errors }}
                     </div>
-                    <div style="flex: 1;">
+                    <div>
                         <label for="{{ form.suffix.id_for_label }}">Suffix</label>
                         {{ form.suffix }}
                         {{ form.suffix.errors }}
@@ -322,10 +332,11 @@
                 <!-- Conditional Assignment Fields -->
                 {% if target_user.role == 'lgu_admin' %}
                 <div class="form-group span-2">
-                    <label for="{{ form.lgu_municipality.id_for_label }}">Municipal Assessors - Assigned
-                        Location</label>
-                    {{ form.lgu_municipality }}
-                    {{ form.lgu_municipality.errors }}
+                    <label>Municipal Assessors - Assigned Location</label>
+                    <input type="text" class="custom-input" value="{{ target_user.lgu_municipality }}" disabled
+                        style="background-color: #f1f5f9; cursor: not-allowed; color: #475569; width: 100%; padding: 0.75rem 1rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                    <!-- Hidden field to ensure form logic remains intact if needed -->
+                    <div style="display: none;">{{ form.lgu_municipality }}</div>
                 </div>
                 {% else %}
                 <div class="form-group span-2">

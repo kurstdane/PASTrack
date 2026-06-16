@@ -198,48 +198,46 @@
 
     <!-- FILTER TOOLBAR -->
     <div class="panel" style="padding: 1rem 1.5rem;">
-        <form method="GET" class="filter-toolbar">
+        <form id="filter-form" method="GET" action="" class="filter-toolbar">
             <!-- Preserve tab and scope state when searching -->
             <input type="hidden" name="tab" value="{{ tab }}">
             <input type="hidden" name="scope" value="{{ scope }}">
             
             <div class="search-bar">
                 <i class="ri-search-line"></i>
-                <input type="text" name="q" value="{{ q }}" placeholder="Search tracking no, client name, or email...">
+                <input type="text" name="search" value="{{ selected_search }}" placeholder="Search tracking no, client name, or email...">
             </div>
 
-            <select name="days" class="filter-select" title="Sort/Filter by Date">
-                <option value="">All Time</option>
-                <option value="3" {% if filter_days == "3" %}selected{% endif %}>Last 3 days</option>
-                <option value="7" {% if filter_days == "7" %}selected{% endif %}>Last 7 days</option>
-                <option value="15" {% if filter_days == "15" %}selected{% endif %}>Last 15 days</option>
-                <option value="30" {% if filter_days == "30" %}selected{% endif %}>Last 30 days</option>
+            <select name="time_range" class="filter-select" title="Sort/Filter by Date">
+                <option value="all" {% if selected_time_range == 'all' %}selected{% endif %}>All Time</option>
+                <option value="today" {% if selected_time_range == 'today' %}selected{% endif %}>Today</option>
+                <option value="this_week" {% if selected_time_range == 'this_week' %}selected{% endif %}>This Week</option>
+                <option value="this_month" {% if selected_time_range == 'this_month' %}selected{% endif %}>This Month</option>
+                <option value="this_year" {% if selected_time_range == 'this_year' %}selected{% endif %}>This Year</option>
             </select>
 
             <!-- Only show advanced filters for Global Transactions -->
             {% if scope == 'all' %}
                 <select name="lgu" class="filter-select">
-                    <option value="">All LGUs</option>
-                    {% for key, val in lgu_choices %}
-                        <option value="{{ key }}" {% if filter_lgu == key %}selected{% endif %}>{{ val }}</option>
+                    <option value="all">All LGUs</option>
+                    {% for item in lgu_list %}
+                        <option value="{{ item }}" {% if selected_lgu == item %}selected{% endif %}>{{ item }}</option>
                     {% endfor %}
                 </select>
 
-                <select name="case_type" class="filter-select">
-                    <option value="">All Transaction Types</option>
-                    {% for key, val in case_type_choices %}
-                        <option value="{{ key }}" {% if filter_case_type == key %}selected{% endif %}>{{ val }}</option>
+                <select name="transaction_type" class="filter-select">
+                    <option value="all">All Transaction Types</option>
+                    {% for key, val in type_list %}
+                        <option value="{{ key }}" {% if selected_transaction_type == key %}selected{% endif %}>{{ val }}</option>
                     {% endfor %}
                 </select>
 
-                <input type="date" name="date_from" class="filter-date" value="{{ filter_date_from }}" title="Date From">
-                <input type="date" name="date_to" class="filter-date" value="{{ filter_date_to }}" title="Date To">
+                <input type="date" name="date_from" class="filter-date" value="{{ selected_date_from }}" title="Date From">
+                <input type="date" name="date_to" class="filter-date" value="{{ selected_date_to }}" title="Date To">
             {% endif %}
 
-            <button type="submit" class="btn-primary">{% if scope == 'me' %}Search Workspace{% else %}Apply Filters{% endif %}</button>
-            
             <!-- Clear Filters Button -->
-            {% if q or filter_lgu or filter_case_type or filter_date_from or filter_date_to or filter_days %}
+            {% if selected_search or selected_time_range != 'all' or selected_lgu != 'all' or selected_transaction_type != 'all' or selected_date_from or selected_date_to %}
                 <a href="?scope={{ scope }}&tab={{ tab }}" class="btn-outline" title="Clear Filters"><i class="ri-close-line" style="font-size: 1.2rem;"></i></a>
             {% endif %}
         </form>
@@ -292,6 +290,16 @@
         <td>
             <div class="client-name">{{ case.client_name }}</div>
             <div class="request-subtext">{{ case.get_case_type_display }}</div>
+            {% if case.status in "for_taxmapping,for_approval,approved,for_numbering,for_release,released" %}
+                <div class="request-subtext" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.3rem;">
+                    Examined by: <strong>{{ case.assigned_to.full_name|default:case.assigned_to.email }}</strong>
+                </div>
+            {% endif %}
+            {% if case.approver_name %}
+                <div class="request-subtext" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.1rem;">
+                    Approved by: <strong>{{ case.approver_name }}</strong>
+                </div>
+            {% endif %}
         </td>
 
         {% if request.user.role == 'capitol_numberer' %}
@@ -425,6 +433,34 @@
             closeAssignModal();
         }
     });
+
+    (function () {
+      const filterForm = document.getElementById('filter-form');
+      if (!filterForm) return;
+
+      // Auto-submit on dropdown or date change
+      const autoSubmitFields = filterForm.querySelectorAll(
+        'select, input[type="date"]'
+      );
+
+      autoSubmitFields.forEach(function (field) {
+        field.addEventListener('change', function () {
+          filterForm.submit();
+        });
+      });
+
+      // Auto-submit search with debounce (wait 500ms after typing stops)
+      const searchInput = filterForm.querySelector('input[type="text"]');
+      if (searchInput) {
+        let debounceTimer;
+        searchInput.addEventListener('input', function () {
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(function () {
+            filterForm.submit();
+          }, 500);
+        });
+      }
+    })();
 </script>
 
 {% endblock %}

@@ -120,10 +120,11 @@ class CaseDetailsForm(forms.ModelForm):
         
         ownership_type = cleaned.get('ownership_type')
 
-        if not (cleaned.get("client_first_name") or "").strip():
-            self.add_error("client_first_name", "First name is required.")
-        if not (cleaned.get("client_last_name") or "").strip():
-            self.add_error("client_last_name", "Last name is required.")
+        if ownership_type != 'corporation':
+            if not (cleaned.get("client_first_name") or "").strip():
+                self.add_error("client_first_name", "First name is required.")
+            if not (cleaned.get("client_last_name") or "").strip():
+                self.add_error("client_last_name", "Last name is required.")
 
         if ownership_type == 'corporation':
             if not cleaned.get('corporation_name'):
@@ -152,6 +153,11 @@ class CaseDetailsForm(forms.ModelForm):
             self.add_error("area_value", "Area value is required.")
 
         raw_num = (cleaned.get("client_number") or "").strip()
+        raw_email = (cleaned.get("client_email") or "").strip()
+        
+        if not raw_num and not raw_email:
+            self.add_error("client_number", "Input atleast one contact (Phone Number or Email)")
+
         if raw_num:
             # Step 1: Extract all digits
             digits = "".join([c for c in raw_num if c.isdigit()])
@@ -389,7 +395,7 @@ class ProfileUpdateForm(forms.ModelForm):
 class SettingsProfileForm(forms.ModelForm):
     class Meta:
         model = CustomUser
-        fields: ClassVar[list[str]] = ["photo", "first_name", "last_name", "position"]
+        fields: ClassVar[list[str]] = ["photo", "first_name", "last_name"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -544,31 +550,50 @@ class StaffAccountUpdateForm(forms.ModelForm):
 
     account_status = forms.ChoiceField(
         required=True,
-        choices=CustomUser.ACCOUNT_STATUS_CHOICES,
+        choices=[c for c in CustomUser.ACCOUNT_STATUS_CHOICES if c[0] != "pending"],
         widget=forms.Select(),
         label="Account Status",
     )
 
+    username = forms.CharField(
+        required=False,
+        max_length=150,
+        label="Username / Staff ID",
+        help_text="Can only be edited when the account is active."
+    )
+
     class Meta:
         model = CustomUser
-        fields: ClassVar[list[str]] = ["first_name", "middle_initial", "last_name", "suffix", "lgu_municipality", "account_status"]
+        fields: ClassVar[list[str]] = ["username", "first_name", "middle_initial", "last_name", "suffix", "lgu_municipality", "account_status"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['first_name'].required = True
         self.fields['last_name'].required = True
         if self.instance and self.instance.pk:
+            self.fields["username"].initial = self.instance.username
+            if self.instance.account_status == "active":
+                self.fields["username"].disabled = False
+                self.fields["username"].required = True
+            else:
+                self.fields["username"].disabled = True
+
             if self.instance.role == "lgu_admin":
                 self.fields["capitol_role"].widget = forms.HiddenInput()
                 self.fields["lgu_municipality"].initial = self.instance.lgu_municipality
+                self.fields["lgu_municipality"].disabled = True
             else:
                 self.fields["lgu_municipality"].widget = forms.HiddenInput()
                 self.fields["capitol_role"].initial = self.instance.role
 
     def save(self, commit=True):
         user: CustomUser = super().save(commit=False)
+        if self.cleaned_data.get("username"):
+            user.username = self.cleaned_data["username"]
+        
         if user.role == "lgu_admin":
-            user.lgu_municipality = str(self.cleaned_data.get("lgu_municipality") or "")
+            # Disabled fields don't send cleaned_data, preserve instance value
+            pass
         else:
             user.lgu_municipality = ""
             new_role = self.cleaned_data.get("capitol_role")

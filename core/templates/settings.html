@@ -202,22 +202,21 @@
                                 {{ profile_form.last_name }}
                                 {{ profile_form.last_name.errors }}
                             </div>
-                            <div class="form-group span-2">
-                                <label>Email Address</label>
-                                <input type="email" class="form-control" value="{{ request.user.email }}" disabled>
+                            <div class="form-group">
+                                <label>Staff ID</label>
+                                <input type="text" class="form-control" value="{{ request.user.username }}" disabled>
                             </div>
                             <div class="form-group">
                                 <label>System Role</label>
                                 <input type="text" class="form-control" value="{{ request.user.get_role_display }}" disabled title="Roles cannot be edited from profile">
                             </div>
                             <div class="form-group">
-                                <label>Staff ID</label>
-                                <input type="text" class="form-control" value="{{ request.user.username }}" disabled>
+                                <label>Email Address</label>
+                                <input type="email" class="form-control" value="{{ request.user.email }}" disabled>
                             </div>
-                            <div class="form-group span-2">
-                                <label>Position</label>
-                                {{ profile_form.position }}
-                                {{ profile_form.position.errors }}
+                            <div class="form-group">
+                                <label>Date of Account Activation</label>
+                                <input type="text" class="form-control" value="{{ request.user.date_joined|date:'F d, Y' }}" disabled>
                             </div>
                         </div>
 
@@ -242,17 +241,26 @@
                         <div class="form-grid">
                             <div class="form-group span-2">
                                 <label>Current Password</label>
-                                {{ password_form.old_password }}
+                                <div style="position: relative;">
+                                    {{ password_form.old_password }}
+                                    <i class="ri-eye-line toggle-password" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #6c757d;"></i>
+                                </div>
                                 {{ password_form.old_password.errors }}
                             </div>
                             <div class="form-group">
                                 <label>New Password</label>
-                                {{ password_form.new_password1 }}
+                                <div style="position: relative;">
+                                    {{ password_form.new_password1 }}
+                                    <i class="ri-eye-line toggle-password" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #6c757d;"></i>
+                                </div>
                                 {{ password_form.new_password1.errors }}
                             </div>
                             <div class="form-group">
                                 <label>Confirm New Password</label>
-                                {{ password_form.new_password2 }}
+                                <div style="position: relative;">
+                                    {{ password_form.new_password2 }}
+                                    <i class="ri-eye-line toggle-password" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #6c757d;"></i>
+                                </div>
                                 {{ password_form.new_password2.errors }}
                             </div>
                         </div>
@@ -263,7 +271,8 @@
                     </form>
                 </div>
 
-                <!-- Two-Factor Auth Card -->
+                <!-- Two-Factor Auth Card (Hidden for now) -->
+                <!-- 
                 <div class="card">
                     <div class="card-header">
                         <h2 class="card-title">Two-Factor Authentication (2FA)</h2>
@@ -280,6 +289,7 @@
                         </label>
                     </div>
                 </div>
+                -->
             </section>
 
             <!-- 3. NOTIFICATIONS SECTION -->
@@ -426,6 +436,23 @@
                 }
             });
         }
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".toggle-password").forEach(function(icon) {
+            icon.addEventListener("click", function() {
+                var input = this.previousElementSibling;
+                if (input.type === "password") {
+                    input.type = "text";
+                    this.classList.remove("ri-eye-line");
+                    this.classList.add("ri-eye-off-line");
+                } else {
+                    input.type = "password";
+                    this.classList.remove("ri-eye-off-line");
+                    this.classList.add("ri-eye-line");
+                }
+            });
+        });
     });
 </script>
 {% endblock %}

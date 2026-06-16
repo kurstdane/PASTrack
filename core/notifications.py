@@ -17,7 +17,7 @@ def _sns_enabled() -> bool:
     return bool(getattr(settings, "LEGALTRACK_SNS_ENABLED", False))
 
 
-def send_case_email(*, to_email: str, subject: str, message: str) -> bool:
+def send_case_email(*, to_email: str, subject: str, message: str, html_message: str | None = None) -> bool:
     with open("email_log.txt", "a") as f:
         f.write(f"Attempting to send email to: {to_email}\n")
         f.write(f"LEGALTRACK_SEND_CASE_EMAILS: {getattr(settings, 'LEGALTRACK_SEND_CASE_EMAILS', False)}\n")
@@ -36,6 +36,7 @@ def send_case_email(*, to_email: str, subject: str, message: str) -> bool:
             getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@cebu.gov.ph"),
             [to_email],
             fail_silently=False,
+            html_message=html_message,
         )
         with open("email_log.txt", "a") as f:
             f.write("Email sent successfully!\n")

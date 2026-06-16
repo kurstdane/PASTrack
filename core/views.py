@@ -196,6 +196,8 @@ def system_settings(request):
                 preferences_form.save()
                 messages.success(request, "Preferences updated.")
                 return redirect(f"{reverse('settings')}#system")
+    for field in password_form.fields.values():
+        field.widget.attrs.update({'class': 'form-control'})
 
     return render(request, "settings.html", {
         "role_display": user.get_role_display(),
@@ -3976,14 +3978,24 @@ def submissions(request):
     scope = (request.GET.get("scope") or "me").strip().lower()
     tab = (request.GET.get("tab") or "").strip().lower()
     
-    q = (request.GET.get("q") or "").strip()
-    case_type = (request.GET.get("case_type") or "").strip()
-    lgu = (request.GET.get("lgu") or "").strip()
+    search = (request.GET.get("search") or "").strip()
+    time_range = (request.GET.get("time_range") or "all").strip()
+    lgu = (request.GET.get("lgu") or "all").strip()
+    transaction_type = (request.GET.get("transaction_type") or "all").strip()
     date_from_raw = (request.GET.get("date_from") or "").strip()
     date_to_raw = (request.GET.get("date_to") or "").strip()
 
-    date_from = parse_date(date_from_raw) if date_from_raw else None
-    date_to = parse_date(date_to_raw) if date_to_raw else None
+    def parse_safe_date(d_str):
+        if not d_str:
+            return None
+        try:
+            from datetime import datetime
+            return datetime.strptime(d_str, '%Y-%m-%d').date()
+        except ValueError:
+            return None
+
+    date_from = parse_safe_date(date_from_raw)
+    date_to = parse_safe_date(date_to_raw)
 
     # Base: Everything submitted by LGUs
     qs = Case.objects.filter(lgu_submitted_at__isnull=False).select_related("submitted_by", "assigned_to", "returned_by").order_by("-created_at")
@@ -4072,11 +4084,21 @@ def submissions(request):
                 
         elif request.user.role == "capitol_approver":
             to_approve_qs = qs.filter(status="for_approval")
-            approved_qs = qs.filter(status="approved") 
-            returned_to_examiner_qs = qs.filter(status="in_review", returned_by__role="capitol_approver")
             
-            # Approvers share a queue of cases for approval
-            active_assigned_qs = to_approve_qs
+            from django.db.models.functions import Replace
+            from django.db.models import Value
+            approved_tids_sq = AuditLog.objects.filter(
+                actor=request.user,
+                action="case_approval"
+            ).annotate(
+                tid=Replace("target_object", Value("Case: "), Value(""))
+            ).values("tid")
+
+            approved_qs = qs.filter(tracking_id__in=approved_tids_sq)
+            returned_to_examiner_qs = qs.filter(status="in_review", returned_by=request.user)
+            
+            # Approvers share a queue for 'to_approve', and their own approved cases
+            active_assigned_qs = (to_approve_qs | approved_qs).distinct()
 
             tabs = [
                 ("all_assigned", f"All Assigned ({active_assigned_qs.count()})"),
@@ -4191,30 +4213,58 @@ def submissions(request):
     # ==========================================
     # SEARCH & FILTERS
     # ==========================================
-    if q:
+    if search:
         qs = qs.filter(
-            Q(tracking_id__icontains=q) |
-            Q(client_name__icontains=q) |
-            Q(client_first_name__icontains=q) |
-            Q(client_last_name__icontains=q) |
-            Q(client_email__icontains=q) |
-            Q(submitted_by__email__icontains=q)
+            Q(tracking_id__icontains=search) |
+            Q(client_name__icontains=search) |
+            Q(client_first_name__icontains=search) |
+            Q(client_last_name__icontains=search) |
+            Q(client_email__icontains=search) |
+            Q(submitted_by__email__icontains=search)
         )
 
-    # Only apply advanced filters if they are actually passed
-    if case_type: qs = qs.filter(case_type=case_type)
-    if lgu: qs = qs.filter(submitted_by__lgu_municipality=lgu)
-    if date_from: qs = qs.filter(created_at__date__gte=date_from)
-    if date_to: qs = qs.filter(created_at__date__lte=date_to)
+    today = timezone.localtime(timezone.now()).date()
+    if time_range == 'today':
+        qs = qs.filter(created_at__date=today)
+    elif time_range == 'this_week':
+        start = today - timedelta(days=today.weekday())
+        qs = qs.filter(created_at__date__gte=start)
+    elif time_range == 'this_month':
+        qs = qs.filter(
+            created_at__year=today.year,
+            created_at__month=today.month
+        )
+    elif time_range == 'this_year':
+        qs = qs.filter(created_at__year=today.year)
 
-    days_filter = (request.GET.get("days") or "").strip()
-    if days_filter and days_filter.isdigit():
-        cutoff_date = timezone.localtime(timezone.now()).date() - timedelta(days=int(days_filter))
-        qs = qs.filter(updated_at__date__gte=cutoff_date)
+    if lgu and lgu != 'all':
+        qs = qs.filter(area__iexact=lgu)
+
+    if transaction_type and transaction_type != 'all':
+        qs = qs.filter(case_type__iexact=transaction_type)
+
+    if date_from:
+        qs = qs.filter(created_at__date__gte=date_from)
+    if date_to:
+        qs = qs.filter(created_at__date__lte=date_to)
 
     number_q = (request.GET.get("number") or "").strip()
     if number_q:
         qs = qs.filter(Q(td_number__icontains=number_q) | Q(tracking_id__icontains=number_q)).distinct()
+
+    lgu_list = [choice[0] for choice in getattr(CustomUser, "LGU_MUNICIPALITY_CHOICES", [])]
+    
+    db_type_list = Case.objects.exclude(case_type='').values_list('case_type', flat=True).distinct().order_by('case_type')
+    type_list = [(t, dict(Case.CASE_TYPE_CHOICES).get(t, t)) for t in db_type_list]
+
+    from django.db.models import Subquery, OuterRef, Value
+    from django.db.models.functions import Concat
+    approver_sq = AuditLog.objects.filter(
+        action="case_approval",
+        target_object=Concat(Value("Case: "), OuterRef("tracking_id"))
+    ).order_by("-created_at").values("actor__full_name")[:1]
+    
+    qs = qs.annotate(approver_name=Subquery(approver_sq))
 
     # Preserve parameters for pagination
     query = request.GET.copy()
@@ -4233,15 +4283,15 @@ def submissions(request):
         "scope": scope,
         "page_title": page_title,
         "page_subtitle": page_subtitle,
-        "q": q,
         "tabs": tabs,
-        "filter_case_type": case_type,
-        "filter_lgu": lgu,
-        "filter_date_from": date_from_raw,
-        "filter_date_to": date_to_raw,
-        "filter_days": days_filter,
-        "case_type_choices": list(getattr(Case, "CASE_TYPE_CHOICES", [])),
-        "lgu_choices": list(getattr(CustomUser, "LGU_MUNICIPALITY_CHOICES", [])),
+        "lgu_list": lgu_list,
+        "type_list": type_list,
+        "selected_search": search,
+        "selected_time_range": time_range,
+        "selected_lgu": lgu,
+        "selected_transaction_type": transaction_type,
+        "selected_date_from": date_from_raw,
+        "selected_date_to": date_to_raw,
         "qs_params": query.urlencode(),
         "qs_params_no_tab": query_no_tab.urlencode(),
         "examiners": examiners,  # Injected here for the modal logic
@@ -4316,13 +4366,61 @@ def receive_case(request, tracking_id):
         details={"new_status": case.status}
     )
 
+    date_received = case.received_at.strftime('%B %d, %Y') if case.received_at else timezone.now().strftime('%B %d, %Y')
+    html_message = f"""<p>Dear {case.client_display_name},</p>
+<p>This is to formally inform you that your real property tax declaration 
+request has been successfully received by the Provincial Assessor's 
+Office of Cebu.</p>
+<p>Case Reference No.: <b>{case.tracking_id}</b><br>
+Date Received: <b>{date_received}</b><br>
+Current Status: <b>Received</b></p>
+<p>Your submitted documents are now in queue for examination by our 
+designated Capitol staff. You will be notified of any further updates 
+as your case progresses through the processing workflow.</p>
+<p>To monitor the status of your case at any time, please visit:<br>
+<a href="https://pastrack.onrender.com/">https://pastrack.onrender.com/</a><br>
+and enter your Case Reference Number in the tracking portal.</p>
+<p>Should you have any concerns, please do not hesitate to contact the 
+Provincial Assessor's Office of Cebu.</p>
+<p>Salamat ug padayon ang inyong pagtamod sa among serbisyo.</p>
+<p>Respectfully,<br>
+Provincial Assessor's Office<br>
+Province of Cebu<br>
+PAStrack Document Tracking System</p>"""
+
+    plain_message = f"""Dear {case.client_display_name},
+
+This is to formally inform you that your real property tax declaration 
+request has been successfully received by the Provincial Assessor's 
+Office of Cebu.
+
+Case Reference No.: {case.tracking_id}
+Date Received:      {date_received}
+Current Status:     Received
+
+Your submitted documents are now in queue for examination by our 
+designated Capitol staff. You will be notified of any further updates 
+as your case progresses through the processing workflow.
+
+To monitor the status of your case at any time, please visit:
+https://pastrack.onrender.com/
+and enter your Case Reference Number in the tracking portal.
+
+Should you have any concerns, please do not hesitate to contact the 
+Provincial Assessor's Office of Cebu.
+
+Salamat ug padayon ang inyong pagtamod sa among serbisyo.
+
+Respectfully,
+Provincial Assessor's Office
+Province of Cebu
+PAStrack Document Tracking System"""
+
     send_case_email(
         to_email=(case.client_email or "").strip(),
-        subject=f"PAStrack: Case {case.tracking_id} received",
-        message=(
-            f"Your request {case.tracking_id} has been marked as physically received.\n\n"
-            f"Current status: {dict(Case.STATUS_CHOICES).get(case.status, case.status)}\n"
-        ),
+        subject=f"PAStrack — Case {case.tracking_id} Successfully Received",
+        message=plain_message,
+        html_message=html_message,
     )
     sns_hook(event="case_received", payload={"tracking_id": case.tracking_id, "status": case.status})
 
@@ -4377,14 +4475,75 @@ def return_case(request, tracking_id):
         details={"new_status": case.status, "reason": reason, "deadline": case.client_correction_deadline.isoformat() if case.client_correction_deadline else None, "returned_to": "Client"}
     )
 
+    date_returned = case.returned_at.strftime('%B %d, %Y') if case.returned_at else timezone.now().strftime('%B %d, %Y')
+    html_message = f"""<p>Dear {case.client_display_name},</p>
+<p>This is to formally notify you that your real property tax declaration 
+request has been reviewed and returned for correction by the Provincial 
+Assessor's Office of Cebu.</p>
+<p>Case Reference No.: <b>{case.tracking_id}</b><br>
+Date Returned: <b>{date_returned}</b><br>
+Current Status: <b>Returned for Correction</b></p>
+<p>Reason / Remarks:<br>
+{reason}</p>
+<p>Your designated LGU Administrator has been notified and will coordinate 
+with you regarding the necessary corrections. Please ensure that the 
+required revisions are addressed promptly to avoid further delays in 
+the processing of your case.</p>
+<p>Once the corrections have been made and the case is resubmitted, you 
+will receive a confirmation notification.</p>
+<p>To monitor the status of your case at any time, please visit:<br>
+<a href="https://pastrack.onrender.com/">https://pastrack.onrender.com/</a><br>
+and enter your Case Reference Number in the tracking portal.</p>
+<p>Should you have any concerns, please do not hesitate to contact the 
+Provincial Assessor's Office of Cebu or your municipal LGU 
+Assessor's Office.</p>
+<p>Salamat ug padayon ang inyong pagtamod sa among serbisyo.</p>
+<p>Respectfully,<br>
+Provincial Assessor's Office<br>
+Province of Cebu<br>
+PAStrack Document Tracking System</p>"""
+
+    plain_message = f"""Dear {case.client_display_name},
+
+This is to formally notify you that your real property tax declaration 
+request has been reviewed and returned for correction by the Provincial 
+Assessor's Office of Cebu.
+
+Case Reference No.: {case.tracking_id}
+Date Returned:      {date_returned}
+Current Status:     Returned for Correction
+
+Reason / Remarks:
+{reason}
+
+Your designated LGU Administrator has been notified and will coordinate 
+with you regarding the necessary corrections. Please ensure that the 
+required revisions are addressed promptly to avoid further delays in 
+the processing of your case.
+
+Once the corrections have been made and the case is resubmitted, you 
+will receive a confirmation notification.
+
+To monitor the status of your case at any time, please visit:
+https://pastrack.onrender.com/
+and enter your Case Reference Number in the tracking portal.
+
+Should you have any concerns, please do not hesitate to contact the 
+Provincial Assessor's Office of Cebu or your municipal LGU 
+Assessor's Office.
+
+Salamat ug padayon ang inyong pagtamod sa among serbisyo.
+
+Respectfully,
+Provincial Assessor's Office
+Province of Cebu
+PAStrack Document Tracking System"""
+
     email_ok = send_case_email(
         to_email=(case.client_email or "").strip(),
-        subject=f"PAStrack: Action needed for case {case.tracking_id}",
-        message=(
-            f"Your request {case.tracking_id} was returned for correction.\n\n"
-            f"Reason: {reason}\n"
-            f"Correction deadline: {case.client_correction_deadline}\n"
-        ),
+        subject=f"PAStrack — Case {case.tracking_id} Requires Correction",
+        message=plain_message,
+        html_message=html_message,
     )
     phone = (case.client_number or "").strip()
     sns_ok = False
@@ -4579,13 +4738,61 @@ def approve_case(request, tracking_id):
         details={"old_status": old_status, "new_status": case.status}
     )
 
+    date_approved = case.updated_at.strftime('%B %d, %Y') if case.updated_at else timezone.now().strftime('%B %d, %Y')
+    html_message = f"""<p>Dear {case.client_display_name},</p>
+<p>We are pleased to inform you that your real property tax declaration 
+request has been reviewed and officially approved by the Provincial 
+Assessor's Office of Cebu.</p>
+<p>Case Reference No.: <b>{case.tracking_id}</b><br>
+Date Approved: <b>{date_approved}</b><br>
+Current Status: <b>For Numbering</b></p>
+<p>Your case is now being processed for the issuance of the official 
+Tax Declaration number. You will receive a final notification once 
+your documents are ready for release.</p>
+<p>To monitor the status of your case at any time, please visit:<br>
+<a href="https://pastrack.onrender.com/">https://pastrack.onrender.com/</a><br>
+and enter your Case Reference Number in the tracking portal.</p>
+<p>Should you have any concerns, please do not hesitate to contact the 
+Provincial Assessor's Office of Cebu.</p>
+<p>Salamat ug padayon ang inyong pagtamod sa among serbisyo.</p>
+<p>Respectfully,<br>
+Provincial Assessor's Office<br>
+Province of Cebu<br>
+PAStrack Document Tracking System</p>"""
+
+    plain_message = f"""Dear {case.client_display_name},
+
+We are pleased to inform you that your real property tax declaration 
+request has been reviewed and officially approved by the Provincial 
+Assessor's Office of Cebu.
+
+Case Reference No.: {case.tracking_id}
+Date Approved:      {date_approved}
+Current Status:     For Numbering
+
+Your case is now being processed for the issuance of the official 
+Tax Declaration number. You will receive a final notification once 
+your documents are ready for release.
+
+To monitor the status of your case at any time, please visit:
+https://pastrack.onrender.com/
+and enter your Case Reference Number in the tracking portal.
+
+Should you have any concerns, please do not hesitate to contact the 
+Provincial Assessor's Office of Cebu.
+
+Salamat ug padayon ang inyong pagtamod sa among serbisyo.
+
+Respectfully,
+Provincial Assessor's Office
+Province of Cebu
+PAStrack Document Tracking System"""
+
     send_case_email(
         to_email=(case.client_email or "").strip(),
-        subject=f"PAStrack: Case {case.tracking_id} approved",
-        message=(
-            f"Your request {case.tracking_id} has been approved.\n\n"
-            f"Current status: {dict(Case.STATUS_CHOICES).get(case.status, case.status)}\n"
-        ),
+        subject=f"PAStrack — Case {case.tracking_id} Has Been Approved",
+        message=plain_message,
+        html_message=html_message,
     )
     sns_hook(event="case_approved", payload={"tracking_id": case.tracking_id, "status": case.status})
 
@@ -4871,6 +5078,62 @@ def transaction_corrected(request, tracking_id):
         details={"old_status": old_status, "new_status": "received", "note": "Receiver marked correction as complete."},
     )
 
+    html_message = f"""<p>Dear {case.client_display_name},</p>
+<p>We are pleased to inform you that the corrected documents for your real 
+property tax declaration request have been successfully received and 
+accepted by the Provincial Assessor's Office of Cebu.</p>
+<p>Case Reference No.: <b>{case.tracking_id}</b><br>
+Current Status: <b>Received</b></p>
+<p>Your submitted documents are now back in queue for examination by our 
+designated Capitol staff. You will be notified of any further updates 
+as your case progresses through the processing workflow.</p>
+<p>To monitor the status of your case at any time, please visit:<br>
+<a href="https://pastrack.onrender.com/">https://pastrack.onrender.com/</a><br>
+and enter your Case Reference Number in the tracking portal.</p>
+<p>Should you have any concerns, please do not hesitate to contact the 
+Provincial Assessor's Office of Cebu or your municipal LGU 
+Assessor's Office.</p>
+<p>Salamat ug padayon ang inyong pagtamod sa among serbisyo.</p>
+<p>Respectfully,<br>
+Provincial Assessor's Office<br>
+Province of Cebu<br>
+PAStrack Document Tracking System</p>"""
+
+    plain_message = f"""Dear {case.client_display_name},
+
+We are pleased to inform you that the corrected documents for your real 
+property tax declaration request have been successfully received and 
+accepted by the Provincial Assessor's Office of Cebu.
+
+Case Reference No.: {case.tracking_id}
+Current Status:     Received
+
+Your submitted documents are now back in queue for examination by our 
+designated Capitol staff. You will be notified of any further updates 
+as your case progresses through the processing workflow.
+
+To monitor the status of your case at any time, please visit:
+https://pastrack.onrender.com/
+and enter your Case Reference Number in the tracking portal.
+
+Should you have any concerns, please do not hesitate to contact the 
+Provincial Assessor's Office of Cebu or your municipal LGU 
+Assessor's Office.
+
+Salamat ug padayon ang inyong pagtamod sa among serbisyo.
+
+Respectfully,
+Provincial Assessor's Office
+Province of Cebu
+PAStrack Document Tracking System"""
+
+    send_case_email(
+        to_email=(case.client_email or "").strip(),
+        subject=f"PAStrack — Case {case.tracking_id} Corrections Received",
+        message=plain_message,
+        html_message=html_message,
+    )
+
     messages.success(request, f"Case {case.tracking_id} marked as corrected and re-received.")
     return redirect("case_detail", tracking_id=case.tracking_id)
 
@@ -4915,15 +5178,74 @@ def release_case(request, tracking_id):
         details={"old_status": old_status, "new_status": case.status}
     )
 
+    date_released = case.released_at.strftime('%B %d, %Y') if case.released_at else timezone.now().strftime('%B %d, %Y')
+    html_message = f"""<p>Dear {case.client_display_name},</p>
+<p>We are pleased to inform you that your real property tax declaration 
+request has been fully processed and is now ready for release by the 
+Provincial Assessor's Office of Cebu.</p>
+<p>Case Reference No.: <b>{case.tracking_id}</b><br>
+Tax Declaration No.: <b>{case.td_number or 'N/A'}</b><br>
+Date Released: <b>{date_released}</b><br>
+Current Status: <b>Released</b></p>
+<p>You or your authorized representative may now claim your official 
+Tax Declaration documents at the Provincial Assessor's Office. 
+Please bring a valid government-issued identification card and 
+your Case Reference Number upon claiming.</p>
+<p>Office Address:<br>
+Provincial Assessor's Office<br>
+Cebu Provincial Capitol, Cebu City</p>
+<p>Office Hours:<br>
+Monday to Friday | 8:00 AM – 5:00 PM<br>
+(Except Public Holidays)</p>
+<p>To verify the status of your case, please visit:<br>
+<a href="https://pastrack.onrender.com/">https://pastrack.onrender.com/</a><br>
+and enter your Case Reference Number in the tracking portal.</p>
+<p>Salamat ug padayon ang inyong pagtamod sa among serbisyo.</p>
+<p>Respectfully,<br>
+Provincial Assessor's Office<br>
+Province of Cebu<br>
+PAStrack Document Tracking System</p>"""
+
+    plain_message = f"""Dear {case.client_display_name},
+
+We are pleased to inform you that your real property tax declaration 
+request has been fully processed and is now ready for release by the 
+Provincial Assessor's Office of Cebu.
+
+Case Reference No.:      {case.tracking_id}
+Tax Declaration No.:     {case.td_number or 'N/A'}
+Date Released:           {date_released}
+Current Status:          Released
+
+You or your authorized representative may now claim your official 
+Tax Declaration documents at the Provincial Assessor's Office. 
+Please bring a valid government-issued identification card and 
+your Case Reference Number upon claiming.
+
+Office Address:
+Provincial Assessor's Office
+Cebu Provincial Capitol, Cebu City
+
+Office Hours:
+Monday to Friday | 8:00 AM – 5:00 PM
+(Except Public Holidays)
+
+To verify the status of your case, please visit:
+https://pastrack.onrender.com/
+and enter your Case Reference Number in the tracking portal.
+
+Salamat ug padayon ang inyong pagtamod sa among serbisyo.
+
+Respectfully,
+Provincial Assessor's Office
+Province of Cebu
+PAStrack Document Tracking System"""
+
     send_case_email(
         to_email=(case.client_email or "").strip(),
-        subject=f"PAStrack: Case {case.tracking_id} released",
-        message=(
-            f"Your request {case.tracking_id} has been released.\n\n"
-            f"Name: {case.claimed_by_name}\n"
-            f"Contact Number: {case.claimed_by_contact}\n\n"
-            f"Current status: {dict(Case.STATUS_CHOICES).get(case.status, case.status)}\n"
-        ),
+        subject=f"PAStrack — Case {case.tracking_id} Is Ready for Release",
+        message=plain_message,
+        html_message=html_message,
     )
     sns_hook(event="case_released", payload={"tracking_id": case.tracking_id, "status": case.status})
 
