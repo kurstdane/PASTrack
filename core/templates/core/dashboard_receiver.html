@@ -674,8 +674,7 @@
             <div class="hero-text">
                 <h1>Hi, {{ request.user.first_name|default:"Receiver" }}!</h1>
                 <p>
-                    <span style="color: var(--primary, #3b82f6); font-weight: 700;">{{
-                        request.user.staff_id|default:"REC-001" }}</span>
+                    <span style="color: var(--primary, #3b82f6); font-weight: 700;">{{ request.user.username|default:"REC-001" }}</span>
                     <span style="margin: 0 8px; color: #cbd5e1;">|</span>
                     Capitol Receiver
                 </p>
@@ -1016,116 +1015,116 @@
 
         const volumeData = JSON.parse('{{ volume_chart_data_json|escapejs }}');
 
-    const volChart = new Chart(ctxVol, {
-        type: 'line',
-        data: {
-            labels: volumeData.weekly.labels,
-            datasets: [{
-                label: 'Intake Volume',
-                data: volumeData.weekly.data,
-                borderColor: '#3b82f6',
-                borderWidth: 2.5,
-                backgroundColor: volGrad,
-                fill: true,
-                tension: 0.4,
-                pointBackgroundColor: '#ffffff',
-                pointBorderColor: '#3b82f6',
-                pointBorderWidth: 2,
-                pointRadius: 4,
-                pointHoverRadius: 6
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: '#0f172a', padding: 12, cornerRadius: 6,
-                    displayColors: false,
-                    titleFont: { family: "'Inter', sans-serif", size: 11 },
-                    bodyFont: { family: "'Inter', sans-serif", size: 13, weight: '600' }
-                }
+        const volChart = new Chart(ctxVol, {
+            type: 'line',
+            data: {
+                labels: volumeData.weekly.labels,
+                datasets: [{
+                    label: 'Intake Volume',
+                    data: volumeData.weekly.data,
+                    borderColor: '#3b82f6',
+                    borderWidth: 2.5,
+                    backgroundColor: volGrad,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#3b82f6',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true, suggestedMax: volumeData.weekly.max,
-                    ticks: { color: '#64748b', font: { family: "'Inter', sans-serif", size: 11 } },
-                    border: { display: false },
-                    grid: { color: 'rgba(226,232,240,0.5)' }
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0f172a', padding: 12, cornerRadius: 6,
+                        displayColors: false,
+                        titleFont: { family: "'Inter', sans-serif", size: 11 },
+                        bodyFont: { family: "'Inter', sans-serif", size: 13, weight: '600' }
+                    }
                 },
-                x: {
-                    ticks: { color: '#64748b', font: { family: "'Inter', sans-serif", size: 11 } },
-                    grid: { display: false }, border: { display: false }
-                }
-            },
-            interaction: { intersect: false, mode: 'index' }
-        }
-    });
+                scales: {
+                    y: {
+                        beginAtZero: true, suggestedMax: volumeData.weekly.max,
+                        ticks: { color: '#64748b', font: { family: "'Inter', sans-serif", size: 11 } },
+                        border: { display: false },
+                        grid: { color: 'rgba(226,232,240,0.5)' }
+                    },
+                    x: {
+                        ticks: { color: '#64748b', font: { family: "'Inter', sans-serif", size: 11 } },
+                        grid: { display: false }, border: { display: false }
+                    }
+                },
+                interaction: { intersect: false, mode: 'index' }
+            }
+        });
 
-    document.getElementById('volumeFilter').addEventListener('change', function (e) {
-        const tf = e.target.value;
-        volChart.data.labels = volumeData[tf].labels;
-        volChart.data.datasets[0].data = volumeData[tf].data;
-        volChart.options.scales.y.suggestedMax = volumeData[tf].max;
-        volChart.update();
-    });
+        document.getElementById('volumeFilter').addEventListener('change', function (e) {
+            const tf = e.target.value;
+            volChart.data.labels = volumeData[tf].labels;
+            volChart.data.datasets[0].data = volumeData[tf].data;
+            volChart.options.scales.y.suggestedMax = volumeData[tf].max;
+            volChart.update();
+        });
 
         // ==========================================
         // 2. PIPELINE WORKLOAD DOUGHNUT (DYNAMIC)
         // ==========================================
         const pipelineData = JSON.parse('{{ pipeline_chart_data_json|escapejs }}');
 
-    const ctxPipe = document.getElementById('pipelineChart').getContext('2d');
-    const pipeChart = new Chart(ctxPipe, {
-        type: 'doughnut',
-        data: {
-            labels: pipelineData.all.labels,
-            datasets: [{ data: pipelineData.all.data, backgroundColor: pipelineData.all.colors, borderWidth: 0, hoverOffset: 6 }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false, cutout: '80%',
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: '#0f172a', padding: 10, cornerRadius: 6, displayColors: true,
-                    bodyFont: { family: "'Inter', sans-serif", size: 12, weight: '600' },
-                    callbacks: {
-                        label: function (ctx) {
-                            const total = ctx.chart._metasets[ctx.datasetIndex].total;
-                            const pct = Math.round((ctx.raw / total) * 100) + '%';
-                            return ` ${ctx.label}: ${ctx.raw} (${pct})`;
+        const ctxPipe = document.getElementById('pipelineChart').getContext('2d');
+        const pipeChart = new Chart(ctxPipe, {
+            type: 'doughnut',
+            data: {
+                labels: pipelineData.all.labels,
+                datasets: [{ data: pipelineData.all.data, backgroundColor: pipelineData.all.colors, borderWidth: 0, hoverOffset: 6 }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, cutout: '80%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0f172a', padding: 10, cornerRadius: 6, displayColors: true,
+                        bodyFont: { family: "'Inter', sans-serif", size: 12, weight: '600' },
+                        callbacks: {
+                            label: function (ctx) {
+                                const total = ctx.chart._metasets[ctx.datasetIndex].total;
+                                const pct = Math.round((ctx.raw / total) * 100) + '%';
+                                return ` ${ctx.label}: ${ctx.raw} (${pct})`;
+                            }
                         }
                     }
                 }
             }
-        }
-    });
+        });
 
-    // Initialize center text
-    document.getElementById('pipelineTotal').innerText = pipelineData.all.total;
+        // Initialize center text
+        document.getElementById('pipelineTotal').innerText = pipelineData.all.total;
 
-    function buildLegend(key) {
-        const d = pipelineData[key];
-        document.getElementById('pipelineLegend').innerHTML = d.labels.map((lbl, i) =>
-            `<div class="pl-item">
+        function buildLegend(key) {
+            const d = pipelineData[key];
+            document.getElementById('pipelineLegend').innerHTML = d.labels.map((lbl, i) =>
+                `<div class="pl-item">
                 <div class="pl-left"><div class="pl-dot" style="background:${d.colors[i]};"></div>${lbl}</div>
                 <div class="pl-count">${d.data[i]}</div>
              </div>`
-        ).join('');
-    }
-    buildLegend('all');
+            ).join('');
+        }
+        buildLegend('all');
 
-    document.getElementById('pipelineFilter').addEventListener('change', function (e) {
-        const fv = e.target.value;
-        const nd = pipelineData[fv];
-        pipeChart.data.labels = nd.labels;
-        pipeChart.data.datasets[0].data = nd.data;
-        pipeChart.data.datasets[0].backgroundColor = nd.colors;
-        pipeChart.update();
-        document.getElementById('pipelineTotal').innerText = nd.total;
-        document.getElementById('pipelineLabel').innerText = nd.center_label;
-        buildLegend(fv);
+        document.getElementById('pipelineFilter').addEventListener('change', function (e) {
+            const fv = e.target.value;
+            const nd = pipelineData[fv];
+            pipeChart.data.labels = nd.labels;
+            pipeChart.data.datasets[0].data = nd.data;
+            pipeChart.data.datasets[0].backgroundColor = nd.colors;
+            pipeChart.update();
+            document.getElementById('pipelineTotal').innerText = nd.total;
+            document.getElementById('pipelineLabel').innerText = nd.center_label;
+            buildLegend(fv);
+        });
     });
-});
 </script>
 {% endblock %}

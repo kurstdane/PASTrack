@@ -266,6 +266,7 @@ def user_list_api(request):
         }
         status_class, status_str = status_map.get(user.account_status, ("status-inactive", user.get_account_status_display()))
 
+        is_capitol = user.role.startswith("capitol_") or user.role == "super_admin"
         users.append({
             "id": user.id,
             "initials": initials,
@@ -273,7 +274,7 @@ def user_list_api(request):
             "email": user.email,
             "role_class": role_class,
             "role_str": role_str,
-            "lgu": user.lgu_municipality or "Capitol",
+            "lgu": "Capitol" if is_capitol else (user.lgu_municipality or "Capitol"),
             "status_class": status_class,
             "status_str": status_str,
             "is_pending": user.account_status == "pending",
