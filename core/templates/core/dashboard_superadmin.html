@@ -891,12 +891,9 @@
 
             <!-- Tabs -->
             <div class="tab-bar">
-                <div class="tab-link active" data-tab="total">Total Users <span class="tab-badge">{{ total_users_count
-                        }}</span></div>
-                <div class="tab-link" data-tab="pending">Pending Activation <span class="tab-badge">{{
-                        pending_users_count }}</span></div>
-                <div class="tab-link" data-tab="deactivated">Deactivated <span class="tab-badge">{{
-                        deactivated_users_count }}</span></div>
+                <div class="tab-link active" data-tab="total">Total Users <span class="tab-badge">{{ total_users_count }}</span></div>
+                <div class="tab-link" data-tab="pending">Pending Activation <span class="tab-badge">{{ pending_users_count }}</span></div>
+                <div class="tab-link" data-tab="deactivated">Deactivated <span class="tab-badge">{{ deactivated_users_count }}</span></div>
             </div>
 
             <!-- Toolbar -->
@@ -1176,9 +1173,8 @@
         volGrad.addColorStop(1, 'rgba(59, 130, 246, 0)');
 
         const volumeData = {
-            weekly: { labels: {{ sys_weekly_labels| safe
-    }}, data: {{ sys_weekly_data| safe }}, max: {{ sys_weekly_max }}  },
-        monthly: { labels: {{ sys_monthly_labels| safe }}, data: {{ sys_monthly_data| safe }}, max: {{ sys_monthly_max }} }
+            weekly: { labels: {{ sys_weekly_labels|safe }}, data: {{ sys_weekly_data|safe }}, max: {{ sys_weekly_max }} },
+            monthly: { labels: {{ sys_monthly_labels|safe }}, data: {{ sys_monthly_data|safe }}, max: {{ sys_monthly_max }} }
         };
 
     const volChart = new Chart(ctxVol, {
@@ -1233,9 +1229,9 @@
     // --- 2. USER DISTRIBUTION DOUGHNUT ---
     const pipelineData = {
         all: {
-            labels: ['LGU Admin', 'Receiver', 'Examiner', 'Approver', 'Numberer'],
-            data: JSON.parse('{{ role_distribution_array|default:"[0,0,0,0,0]"|safe }}'),
-            colors: ['#0ea5e9', '#a855f7', '#eab308', '#22c55e', '#ef4444'],
+            labels: ['LGU Admin', 'Receiver', 'Examiner', 'Approver', 'Numberer', 'Tax Mapper', 'Releaser'],
+            data: JSON.parse('{{ role_distribution_array|default:"[0,0,0,0,0,0,0]"|safe }}'),
+            colors: ['#0ea5e9', '#a855f7', '#eab308', '#22c55e', '#ef4444', '#f97316', '#14b8a6'],
             total: {{ total_users_count }}, centerLabel: 'Total Users'
             },
     status: {
@@ -1306,14 +1302,14 @@
     // --- 3. USERS BY ROLE DOUGHNUT (existing, wired to Django context) ---
     const roleCtx = document.getElementById('roleChart');
     if (roleCtx) {
-        const roleData = JSON.parse('{{ role_distribution_array|default:"[0,0,0,0,0]"|safe }}');
+        const roleData = JSON.parse('{{ role_distribution_array|default:"[0,0,0,0,0,0,0]"|safe }}');
         new Chart(roleCtx.getContext('2d'), {
             type: 'doughnut',
             data: {
-                labels: ['LGU Admin', 'Receiver', 'Examiner', 'Approver', 'Numberer'],
+                labels: ['LGU Admin', 'Receiver', 'Examiner', 'Approver', 'Numberer', 'Tax Mapper', 'Releaser'],
                 datasets: [{
                     data: roleData,
-                    backgroundColor: ['#0ea5e9', '#a855f7', '#eab308', '#22c55e', '#ef4444'],
+                    backgroundColor: ['#0ea5e9', '#a855f7', '#eab308', '#22c55e', '#ef4444', '#f97316', '#14b8a6'],
                     borderWidth: 0, cutout: '78%'
                 }]
             },

@@ -208,6 +208,14 @@
                 <input type="text" name="q" value="{{ q }}" placeholder="Search tracking no, client name, or email...">
             </div>
 
+            <select name="days" class="filter-select" title="Sort/Filter by Date">
+                <option value="">All Time</option>
+                <option value="3" {% if filter_days == "3" %}selected{% endif %}>Last 3 days</option>
+                <option value="7" {% if filter_days == "7" %}selected{% endif %}>Last 7 days</option>
+                <option value="15" {% if filter_days == "15" %}selected{% endif %}>Last 15 days</option>
+                <option value="30" {% if filter_days == "30" %}selected{% endif %}>Last 30 days</option>
+            </select>
+
             <!-- Only show advanced filters for Global Transactions -->
             {% if scope == 'all' %}
                 <select name="lgu" class="filter-select">
@@ -231,7 +239,7 @@
             <button type="submit" class="btn-primary">{% if scope == 'me' %}Search Workspace{% else %}Apply Filters{% endif %}</button>
             
             <!-- Clear Filters Button -->
-            {% if q or filter_lgu or filter_case_type or filter_date_from or filter_date_to %}
+            {% if q or filter_lgu or filter_case_type or filter_date_from or filter_date_to or filter_days %}
                 <a href="?scope={{ scope }}&tab={{ tab }}" class="btn-outline" title="Clear Filters"><i class="ri-close-line" style="font-size: 1.2rem;"></i></a>
             {% endif %}
         </form>

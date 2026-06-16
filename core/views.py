@@ -7,7 +7,7 @@ import secrets
 import string
 import sys
 from django.core.mail import send_mail
-from datetime import timedelta
+from datetime import timedelta, datetime
 import base64
 import json
 import mimetypes
@@ -1296,15 +1296,15 @@ def dashboard(request):
     # ==========================================
     if user.role == "super_admin":
         # 1. KPIs
-        total_users_count = CustomUser.objects.count()
+        total_users_count = CustomUser.objects.exclude(id=user.id).count()
         total_lgus_count = CustomUser.objects.filter(role="lgu_admin").values("lgu_municipality").distinct().count()
         active_cases_count = Case.objects.exclude(status__in=["released", "withdrawn", "returned", "draft"]).count()
         
         seven_days_ago = timezone.now() - timedelta(days=7)
-        new_users_count = CustomUser.objects.filter(date_joined__gte=seven_days_ago).count()
+        new_users_count = CustomUser.objects.exclude(id=user.id).filter(date_joined__gte=seven_days_ago).count()
         
-        pending_users_count = CustomUser.objects.filter(account_status="pending").count()
-        deactivated_users_count = CustomUser.objects.filter(account_status="inactive").count()
+        pending_users_count = CustomUser.objects.exclude(id=user.id).filter(account_status="pending").count()
+        deactivated_users_count = CustomUser.objects.exclude(id=user.id).filter(account_status="inactive").count()
 
         # 2. Recent Logs
         recent_logs = AuditLog.objects.filter(
@@ -1318,8 +1318,10 @@ def dashboard(request):
             "capitol_examiner": 2,
             "capitol_approver": 3,
             "capitol_numberer": 4,
+            "capitol_taxmapper": 5,
+            "capitol_releaser": 6,
         }
-        role_distribution_array = [0] * 5
+        role_distribution_array = [0] * 7
         role_counts = CustomUser.objects.values("role").annotate(count=Count("id"))
         for item in role_counts:
             idx = role_map.get(item["role"])
@@ -1327,27 +1329,28 @@ def dashboard(request):
                 role_distribution_array[idx] = item["count"]
 
         # 4. Pipeline Data
-        lgu_staff_count = CustomUser.objects.filter(role="lgu_admin").count()
-        capitol_staff_count = CustomUser.objects.filter(role__startswith="capitol_").count()
-        active_users_count = CustomUser.objects.filter(account_status="active").count()
+        lgu_staff_count = CustomUser.objects.exclude(id=user.id).filter(role="lgu_admin").count()
+        capitol_staff_count = CustomUser.objects.exclude(id=user.id).filter(role__startswith="capitol_").count()
+        active_users_count = CustomUser.objects.exclude(id=user.id).filter(account_status="active").count()
 
-        # 5. Audit Log System Activity
+        # 5. Audit Log System Activity (Timezone Aware)
         today = timezone.localdate()
         seven_days_ago_date = today - timedelta(days=6)
-        daily_logs = AuditLog.objects.filter(created_at__date__gte=seven_days_ago_date) \
-            .annotate(date=TruncDate('created_at')) \
-            .values('date') \
-            .annotate(count=Count('id')) \
-            .order_by('date')
-            
-        daily_dict = {item['date']: item['count'] for item in daily_logs}
+        
         weekly_labels = []
-        weekly_data = []
+        weekly_data = [0] * 7
         for i in range(7):
             d = seven_days_ago_date + timedelta(days=i)
             weekly_labels.append(d.strftime("%a"))
-            weekly_data.append(daily_dict.get(d, 0))
             
+        logs_7 = AuditLog.objects.filter(created_at__gte=timezone.make_aware(datetime.combine(seven_days_ago_date, datetime.min.time())))
+        for log in logs_7:
+            log_date = timezone.localtime(log.created_at).date()
+            days_ago = (today - log_date).days
+            if 0 <= days_ago <= 6:
+                idx = 6 - days_ago
+                weekly_data[idx] += 1
+                
         weekly_max = max(weekly_data) if weekly_data else 10
         weekly_max = max(weekly_max + 10, 35)
 
@@ -1416,8 +1419,8 @@ def dashboard(request):
         total_cases_count = base_qs.count()
         todays_cases_count = base_qs.filter(lgu_submitted_at__date=timezone.localdate()).count()
 
-        pending_statuses = {"not_received", "received", "to_examine", "in_review", "for_taxmapping", "for_approval", "for_numbering", "for_release"}
-        processing_statuses = {"received", "to_examine", "in_review", "for_taxmapping", "for_approval", "for_numbering", "for_release"}
+        pending_statuses = {"not_received"}
+        processing_statuses = {"received", "to_examine", "in_review", "for_taxmapping", "for_approval", "approved", "for_numbering", "for_release"}
         released_statuses = {"released"}
 
         tab_map = {
@@ -1448,29 +1451,65 @@ def dashboard(request):
         recent_logs = AuditLog.objects.filter(actor=user).order_by("-created_at")[:5]
 
         status_counts_dict = {r["status"]: r["count"] for r in raw}
+        drafts = status_counts_dict.get("draft", 0) + status_counts_dict.get("client_correction", 0)
         not_received = status_counts_dict.get("not_received", 0)
         received = status_counts_dict.get("received", 0)
         in_review = sum(status_counts_dict.get(s, 0) for s in ["to_examine", "in_review", "for_taxmapping"])
         for_approval = status_counts_dict.get("for_approval", 0) + status_counts_dict.get("approved", 0)
         for_numbering = status_counts_dict.get("for_numbering", 0) + status_counts_dict.get("for_release", 0)
         released = status_counts_dict.get("released", 0)
+        others = status_counts_dict.get("withdrawn", 0) + status_counts_dict.get("returned", 0)
+
+        pipeline_data_dict = {
+            "all": {
+                "labels": ["Draft/Correction", "Not Received", "Processing", "Released", "Withdrawn/Returned"],
+                "data": [drafts, not_received, (received + in_review + for_approval + for_numbering), released, others],
+                "colors": ["#64748b", "#f59e0b", "#3b82f6", "#059669", "#ef4444"],
+                "total": total_cases_count,
+                "centerLabel": "Total Cases"
+            },
+            "pending": {
+                "labels": ["Not Received"],
+                "data": [not_received],
+                "colors": ["#f59e0b"],
+                "total": not_received,
+                "centerLabel": "Pending"
+            },
+            "in_progress": {
+                "labels": ["Received", "In Review", "For Approval", "For Numbering"],
+                "data": [received, in_review, for_approval, for_numbering],
+                "colors": ["#0ea5e9", "#6366f1", "#7c3aed", "#ec4899"],
+                "total": processing_count,
+                "centerLabel": "In Progress"
+            },
+            "completed": {
+                "labels": ["Released", "Withdrawn/Returned"],
+                "data": [released, others],
+                "colors": ["#059669", "#ef4444"],
+                "total": released_count + others,
+                "centerLabel": "Completed"
+            }
+        }
+
 
         # Volume Chart Data
         today = timezone.localdate()
         seven_days_ago_date = today - timedelta(days=6)
-        daily_cases = base_qs.filter(lgu_submitted_at__date__gte=seven_days_ago_date) \
-            .annotate(date=TruncDate('lgu_submitted_at')) \
-            .values('date') \
-            .annotate(count=Count('id')) \
-            .order_by('date')
-            
-        daily_dict = {item['date']: item['count'] for item in daily_cases}
+        
         weekly_labels = []
-        weekly_data = []
+        weekly_data = [0] * 7
         for i in range(7):
             d = seven_days_ago_date + timedelta(days=i)
             weekly_labels.append(d.strftime("%a"))
-            weekly_data.append(daily_dict.get(d, 0))
+            
+        cases_7 = base_qs.filter(lgu_submitted_at__gte=timezone.make_aware(datetime.combine(seven_days_ago_date, datetime.min.time())))
+        for case in cases_7:
+            if case.lgu_submitted_at:
+                case_date = timezone.localtime(case.lgu_submitted_at).date()
+                days_ago = (today - case_date).days
+                if 0 <= days_ago <= 6:
+                    idx = 6 - days_ago
+                    weekly_data[idx] += 1
             
         weekly_max = max(weekly_data) if weekly_data else 5
         weekly_max = max(weekly_max + 5, 25)
@@ -1478,21 +1517,27 @@ def dashboard(request):
         twenty_eight_days_ago = today - timedelta(days=27)
         monthly_labels = ["Week 1", "Week 2", "Week 3", "Week 4"]
         monthly_data = [0, 0, 0, 0]
-        cases_28 = base_qs.filter(lgu_submitted_at__date__gte=twenty_eight_days_ago)
+        cases_28 = base_qs.filter(lgu_submitted_at__gte=timezone.make_aware(datetime.combine(twenty_eight_days_ago, datetime.min.time())))
         for case in cases_28:
-            days_ago = (today - timezone.localtime(case.lgu_submitted_at).date()).days
-            if days_ago <= 6:
-                monthly_data[3] += 1
-            elif days_ago <= 13:
-                monthly_data[2] += 1
-            elif days_ago <= 20:
-                monthly_data[1] += 1
-            else:
-                monthly_data[0] += 1
-                
+            if case.lgu_submitted_at:
+                days_ago = (today - timezone.localtime(case.lgu_submitted_at).date()).days
+                if days_ago <= 6:
+                    monthly_data[3] += 1
+                elif days_ago <= 13:
+                    monthly_data[2] += 1
+                elif days_ago <= 20:
+                    monthly_data[1] += 1
+                elif days_ago <= 27:
+                    monthly_data[0] += 1
+        
         monthly_max = max(monthly_data) if monthly_data else 20
         monthly_max = max(monthly_max + 10, 80)
 
+        volume_chart_data = {
+            "weekly": {"labels": weekly_labels, "data": weekly_data, "max": weekly_max},
+            "monthly": {"labels": monthly_labels, "data": monthly_data, "max": monthly_max}
+        }
+        
         context.update({
             "section": "lgu_admin",
             "tab": tab,
@@ -1516,12 +1561,8 @@ def dashboard(request):
             "status_for_approval": for_approval,
             "status_for_numbering": for_numbering,
             "status_released": released,
-            "lgu_weekly_labels": json.dumps(weekly_labels),
-            "lgu_weekly_data": json.dumps(weekly_data),
-            "lgu_weekly_max": weekly_max,
-            "lgu_monthly_labels": json.dumps(monthly_labels),
-            "lgu_monthly_data": json.dumps(monthly_data),
-            "lgu_monthly_max": monthly_max,
+            "lgu_volume_data_json": json.dumps(volume_chart_data),
+            "pipeline_data_json": json.dumps(pipeline_data_dict),
         })
         template = "core/dashboard_lgu.html"
 
@@ -1558,27 +1599,40 @@ def dashboard(request):
         stats_returned_from_examiner = Case.objects.filter(status="received", assigned_to__isnull=True, returned_by__role="capitol_examiner").count()
 
         # Intake Volume Chart Data
-        now = timezone.now()
-        
-        # Weekly Intake
-        week_start = today - timedelta(days=today.weekday())
-        weekly_labels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+        seven_days_ago = today - timedelta(days=6)
+        weekly_labels = []
         weekly_data = [0]*7
         for i in range(7):
-            day = week_start + timedelta(days=i)
-            count = Case.objects.filter(lgu_submitted_at__date=day).count()
-            weekly_data[i] = count
+            d = seven_days_ago + timedelta(days=i)
+            weekly_labels.append(d.strftime("%a"))
+            
+        rec_cases_7 = Case.objects.filter(lgu_submitted_at__gte=timezone.make_aware(datetime.combine(seven_days_ago, datetime.min.time())))
+        for case in rec_cases_7:
+            if case.lgu_submitted_at:
+                case_date = timezone.localtime(case.lgu_submitted_at).date()
+                days_ago = (today - case_date).days
+                if 0 <= days_ago <= 6:
+                    idx = 6 - days_ago
+                    weekly_data[idx] += 1
+                    
         weekly_max = max(weekly_data + [10])
         
         # Monthly Intake
-        month_start = today.replace(day=1)
+        twenty_eight_days_ago = today - timedelta(days=27)
         monthly_labels = ['Week 1','Week 2','Week 3','Week 4']
         monthly_data = [0]*4
-        for week_num in range(4):
-            week_start_date = month_start + timedelta(weeks=week_num)
-            week_end_date = week_start_date + timedelta(days=6)
-            count = Case.objects.filter(lgu_submitted_at__date__gte=week_start_date, lgu_submitted_at__date__lte=week_end_date).count()
-            monthly_data[week_num] = count
+        rec_cases_28 = Case.objects.filter(lgu_submitted_at__gte=timezone.make_aware(datetime.combine(twenty_eight_days_ago, datetime.min.time())))
+        for case in rec_cases_28:
+            if case.lgu_submitted_at:
+                days_ago = (today - timezone.localtime(case.lgu_submitted_at).date()).days
+                if days_ago <= 6:
+                    monthly_data[3] += 1
+                elif days_ago <= 13:
+                    monthly_data[2] += 1
+                elif days_ago <= 20:
+                    monthly_data[1] += 1
+                elif days_ago <= 27:
+                    monthly_data[0] += 1
         monthly_max = max(monthly_data + [100])
         
         volume_chart_data = {
@@ -1591,8 +1645,8 @@ def dashboard(request):
         
         status_counts = {
             "received": all_active.filter(status="received").count(),
-            "to_examine": all_active.filter(status__in=["to_examine", "in_review"]).count(),
-            "to_approve": all_active.filter(status="for_approval").count(),
+            "to_examine": all_active.filter(status__in=["to_examine", "in_review", "for_taxmapping"]).count(),
+            "to_approve": all_active.filter(status__in=["for_approval", "approved"]).count(),
             "for_numbering": all_active.filter(status="for_numbering").count(),
             "to_release": all_active.filter(status="for_release").count(),
         }
@@ -1693,8 +1747,8 @@ def dashboard(request):
             "stats_ready_assign": stats_ready_assign,
             "stats_received_today": stats_received_today,
             "stats_returned_from_examiner": stats_returned_from_examiner,
-            "volume_chart_data": volume_chart_data,
-            "pipeline_chart_data": pipeline_chart_data,
+            "volume_chart_data_json": json.dumps(volume_chart_data),
+            "pipeline_chart_data_json": json.dumps(pipeline_chart_data),
             "returned_cases": returned_cases,
             "cases_to_assign": cases_to_assign,
             "recent_logs": recent_logs,
@@ -2469,6 +2523,8 @@ def _lgu_owns_case(user, case: Case) -> bool:
     if role == "capitol_receiving":
         # Receivers "own" the case if it is in the intake or correction phase
         return case.status in {"draft", "not_received", "client_correction"} and case.assigned_to_id is None
+    if role == "capitol_examiner":
+        return case.assigned_to_id == user.id
     if role != "lgu_admin":
         return False
     user_mun = (getattr(user, "lgu_municipality", "") or "").strip()
@@ -2485,6 +2541,10 @@ def _lgu_can_edit_details(user, case: Case) -> bool:
     if role == "capitol_receiving":
         return case.status in {"draft", "not_received", "client_correction"}
         
+    if role == "capitol_examiner":
+        returned_by_role = getattr(getattr(case, "returned_by", None), "role", "") or ""
+        return case.status == "in_review" and returned_by_role == "capitol_approver"
+        
     # LGU can only edit if NOT yet submitted to capitol
     if role == "lgu_admin":
         if case.lgu_submitted_at is not None:
@@ -2499,6 +2559,9 @@ def _lgu_can_edit_documents(user, case: Case) -> bool:
     
     role = getattr(user, "role", "") or ""
     if role == "capitol_receiving":
+        return True
+        
+    if role == "capitol_examiner":
         return True
         
     if role == "lgu_admin":
@@ -2881,8 +2944,8 @@ def edit_case(request, tracking_id):
 def case_wizard(request, tracking_id, step: int):
     case = get_object_or_404(Case, tracking_id=tracking_id)
 
-    if request.user.role not in {"lgu_admin", "capitol_receiving"}:
-        messages.error(request, "Only LGU Admins and Receiver can edit submissions.")
+    if request.user.role not in {"lgu_admin", "capitol_receiving", "capitol_examiner"}:
+        messages.error(request, "Only LGU Admins, Receivers, and Examiners can edit submissions.")
         return redirect("dashboard")
 
     if not _lgu_can_edit_details(request.user, case):
@@ -3103,7 +3166,7 @@ def case_wizard(request, tracking_id, step: int):
                 )
 
                 messages.success(request, "Checklist and uploads saved.")
-                if case.status == "not_received" and case.lgu_submitted_at is not None:
+                if case.status in {"not_received", "in_review"} and case.lgu_submitted_at is not None:
                     return redirect("case_detail", tracking_id=case.tracking_id)
                 return redirect("case_wizard", tracking_id=case.tracking_id, step=3)
         else:
@@ -3985,8 +4048,8 @@ def submissions(request):
             under_review_qs = qs.filter(assigned_to=request.user, status="in_review")
             returned_qs = qs.filter(assigned_to=request.user, returned_by__role="capitol_approver")
             
-            # Currently assigned to Examiner means still in review process
-            active_assigned_qs = qs.filter(assigned_to=request.user, status__in=["to_examine", "in_review", "client_correction"])
+            # Show all handled Cases by the Examiner (any status, if assigned to them)
+            active_assigned_qs = qs.filter(assigned_to=request.user)
 
             tabs = [
                 ("all_assigned", f"All Assigned ({active_assigned_qs.count()})"), 
@@ -4143,6 +4206,11 @@ def submissions(request):
     if date_from: qs = qs.filter(created_at__date__gte=date_from)
     if date_to: qs = qs.filter(created_at__date__lte=date_to)
 
+    days_filter = (request.GET.get("days") or "").strip()
+    if days_filter and days_filter.isdigit():
+        cutoff_date = timezone.localtime(timezone.now()).date() - timedelta(days=int(days_filter))
+        qs = qs.filter(updated_at__date__gte=cutoff_date)
+
     number_q = (request.GET.get("number") or "").strip()
     if number_q:
         qs = qs.filter(Q(td_number__icontains=number_q) | Q(tracking_id__icontains=number_q)).distinct()
@@ -4170,6 +4238,7 @@ def submissions(request):
         "filter_lgu": lgu,
         "filter_date_from": date_from_raw,
         "filter_date_to": date_to_raw,
+        "filter_days": days_filter,
         "case_type_choices": list(getattr(Case, "CASE_TYPE_CHOICES", [])),
         "lgu_choices": list(getattr(CustomUser, "LGU_MUNICIPALITY_CHOICES", [])),
         "qs_params": query.urlencode(),
@@ -4616,15 +4685,12 @@ def return_for_correction(request, tracking_id):
         return redirect("case_detail", tracking_id=case.tracking_id)
 
     flagged_docs = [d for d in case.documents.all() if (d.review_remark or "").strip()]
-    if not flagged_docs:
-        messages.error(request, "You must add a remark to at least one file before returning to the Examiner.")
-        return redirect("case_detail", tracking_id=case.tracking_id)
-
-    # Append the list of flagged files to the return reason so the Examiner sees it clearly
-    flagged_details = "\n\nFlagged Documents by Approver:\n" + "\n".join(
-        f"- {d.doc_type}: {d.review_remark}" for d in flagged_docs
-    )
-    reason += flagged_details
+    if flagged_docs:
+        # Append the list of flagged files to the return reason so the Examiner sees it clearly
+        flagged_details = "\n\nFlagged Documents by Approver:\n" + "\n".join(
+            f"- {d.doc_type}: {d.review_remark}" for d in flagged_docs
+        )
+        reason += flagged_details
 
     old_status = case.status
     case.status = "in_review"

@@ -674,7 +674,8 @@
             <div class="hero-text">
                 <h1>Hi, {{ request.user.first_name|default:"Receiver" }}!</h1>
                 <p>
-                    <span style="color: var(--primary, #3b82f6); font-weight: 700;">{{ request.user.staff_id|default:"REC-001" }}</span>
+                    <span style="color: var(--primary, #3b82f6); font-weight: 700;">{{
+                        request.user.staff_id|default:"REC-001" }}</span>
                     <span style="margin: 0 8px; color: #cbd5e1;">|</span>
                     Capitol Receiver
                 </p>
@@ -701,19 +702,6 @@
 
         <div class="bento-card span-3">
             <div class="card-header">
-                <span class="card-title">Ready to Assign</span>
-                <div class="kpi-icon-box" style="background:#f3e8ff; color:#6b21a8;"><i
-                        class="ri-user-shared-2-line"></i></div>
-            </div>
-            <div class="kpi-value">{{ stats_ready_assign|default:"0" }}</div>
-            <div class="kpi-meta" style="color:#6b21a8;"><i class="ri-arrow-up-line"></i>&nbsp;<span>Needs
-                    assignment</span></div>
-            <a href="/submissions/?scope=me&tab=received" class="kpi-cta">Assign Cases <i
-                    class="ri-arrow-right-line"></i></a>
-        </div>
-
-        <div class="bento-card span-3">
-            <div class="card-header">
                 <span class="card-title">Received Today</span>
                 <div class="kpi-icon-box" style="background:#dcfce7; color:#166534;"><i
                         class="ri-checkbox-circle-line"></i></div>
@@ -722,6 +710,19 @@
             <div class="kpi-meta" style="color:#059669;"><i class="ri-arrow-up-line"></i>&nbsp;<span>Today's
                     intake</span></div>
             <a href="/submissions/?scope=me&tab=received" class="kpi-cta">View Submissions <i
+                    class="ri-arrow-right-line"></i></a>
+        </div>
+
+        <div class="bento-card span-3">
+            <div class="card-header">
+                <span class="card-title">Ready to Assign</span>
+                <div class="kpi-icon-box" style="background:#f3e8ff; color:#6b21a8;"><i
+                        class="ri-user-shared-2-line"></i></div>
+            </div>
+            <div class="kpi-value">{{ stats_ready_assign|default:"0" }}</div>
+            <div class="kpi-meta" style="color:#6b21a8;"><i class="ri-arrow-up-line"></i>&nbsp;<span>Needs
+                    assignment</span></div>
+            <a href="/submissions/?scope=me&tab=received" class="kpi-cta">Assign Cases <i
                     class="ri-arrow-right-line"></i></a>
         </div>
 
@@ -806,7 +807,7 @@
                                 <span class="t-main">{{ case.client_name }}</span>
                                 <span class="t-sub">{{ case.get_case_type_display }}</span>
                             </td>
-                            <td style="color:#64748b; font-size:0.875rem;">{{ case.submitted_by.lgu_municipality|default:"—" }}</td>
+                            <td style="color:#64748b; font-size:0.875rem;">{% if case.submitted_by.lgu_municipality %}{{ case.submitted_by.lgu_municipality }}{% else %}—{% endif %}</td>
                             <td>
                                 <span class="badge
                                 {% if case.status == 'not_received' %}badge-pending
@@ -1013,7 +1014,7 @@
         volGrad.addColorStop(0, 'rgba(59, 130, 246, 0.22)');
         volGrad.addColorStop(1, 'rgba(59, 130, 246, 0)');
 
-        const volumeData = {{ volume_chart_data|safe }};
+        const volumeData = JSON.parse('{{ volume_chart_data_json|escapejs }}');
 
     const volChart = new Chart(ctxVol, {
         type: 'line',
@@ -1069,10 +1070,10 @@
         volChart.update();
     });
 
-    // ==========================================
-    // 2. PIPELINE WORKLOAD DOUGHNUT (DYNAMIC)
-    // ==========================================
-    const pipelineData = {{ pipeline_chart_data|safe }};
+        // ==========================================
+        // 2. PIPELINE WORKLOAD DOUGHNUT (DYNAMIC)
+        // ==========================================
+        const pipelineData = JSON.parse('{{ pipeline_chart_data_json|escapejs }}');
 
     const ctxPipe = document.getElementById('pipelineChart').getContext('2d');
     const pipeChart = new Chart(ctxPipe, {
