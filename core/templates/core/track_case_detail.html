@@ -1,1490 +1,539 @@
-{% extends "base.html" %}
 {% load static %}
-{% block title %}Track Case {{ tracking }} | PASTrack{% endblock %}
-{% block container_class %}landing-full-width{% endblock %}
-
-{% block extra_head %}
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Serif:opsz,wght@8..144,400;8..144,600;8..144,700&display=swap');
-
-  :root {
-    /* Trustworthy Government Color Palette */
-    --color-primary: #0f3d7a;
-    --color-primary-dark: #0a2952;
-    --color-primary-light: #eef2f6;
-    --color-accent: #c48b29;
-    --color-accent-hover: #a3721e;
-
-    --color-text-dark: #1e293b;
-    --color-text-body: #475569;
-    --color-bg-white: #ffffff;
-    --color-bg-offwhite: #f8fafc;
-    --color-border: #cbd5e1;
-
-    --font-heading: 'Roboto Serif', Georgia, serif;
-    --font-body: 'Inter', system-ui, -apple-system, sans-serif;
-
-    --radius-sm: 6px;
-    --radius-md: 10px;
-    --radius-lg: 16px;
-
-    --shadow-sm: 0 1px 3px rgba(15, 61, 122, 0.1);
-    --shadow-md: 0 4px 6px -1px rgba(15, 61, 122, 0.1);
-
-    --transition: all 100ms ease;
-  }
-
-  * {
-    box-sizing: border-box;
-  }
-
-  html {
-    scroll-behavior: smooth;
-    scroll-padding-top: 100px;
-  }
-
-  .landing-full-width {
-    max-width: 100% !important;
-    padding: 0 !important;
-    font-family: var(--font-body);
-    color: var(--color-text-body);
-    background-color: var(--color-bg-offwhite);
-  }
-
-  h1,
-  h2,
-  h3,
-  h4 {
-    font-family: var(--font-heading);
-    color: var(--color-text-dark);
-    margin-top: 0;
-  }
-
-  a:focus-visible,
-  button:focus-visible {
-    outline: 3px solid var(--color-accent);
-    outline-offset: 3px;
-    border-radius: 4px;
-  }
-
-  /* Header Styling */
-  .site-header {
-    background-color: var(--color-bg-white);
-    border-bottom: 1px solid var(--color-border);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: var(--shadow-sm);
-  }
-
-  .header-inner {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 24px;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  .brand-logo {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    text-decoration: none;
-  }
-
-  .brand-logo img {
-    height: 50px;
-    width: auto;
-  }
-
-  .brand-text h1 {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--color-primary);
-    margin: 0;
-    line-height: 1.2;
-  }
-
-  .brand-text p {
-    font-family: var(--font-body);
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--color-text-body);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin: 0;
-  }
-
-  .main-nav {
-    display: flex;
-    gap: 32px;
-    align-items: center;
-  }
-
-  .nav-link {
-    text-decoration: none;
-    color: var(--color-text-dark);
-    font-family: var(--font-body);
-    font-weight: 500;
-    font-size: 0.95rem;
-    transition: var(--transition);
-  }
-
-  .nav-link:hover {
-    color: var(--color-primary);
-  }
-
-  /* Container */
-  .section-container {
-    padding: 50px 24px;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  @media (max-width: 768px) {
-    .header-inner {
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .main-nav {
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .section-container {
-      padding: 30px 16px;
-    }
-  }
-</style>
-{% endblock %}
-
-{% block content %}
-<header class="site-header">
-  <div class="header-inner">
-    <a href="{% url 'landing' %}" class="brand-logo">
-      <img src="{% static 'core/logo.png' %}" alt="Provincial Seal" />
-      <div class="brand-text">
-        <h1>PASTrack System</h1>
-        <p>Provincial Assessor's Office of Cebu</p>
-      </div>
-    </a>
-    <nav class="main-nav">
-      <a href="{% url 'landing' %}" class="nav-link">Home</a>
-      <a href="{% url 'support' %}" class="nav-link" style="color: var(--color-accent);">Need Help?</a>
-    </nav>
-  </div>
-</header>
-
-<style>
-  /* ── PASTrack Case Detail Styles ── */
-
-  /* ── Reset & base ── */
-  *,
-  *::before,
-  *::after {
-    box-sizing: border-box;
-  }
-
-  .pt-wrap {
-    font-family: var(--font-body);
-    background: var(--color-bg-offwhite);
-    min-height: calc(100vh - 82px);
-    color: var(--color-text-dark);
-  }
-
-  /* ════════════════════════════════
-     PAGE BODY — side margin control
-  ════════════════════════════════ */
-  .pt-body {
-    padding-top: 36px;
-    padding-bottom: 56px;
-  }
-
-  /* ════════════════════════════════
-     MAIN TWO-COLUMN GRID
-  ════════════════════════════════ */
-  .pt-grid {
-    display: grid;
-    grid-template-columns: 320px 1fr;
-    gap: 32px;
-    align-items: start;
-  }
-
-  /* ════════════════════════════════
-     CARDS
-  ════════════════════════════════ */
-  .pt-card {
-    background: var(--color-bg-white);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    box-shadow: var(--shadow-sm);
-  }
-
-  .pt-card+.pt-card {
-    margin-top: 24px;
-  }
-
-  .pt-card__body {
-    padding: 32px;
-  }
-
-  /* ════════════════════════════════
-     LEFT SIDEBAR
-  ════════════════════════════════ */
-  .pt-case-number-label {
-    font-size: 0.85rem;
-    color: var(--color-text-body);
-    font-weight: 600;
-    margin: 0 0 6px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .pt-case-number-label svg {
-    width: 14px;
-    height: 14px;
-    color: var(--color-text-body);
-    cursor: pointer;
-  }
-
-  .pt-case-number {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--color-primary-dark);
-    margin: 0 0 16px;
-    letter-spacing: -0.5px;
-    font-family: var(--font-heading);
-  }
-
-  .pt-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: #edf7f0;
-    color: #15803d;
-    border-radius: 20px;
-    padding: 6px 16px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    margin-bottom: 16px;
-  }
-
-  .pt-badge__dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #016727;
-    animation: pulse 2s infinite;
-  }
-
-  @keyframes pulse {
-
-    0%,
-    100% {
-      opacity: 1
-    }
-
-    50% {
-      opacity: .4
-    }
-  }
-
-  .pt-status-desc {
-    font-size: 0.95rem;
-    color: var(--color-text-body);
-    line-height: 1.6;
-    margin: 0 0 24px;
-  }
-
-  .pt-divider {
-    border: none;
-    border-top: 1px solid var(--color-border);
-    margin: 0 0 24px;
-  }
-
-  .pt-meta-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .pt-meta-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    font-size: 0.95rem;
-  }
-
-  .pt-meta-item svg {
-    width: 18px;
-    height: 18px;
-    color: var(--color-text-body);
-    flex-shrink: 0;
-    margin-top: 2px;
-  }
-
-  .pt-meta-key {
-    color: var(--color-text-body);
-    min-width: 120px;
-  }
-
-  .pt-meta-val {
-    color: var(--color-text-dark);
-    font-weight: 600;
-  }
-
-  /* Help / Privacy cards */
-  .pt-help-card {
-    background: var(--color-primary-light);
-    border: none;
-    border-radius: var(--radius-md);
-    padding: 24px;
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-  }
-
-  .pt-help-card__icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: var(--color-bg-white);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    box-shadow: var(--shadow-sm);
-  }
-
-  .pt-help-card__icon svg {
-    color: var(--color-primary);
-    width: 20px;
-    height: 20px;
-  }
-
-  .pt-help-card h4 {
-    font-family: var(--font-heading);
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin: 0 0 6px;
-    color: var(--color-primary-dark);
-  }
-
-  .pt-help-card p {
-    font-size: 0.9rem;
-    color: var(--color-text-body);
-    margin: 0;
-    line-height: 1.5;
-  }
-
-  /* Internal badge */
-  .pt-internal-badge {
-    display: inline-block;
-    background: #fff8e7;
-    color: #92670a;
-    border: 1px solid #f5d87a;
-    border-radius: 6px;
-    padding: 4px 12px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    margin-top: 12px;
-  }
-
-  /* ════════════════════════════════
-     RIGHT PANEL
-  ════════════════════════════════ */
-  .pt-panel-title {
-    font-family: var(--font-heading);
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin: 0 0 6px;
-    color: var(--color-primary-dark);
-  }
-
-  .pt-panel-sub {
-    font-size: 0.95rem;
-    color: var(--color-text-body);
-    margin: 0;
-  }
-
-  .pt-print-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.9rem;
-    color: var(--color-text-body);
-    font-weight: 600;
-    cursor: pointer;
-    background: none;
-    border: none;
-    font-family: inherit;
-    transition: var(--transition);
-  }
-
-  .pt-print-btn:hover {
-    color: var(--color-primary);
-  }
-
-  .pt-print-btn svg {
-    width: 18px;
-    height: 18px;
-  }
-
-  /* ════════════════════════════════
-     PROGRESS STEPPER — 6 steps
-  ════════════════════════════════ */
-  .pt-stepper {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    position: relative;
-    padding: 24px 0 32px;
-    overflow-x: auto;
-  }
-
-  .pt-stepper__track {
-    position: absolute;
-    top: 48px;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: var(--color-border);
-    z-index: 0;
-    border-radius: 2px;
-  }
-
-  .pt-stepper__filled {
-    height: 100%;
-    background: #018333;
-    border-radius: 2px;
-    transition: width .6s cubic-bezier(.4, 0, .2, 1);
-  }
-
-  .pt-step {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    position: relative;
-    z-index: 1;
-    flex: 1;
-    text-align: center;
-    min-width: 90px;
-  }
-
-  .pt-step__circle {
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    border: 2px solid var(--color-border);
-    background: var(--color-bg-white);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    transition: border-color .3s, box-shadow .3s;
-  }
-
-  .pt-step__circle svg {
-    width: 22px;
-    height: 22px;
-    color: var(--color-border);
-    transition: color .3s;
-  }
-
-  /* done */
-  .pt-step--done .pt-step__circle {
-    border-color: #003b16;
-    background: #edf7f0;
-  }
-
-  .pt-step--done .pt-step__circle svg {
-    color: #015b22;
-  }
-
-  /* active */
-  .pt-step--active .pt-step__circle {
-    border-color: var(--color-primary);
-    border-width: 3px;
-    background: var(--color-bg-white);
-    box-shadow: 0 0 0 6px var(--color-primary-light);
-  }
-
-  .pt-step--active .pt-step__circle svg {
-    color: var(--color-primary);
-  }
-
-  /* checkmark badge */
-  .pt-step__check {
-    position: absolute;
-    bottom: -4px;
-    right: -4px;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: #22c55e;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px solid var(--color-bg-white);
-  }
-
-  .pt-step__check svg {
-    width: 12px;
-    height: 12px;
-    color: var(--color-bg-white);
-  }
-
-  .pt-step__num {
-    font-size: 0.75rem;
-    color: var(--color-text-body);
-    font-weight: 700;
-    letter-spacing: .05em;
-  }
-
-  .pt-step--done .pt-step__num {
-    color: #15803d;
-  }
-
-  .pt-step--active .pt-step__num {
-    color: var(--color-primary);
-  }
-
-  .pt-step__name {
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: var(--color-text-body);
-    line-height: 1.3;
-  }
-
-  .pt-step--done .pt-step__name {
-    color: var(--color-text-dark);
-  }
-
-  .pt-step--active .pt-step__name {
-    color: var(--color-primary);
-  }
-
-  .pt-step__date {
-    font-size: 0.75rem;
-    color: var(--color-text-body);
-    line-height: 1.4;
-  }
-
-  .pt-step--active .pt-step__date {
-    color: var(--color-primary);
-    font-weight: 600;
-  }
-
-  /* ════════════════════════════════
-     STAGE INFO BOX
-  ════════════════════════════════ */
-  .pt-stage-box {
-    background: var(--color-primary-light);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    padding: 24px;
-    display: flex;
-    gap: 20px;
-    align-items: flex-start;
-    margin-bottom: 32px;
-  }
-
-  .pt-stage-icon {
-    width: 56px;
-    height: 56px;
-    background: var(--color-bg-white);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    box-shadow: var(--shadow-sm);
-  }
-
-  .pt-stage-icon svg {
-    width: 24px;
-    height: 24px;
-    color: var(--color-primary);
-  }
-
-  .pt-stage-info {
-    flex: 1;
-  }
-
-  .pt-stage-info h4 {
-    font-family: var(--font-heading);
-    font-size: 1.15rem;
-    font-weight: 700;
-    margin: 0 0 6px;
-    color: var(--color-primary-dark);
-  }
-
-  .pt-stage-info h4 span {
-    color: var(--color-primary);
-  }
-
-  .pt-stage-info p {
-    font-size: 0.95rem;
-    color: var(--color-text-body);
-    margin: 0;
-    line-height: 1.6;
-  }
-
-  .pt-next-step {
-    margin-left: auto;
-    text-align: right;
-    min-width: 200px;
-  }
-
-  .pt-next-step__label {
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--color-primary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin: 0 0 6px;
-  }
-
-  .pt-next-step h4 {
-    font-family: var(--font-heading);
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin: 0 0 8px;
-    color: var(--color-text-dark);
-  }
-
-  .pt-next-step__date {
-    font-size: 0.85rem;
-    color: var(--color-text-body);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    justify-content: flex-end;
-    margin-bottom: 6px;
-    font-weight: 500;
-  }
-
-  .pt-next-step__date svg {
-    width: 14px;
-    height: 14px;
-    color: var(--color-text-body);
-  }
-
-  .pt-next-step__note {
-    font-size: 0.75rem;
-    color: var(--color-text-body);
-    margin: 0;
-    line-height: 1.5;
-    max-width: 200px;
-  }
-
-  /* ════════════════════════════════
-     TIMELINE
-  ════════════════════════════════ */
-  .pt-timeline-header {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    margin-bottom: 32px;
-  }
-
-  .pt-timeline-header div p {
-    font-size: 0.95rem;
-    color: var(--color-text-body);
-    margin: 6px 0 0;
-  }
-
-  .pt-btn-ghost {
-    background: var(--color-bg-white);
-    border: 1px solid var(--color-border);
-    color: var(--color-text-dark);
-    border-radius: var(--radius-sm);
-    padding: 10px 20px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    white-space: nowrap;
-    text-decoration: none;
-    transition: var(--transition);
-  }
-
-  .pt-btn-ghost:hover {
-    border-color: var(--color-primary);
-    color: var(--color-primary);
-  }
-
-  .pt-timeline {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    position: relative;
-  }
-
-  .pt-timeline::before {
-    content: '';
-    position: absolute;
-    left: 17px;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: var(--color-border);
-    border-radius: 2px;
-  }
-
-  .pt-tl-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 20px;
-    padding: 0 0 32px;
-    position: relative;
-  }
-
-  .pt-tl-item:last-child {
-    padding-bottom: 0;
-  }
-
-  .pt-tl-dot {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border: 2px solid var(--color-border);
-    background: var(--color-bg-white);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    z-index: 1;
-    position: relative;
-  }
-
-  .pt-tl-dot--done {
-    background: var(--color-primary);
-    border-color: var(--color-primary);
-  }
-
-  .pt-tl-dot--done svg {
-    color: var(--color-bg-white);
-    width: 16px;
-    height: 16px;
-  }
-
-  .pt-tl-dot--active {
-    border-color: var(--color-primary);
-    border-width: 3px;
-  }
-
-  .pt-tl-dot--active svg {
-    color: var(--color-primary);
-    width: 16px;
-    height: 16px;
-  }
-
-  .pt-tl-dot--pending {
-    border-color: var(--color-border);
-    background: var(--color-bg-offwhite);
-  }
-
-  .pt-tl-dot--error {
-    border-color: #dc2626;
-    background: #fef2f2;
-  }
-
-  .pt-tl-dot--error svg {
-    color: #dc2626;
-    width: 16px;
-    height: 16px;
-  }
-
-  .pt-tl-body {
-    flex: 1;
-    padding-top: 8px;
-  }
-
-  .pt-tl-body h4 {
-    font-size: 1.05rem;
-    font-weight: 700;
-    margin: 0 0 4px;
-    color: var(--color-text-dark);
-  }
-
-  .pt-tl-body h4.muted {
-    color: var(--color-text-body);
-    font-weight: 600;
-  }
-
-  .pt-tl-body p {
-    font-size: 0.95rem;
-    color: var(--color-text-body);
-    margin: 0;
-  }
-
-  .pt-tl-date {
-    font-size: 0.85rem;
-    color: var(--color-text-body);
-    white-space: nowrap;
-    padding-top: 10px;
-    font-weight: 500;
-  }
-
-  /* Estimated timeline items (future) */
-  .pt-tl-item--est .pt-tl-body h4 {
-    color: var(--color-text-body);
-    font-style: italic;
-  }
-
-  .pt-tl-est-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    color: #92670a;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    padding: 4px 10px;
-    margin-left: 12px;
-    vertical-align: middle;
-  }
-
-  /* ════════════════════════════════
-     FOOTER
-  ════════════════════════════════ */
-  .pt-footer-note {
-    text-align: center;
-    font-size: 0.85rem;
-    color: var(--color-text-body);
-    margin-top: 40px;
-    padding-bottom: 24px;
-  }
-
-  /* ════════════════════════════════
-     RESPONSIVE
-  ════════════════════════════════ */
-  @media (max-width: 900px) {
-    .pt-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .pt-stage-box {
-      flex-wrap: wrap;
-    }
-
-    .pt-next-step {
-      text-align: left;
-      margin-left: 0;
-    }
-
-    .pt-stepper {
-      overflow-x: auto;
-      gap: 16px;
-    }
-  }
-</style>
-
-<div class="pt-wrap">
-
-
-
-  <!-- ══════════════════════════════
-       PAGE BODY
-  ══════════════════════════════ -->
-  <div class="section-container">
-    <div class="pt-body" style="padding:0;">
-
-      <!-- Search Bar -->
-      {% comment %} <div class="pt-search-bar">
-        <div class="pt-search-icon-wrap">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-            stroke-width="2">
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-        </div> {% endcomment %}
-        {% comment %} <div class="pt-search-label">
-          <h2>Track Your Case</h2>
-          <p>Enter your Case Number to see the latest status.</p>
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Case {{ tracking }} | PASTrack</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        capitol: {
+                            blue: '#0052CC',
+                            blueDark: '#003D99',
+                            blueLight: '#E5F0FF',
+                            accent: '#FFB800',
+                            accentLight: '#FFF8E5',
+                            dark: '#0B132B',
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 20px 40px -15px rgba(0, 0, 0, 0.05)',
+                        'glow': '0 20px 40px -15px rgba(0, 82, 204, 0.4)',
+                    },
+                    animation: {
+                        'fade-in-up': 'fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #F4F7FE;
+            /* Soft polished background from inspo */
+            color: #334155;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Smooth progress line transition */
+        #pt-stepper-fill {
+            transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .stagger-1 {
+            animation-delay: 0.1s;
+            opacity: 0;
+        }
+
+        .stagger-2 {
+            animation-delay: 0.2s;
+            opacity: 0;
+        }
+
+        .stagger-3 {
+            animation-delay: 0.3s;
+            opacity: 0;
+        }
+
+        /* Hide scrollbar for stepper overflow */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+
+<body class="flex flex-col min-h-screen">
+
+    <!-- ── HEADER (Polished, preserving requested elements + Nav) ── -->
+    <header class="w-full bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-[1200px] mx-auto px-6 h-20 flex justify-between items-center gap-4">
+
+            <!-- Logo -->
+            <a href="{% url 'landing' %}" class="flex items-center gap-3 group">
+                <img src="{% static 'core/secondary_logo.png' %}" alt="PASTrack Logo"
+                    class="h-10 w-auto object-contain transition-transform group-hover:scale-105">
+            </a>
+
+            <!-- Nav Links -->
+            <nav class="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-500">
+                <a href="{% url 'landing' %}" class="hover:text-capitol-blue transition-colors">Home</a>
+                <a href="{% url 'landing' %}#faq" class="hover:text-capitol-blue transition-colors">FAQ</a>
+                <a href="{% url 'landing' %}#contact" class="hover:text-capitol-blue transition-colors">Contact Us</a>
+            </nav>
+
+            <!-- Last Updated Badge -->
+            <div class="flex items-center gap-2">
+                <div
+                    class="text-[11px] sm:text-xs text-slate-500 font-semibold bg-slate-50 px-4 py-2 rounded-full border border-slate-200 shadow-sm">
+                    Last updated on: <span class="text-slate-800">{{ updated_at|date:"d.m.Y H:i" }}</span>
+                </div>
+                <button class="md:hidden text-slate-800 text-2xl ml-2"><i class="ri-menu-4-line"></i></button>
+            </div>
         </div>
-        <div class="pt-search-input-row">
-          <input class="pt-search-input" type="text" placeholder="Enter Case Number (e.g., LGU-2025-000123)" />
-          <a class="pt-btn-primary" href="{% url 'track_case' %}">Track Case</a>
-        </div> {% endcomment %}
-        {% comment %}
-      </div> {% endcomment %}
+    </header>
 
-      <!-- Main Grid -->
-      <div class="pt-grid">
+    <!-- ── MAIN CONTENT ── -->
+    <main class="flex-grow w-full max-w-[1200px] mx-auto px-4 sm:px-6 py-10 lg:py-12">
 
-        <!-- ── Left Sidebar ── -->
-        <div>
-          <!-- Case Overview -->
-          <div class="pt-card">
-            <div class="pt-card__body">
-              <h3 style="font-size:15px; font-weight:700; margin:0 0 16px;">Case Overview</h3>
-
-              <p class="pt-case-number-label">
-                Case Number
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                  stroke-width="2">
-                  <rect x="9" y="9" width="13" height="13" rx="2" />
-                  <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-                </svg>
-              </p>
-              <p class="pt-case-number">{{ tracking }}</p>
-
-              <span class="pt-badge"><span class="pt-badge__dot"></span>{{ public_status }}</span>
-
-              <p class="pt-status-desc">Your case is currently being reviewed by the assigned office.</p>
-
-              {% if show_internal_status %}
-              <span class="pt-internal-badge">Internal: {{ internal_status }}</span>
-              {% endif %}
-
-              <hr class="pt-divider" style="margin-top:18px;">
-
-              <ul class="pt-meta-list">
-                <li class="pt-meta-item">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                    stroke-width="2">
-                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                  </svg>
-                  <span class="pt-meta-key">Document Type</span>
-                  <span class="pt-meta-val">{{ case_type|default:"—" }}</span>
-                </li>
-                <li class="pt-meta-item">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                    stroke-width="2">
-                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
-                    <circle cx="12" cy="9" r="2.5" />
-                  </svg>
-                  <span class="pt-meta-key">Origin</span>
-                  <span class="pt-meta-val">LGU of {{ area|default:"—" }}</span>
-                </li>
-                <li class="pt-meta-item">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                    stroke-width="2">
-                    <rect x="3" y="4" width="18" height="18" rx="2" />
-                    <line x1="16" y1="2" x2="16" y2="6" />
-                    <line x1="8" y1="2" x2="8" y2="6" />
-                    <line x1="3" y1="10" x2="21" y2="10" />
-                  </svg>
-                  <span class="pt-meta-key">Date Submitted</span>
-                  <span class="pt-meta-val">
-                    {{ created_at|date:"M d, Y • H:i A" }}
-                  </span>
-                </li>
-                <li class="pt-meta-item">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                    stroke-width="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 16 14" />
-                  </svg>
-                  <span class="pt-meta-key">Last Updated</span>
-                  <span class="pt-meta-val">{{ updated_at|date:"M d, Y • H:i A" }}</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <!-- Need Help -->
-          {% comment %} <div class="pt-card" style="margin-top:20px;">
-            <div class="pt-card__body">
-              <div class="pt-help-card" style="padding:0; background:none; border:none;">
-                <div class="pt-help-card__icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                    stroke-width="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3" />
-                    <line x1="12" y1="17" x2="12.01" y2="17" />
-                  </svg>
-                </div>
-                <div>
-                  <h4>Need Help?</h4>
-                  <p>For concerns about your case, please contact the Capitol Office.</p>
-                  <a class="pt-btn-outline" href="#">Contact Us</a>
-                </div>
-              </div>
-            </div>
-          </div> {% endcomment %}
-
-          <!-- Data Privacy -->
-          <div class="pt-card" style="margin-top:20px;">
-            <div class="pt-card__body">
-              <div class="pt-help-card" style="padding:0; background:none; border:none;">
-                <div class="pt-help-card__icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                    stroke-width="2">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                  </svg>
-                </div>
-                <div>
-                  <h4>Data Privacy</h4>
-                  <p>We protect your information.<br>Your privacy is our priority.</p>
-                </div>
-              </div>
-            </div>
-          </div>
+        <!-- ── HERO / TITLE ── -->
+        <div class="text-center max-w-[700px] mx-auto mb-10 animate-fade-in-up">
+            <p
+                class="text-xs font-bold text-capitol-blue uppercase tracking-widest mb-2 flex items-center justify-center gap-2">
+                <i class="ri-folder-shield-2-fill"></i> Tracking No. {{ tracking }}
+            </p>
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">Track the progress of
+                your case</h1>
+            <p class="text-sm text-slate-500 leading-relaxed font-medium">
+                Your provincial document is currently being processed. Follow the live timeline below for real-time
+                stage updates and estimated completion times.
+            </p>
         </div>
 
-        <!-- ── Right Panel ── -->
-        <div>
+        <!-- ── POLISHED HORIZONTAL STEPPER CARD ── -->
+        <div
+            class="bg-white rounded-[24px] shadow-soft p-6 md:p-8 mb-10 relative z-10 animate-fade-in-up stagger-1 border border-slate-100 overflow-hidden">
 
-          <!-- Case Progress -->
-          <div class="pt-card">
-            <div class="pt-card__body">
+            <div class="relative w-full overflow-x-auto no-scrollbar pb-4">
+                <div class="min-w-[800px] relative px-4">
 
-              <!-- Header row -->
-              <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px;">
-                <div>
-                  <h3 class="pt-panel-title">Case Progress</h3>
-                  <p class="pt-panel-sub">Tracking your case through each stage of the process.</p>
+                    <!-- Background Tracks -->
+                    <div class="absolute left-10 right-10 top-6 h-1.5 bg-slate-100 rounded-full z-0"></div>
+                    <div class="absolute left-10 top-6 h-1.5 bg-capitol-blue rounded-full z-0" id="pt-stepper-fill"
+                        style="width:0%"></div>
+
+                    <div class="relative z-10 flex justify-between items-start" id="pt-stepper">
+
+                        <!-- Step 1 -->
+                        <div class="flex flex-col items-center bg-white px-2 pt-step group" data-step="1">
+                            <div
+                                class="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500 step-circle border-4 border-white bg-slate-100 shadow-sm">
+                                <i class="ri-check-line text-white text-xl hidden step-check"></i>
+                                <span class="text-slate-400 font-bold step-icon">1</span>
+                            </div>
+                            <div class="mt-4 text-center">
+                                <h4 class="text-xs font-extrabold text-slate-800 mb-1 step-name">Submitted</h4>
+                                <span
+                                    class="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-slate-100 text-slate-400 step-badge">Pending</span>
+                            </div>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div class="flex flex-col items-center bg-white px-2 pt-step group" data-step="2">
+                            <div
+                                class="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500 step-circle border-4 border-white bg-slate-100 shadow-sm">
+                                <i class="ri-check-line text-white text-xl hidden step-check"></i>
+                                <span class="text-slate-400 font-bold step-icon">2</span>
+                            </div>
+                            <div class="mt-4 text-center">
+                                <h4 class="text-xs font-extrabold text-slate-800 mb-1 step-name">Received</h4>
+                                <span
+                                    class="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-slate-100 text-slate-400 step-badge">Pending</span>
+                            </div>
+                        </div>
+
+                        <!-- Step 3 -->
+                        <div class="flex flex-col items-center bg-white px-2 pt-step group" data-step="3">
+                            <div
+                                class="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500 step-circle border-4 border-white bg-slate-100 shadow-sm">
+                                <i class="ri-check-line text-white text-xl hidden step-check"></i>
+                                <span class="text-slate-400 font-bold step-icon">3</span>
+                            </div>
+                            <div class="mt-4 text-center">
+                                <h4 class="text-xs font-extrabold text-slate-800 mb-1 step-name">To Examine</h4>
+                                <span
+                                    class="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-slate-100 text-slate-400 step-badge">Pending</span>
+                            </div>
+                        </div>
+
+                        <!-- Step 4 -->
+                        <div class="flex flex-col items-center bg-white px-2 pt-step group" data-step="4">
+                            <div
+                                class="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500 step-circle border-4 border-white bg-slate-100 shadow-sm">
+                                <i class="ri-check-line text-white text-xl hidden step-check"></i>
+                                <span class="text-slate-400 font-bold step-icon">4</span>
+                            </div>
+                            <div class="mt-4 text-center">
+                                <h4 class="text-xs font-extrabold text-slate-800 mb-1 step-name">Approval</h4>
+                                <span
+                                    class="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-slate-100 text-slate-400 step-badge">Pending</span>
+                            </div>
+                        </div>
+
+                        <!-- Step 5 -->
+                        <div class="flex flex-col items-center bg-white px-2 pt-step group" data-step="5">
+                            <div
+                                class="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500 step-circle border-4 border-white bg-slate-100 shadow-sm">
+                                <i class="ri-check-line text-white text-xl hidden step-check"></i>
+                                <span class="text-slate-400 font-bold step-icon">5</span>
+                            </div>
+                            <div class="mt-4 text-center">
+                                <h4 class="text-xs font-extrabold text-slate-800 mb-1 step-name">Numbering</h4>
+                                <span
+                                    class="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-slate-100 text-slate-400 step-badge">Pending</span>
+                            </div>
+                        </div>
+
+                        <!-- Step 6 -->
+                        <div class="flex flex-col items-center bg-white px-2 pt-step group" data-step="6">
+                            <div
+                                class="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500 step-circle border-4 border-white bg-slate-100 shadow-sm">
+                                <i class="ri-check-line text-white text-xl hidden step-check"></i>
+                                <span class="text-slate-400 font-bold step-icon">6</span>
+                            </div>
+                            <div class="mt-4 text-center">
+                                <h4 class="text-xs font-extrabold text-slate-800 mb-1 step-name">Release</h4>
+                                <span
+                                    class="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-slate-100 text-slate-400 step-badge">Pending</span>
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
-                <button class="pt-print-btn" onclick="window.print()">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                    stroke-width="2">
-                    <polyline points="6 9 6 2 18 2 18 9" />
-                    <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" />
-                    <rect x="6" y="14" width="12" height="8" />
-                  </svg>
-                  Print / Save
-                </button>
-              </div>
+            </div>
+        </div>
 
-              <!-- ══ 6-STEP STEPPER ══
-                 Steps: Submitted · Received · In Review · For Approval · For Numbering · For Releasing
-                 The JS below reads data-step on .pt-wrap and fills the bar + marks steps automatically.
-            -->
-              <div class="pt-stepper" id="pt-stepper">
-                <div class="pt-stepper__track">
-                  <div class="pt-stepper__filled" id="pt-stepper-fill" style="width:0%"></div>
-                </div>
+        <!-- ── TWO COLUMN GRID ── -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
+            <!-- ════════════════════════════════════════════════
+                 RIGHT: SOLID GLOW CARD & DETAILS
+            ════════════════════════════════════════════════ -->
+            <div class="lg:col-span-5 flex flex-col gap-8 animate-fade-in-up stagger-3">
 
-                <!-- Step 1: Submitted -->
-                <div class="pt-step" data-step="1">
-                  <div class="pt-step__circle">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                      stroke-width="2">
-                      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                      <polyline points="14 2 14 8 20 8" />
-                    </svg>
-                    <span class="pt-step__check" style="display:none">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                        stroke-width="3">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    </span>
-                  </div>
-                  <span class="pt-step__num">1</span>
-                  <span class="pt-step__name">Submitted</span>
-                  <span class="pt-step__date"></span>
-                </div>
+                <!-- Solid Capitol Blue Card -->
+                <div class="bg-capitol-blue rounded-[24px] p-8 text-white shadow-glow relative overflow-hidden">
+                    <div
+                        class="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4">
+                    </div>
 
-                <!-- Step 2: Received -->
-                <div class="pt-step" data-step="2">
-                  <div class="pt-step__circle">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                      stroke-width="2">
-                      <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
-                      <path
-                        d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z" />
-                    </svg>
-                    <span class="pt-step__check" style="display:none">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                        stroke-width="3">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    </span>
-                  </div>
-                  <span class="pt-step__num">2</span>
-                  <span class="pt-step__name">Received</span>
-                  <span class="pt-step__date"></span>
-                </div>
+                    <div class="relative z-10">
+                        <div class="flex justify-between items-start mb-6">
+                            <div
+                                class="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center text-2xl backdrop-blur-md border border-white/20 shadow-sm">
+                                <i class="ri-shield-user-fill"></i>
+                            </div>
+                            <button onclick="window.print()"
+                                class="text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-xl transition-colors border border-white/10 backdrop-blur-md"
+                                title="Print Details">
+                                <i class="ri-printer-line"></i>
+                            </button>
+                        </div>
 
-                <!-- Step 3: In Review -->
-                <div class="pt-step" data-step="3">
-                  <div class="pt-step__circle">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                      stroke-width="2">
-                      <circle cx="11" cy="11" r="8" />
-                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                    </svg>
-                    <span class="pt-step__check" style="display:none">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                        stroke-width="3">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    </span>
-                  </div>
-                  <span class="pt-step__num">3</span>
-                  <span class="pt-step__name">In Review</span>
-                  <span class="pt-step__date"></span>
-                </div>
+                        <p class="text-[11px] font-bold text-white/70 uppercase tracking-widest mb-1">Current Status</p>
+                        <h2 class="text-3xl font-extrabold tracking-tight mb-8" id="pt-stage-name">{{ public_status }}
+                        </h2>
 
-                <!-- Step 4: For Approval -->
-                <div class="pt-step" data-step="4">
-                  <div class="pt-step__circle">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                      stroke-width="2">
-                      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                      <polyline points="14 2 14 8 20 8" />
-                      <line x1="16" y1="13" x2="8" y2="13" />
-                      <line x1="16" y1="17" x2="8" y2="17" />
-                      <polyline points="10 9 9 9 8 9" />
-                    </svg>
-                    <span class="pt-step__check" style="display:none">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                        stroke-width="3">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    </span>
-                  </div>
-                  <span class="pt-step__num">4</span>
-                  <span class="pt-step__name">For Approval</span>
-                  <span class="pt-step__date"></span>
-                </div>
+                        <div class="bg-capitol-blueDark/40 rounded-2xl p-5 border border-white/10 backdrop-blur-md">
+                            <p
+                                class="text-[10px] font-bold text-white/60 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                                <i class="ri-time-line"></i> Time Remaining / Est. Completion
+                            </p>
+                            <p class="text-lg font-bold" id="pt-next-date-text">Calculating...</p>
 
-                <!-- Step 5: For Numbering -->
-                <div class="pt-step" data-step="5">
-                  <div class="pt-step__circle">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                      stroke-width="2">
-                      <line x1="4" y1="6" x2="20" y2="6" />
-                      <line x1="4" y1="12" x2="20" y2="12" />
-                      <line x1="4" y1="18" x2="14" y2="18" />
-                    </svg>
-                    <span class="pt-step__check" style="display:none">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                        stroke-width="3">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    </span>
-                  </div>
-                  <span class="pt-step__num">5</span>
-                  <span class="pt-step__name">For Numbering</span>
-                  <span class="pt-step__date"></span>
-                </div>
-
-                <!-- Step 6: For Releasing -->
-                <div class="pt-step" data-step="6">
-                  <div class="pt-step__circle">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                      stroke-width="2">
-                      <line x1="22" y1="2" x2="11" y2="13" />
-                      <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                    </svg>
-                    <span class="pt-step__check" style="display:none">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                        stroke-width="3">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    </span>
-                  </div>
-                  <span class="pt-step__num">6</span>
-                  <span class="pt-step__name">For Release</span>
-                  <span class="pt-step__date"></span>
+                            <!-- Internal Status Badge -->
+                            {% if show_internal_status %}
+                            <div class="mt-4 pt-4 border-t border-white/10">
+                                <span
+                                    class="bg-capitol-accent text-capitol-dark text-[10px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-md flex w-fit items-center gap-1.5 shadow-sm">
+                                    <i class="ri-lock-fill"></i> {{ internal_status }}
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
 
-              </div><!-- /stepper -->
+                <!-- Clean Form Details Card -->
+                <div class="bg-white rounded-[24px] shadow-soft border border-slate-100 p-8">
+                    <h4 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-6">Application Details
+                    </h4>
 
-              <!-- Stage Info Box — rendered by JS -->
-              <div class="pt-stage-box" id="pt-stage-box">
-                <div class="pt-stage-icon" id="pt-stage-icon">
-                  <!-- icon injected by JS -->
-                </div>
-                <div class="pt-stage-info">
-                  <h4>Current Stage: <span id="pt-stage-name">{{ public_status }}</span></h4>
-                  <p id="pt-stage-desc">Your case is currently being processed.</p>
-                </div>
-                <div class="pt-next-step" id="pt-next-block">
-                  <p class="pt-next-step__label">Estimated Next Step</p>
-                  <h4 id="pt-next-name">—</h4>
-                  <p class="pt-next-step__date" id="pt-next-date">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                      stroke-width="2">
-                      <rect x="3" y="4" width="18" height="18" rx="2" />
-                      <line x1="16" y1="2" x2="16" y2="6" />
-                      <line x1="8" y1="2" x2="8" y2="6" />
-                      <line x1="3" y1="10" x2="21" y2="10" />
-                    </svg>
-                    <span id="pt-next-date-text">Calculating…</span>
-                  </p>
-                  <p class="pt-next-step__note">*Timeline is estimated based on typical processing duration.</p>
-                </div>
-              </div>
+                    <div class="space-y-4">
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Document Type
+                            </p>
+                            <div class="bg-slate-50 px-4 py-3 rounded-xl border border-slate-100">
+                                <p class="text-sm font-bold text-slate-800">{{ case_type|default:"—" }}</p>
+                            </div>
+                        </div>
 
-              <!-- Timeline section -->
-              <div class="pt-timeline-header">
-                <div>
-                  <h3 class="pt-panel-title">Timeline</h3>
-                  <p>Updates and actions taken on your case.</p>
-                </div>
-              </div>
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Originating
+                                Address</p>
+                            <div
+                                class="bg-slate-50 px-4 py-3 rounded-xl border border-slate-100 flex items-center gap-3">
+                                <i class="ri-map-pin-2-fill text-capitol-blue"></i>
+                                <p class="text-sm font-bold text-slate-800">LGU of {{ area|default:"—" }}</p>
+                            </div>
+                        </div>
 
-              <ul id="timeline" class="pt-timeline">
-                {% for e in timeline %}
-                <li class="pt-tl-item">
-                  <div
-                    class="pt-tl-dot {% if 'returned' in e.label|lower %}pt-tl-dot--error{% else %}pt-tl-dot--done{% endif %}">
-                    {% if 'returned' in e.label|lower %}
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                      stroke-width="3">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    {% else %}
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                      stroke-width="3">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                    {% endif %}
-                  </div>
-                  <div class="pt-tl-body">
-                    <h4 {% if 'returned' in e.label|lower %}style="color: #dc2626;" {% endif %}>{{ e.label }}</h4>
-                  </div>
-                  <span class="pt-tl-date">{{ e.when|date:"M d, Y • H:i A" }}</span>
-                </li>
-                {% empty %}
-                <li class="pt-tl-item">
-                  <div class="pt-tl-dot pt-tl-dot--pending"></div>
-                  <div class="pt-tl-body">
-                    <h4 class="muted"><em>No timeline events available yet.</em></h4>
-                  </div>
-                </li>
-                {% endfor %}
-                <!-- Estimated future steps are appended here by JS -->
-              </ul>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Date
+                                    Logged</p>
+                                <div class="bg-slate-50 px-4 py-3 rounded-xl border border-slate-100">
+                                    <p class="text-sm font-bold text-slate-800">{{ created_at|date:"d.m.Y" }}</p>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Time</p>
+                                <div class="bg-slate-50 px-4 py-3 rounded-xl border border-slate-100">
+                                    <p class="text-sm font-bold text-slate-800">{{ created_at|date:"H:i A" }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
             </div>
-          </div>
 
-        </div><!-- /right panel -->
-      </div><!-- /grid -->
 
-      <p class="pt-footer-note">This is a public portal. For security and privacy, some details are not displayed.</p>
+            <!-- ════════════════════════════════════════════════
+                 LEFT: POLISHED ACTIVITY FEED
+            ════════════════════════════════════════════════ -->
+            <div class="lg:col-span-7 flex flex-col gap-6 animate-fade-in-up stagger-2">
+                <div class="bg-white rounded-[24px] shadow-soft border border-slate-100 p-8">
+                    <h3 class="text-lg font-extrabold text-slate-900 mb-8 flex items-center gap-2">
+                        <i class="ri-history-line text-capitol-blue"></i> Activity Review
+                    </h3>
 
-    </div><!-- /pt-body -->
-  </div><!-- /section-container -->
+                    <div class="relative" id="timeline">
+                        <!-- Vertical line -->
+                        <div class="absolute left-[19px] top-2 bottom-2 w-0.5 bg-slate-100 z-0"></div>
 
-  <!-- ══════════════════════════════════════════════════════════
-     AUTO TIMELINE LOGIC
-     ──────────────────────────────────────────────────────────
-     This script reads the current public_status from Django,
-     maps it to one of the 6 steps, then:
-       1. Marks steps done / active / pending in the stepper
-       2. Fills the progress bar proportionally
-       3. Estimates the dates for each future step
-          (based on typical business-day durations per stage)
-       4. Appends estimated items into the timeline list
-     ────────────────────────────────────────────────────────── -->
-  <script>
-    (function () {
-      /* ── Step definitions ── */
-      const STEPS = [
-        {
-          num: 1, name: 'Submitted', estDays: 0,
-          desc: 'Your case has been submitted and is awaiting acknowledgment.',
-          icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
-        },
-        {
-          num: 2, name: 'Received', estDays: 1,
-          desc: 'Your case has been received and logged by the office.',
-          icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>'
-        },
-        {
-          num: 3, name: 'In Review', estDays: 3,
-          desc: 'Your document is currently being reviewed by the concerned office.',
-          icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
-        },
-        {
-          num: 4, name: 'For Approval', estDays: 3,
-          desc: 'Your case has been endorsed and is awaiting official approval.',
-          icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'
-        },
-        {
-          num: 5, name: 'For Numbering', estDays: 2,
-          desc: 'Your approved document is being assigned an official control number.',
-          icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="14" y2="18"/></svg>'
-        },
-        {
-          num: 6, name: 'For Releasing', estDays: 1,
-          desc: 'Your document is ready and will be released to the requesting party.',
-          icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>'
-        },
+                        {% for e in timeline %}
+                        <div class="relative z-10 flex items-start gap-6 pb-8 last:pb-0 group">
+                            <!-- Icon -->
+                            <div
+                                class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 border-4 border-white shadow-sm mt-1 transition-transform group-hover:scale-110 {% if 'returned' in e.label|lower %}bg-red-50 text-red-500{% else %}bg-capitol-blueLight text-capitol-blue{% endif %}">
+                                {% if 'returned' in e.label|lower %}
+                                <i class="ri-error-warning-fill text-lg"></i>
+                                {% else %}
+                                <i class="ri-checkbox-circle-fill text-lg"></i>
+                                {% endif %}
+                            </div>
+                            <!-- Content -->
+                            <div
+                                class="flex-1 bg-slate-50 rounded-2xl p-5 border border-slate-100 group-hover:border-capitol-blueLight transition-colors">
+                                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
+                                    <h4
+                                        class="text-sm font-bold {% if 'returned' in e.label|lower %}text-red-600{% else %}text-slate-800{% endif %}">
+                                        {{ e.label }}</h4>
+                                    <span
+                                        class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-white px-2 py-1 rounded-md shadow-sm border border-slate-100"><i
+                                            class="ri-calendar-event-line mr-1"></i> {{ e.when|date:"d.m.Y H:i"
+                                        }}</span>
+                                </div>
+                                <p class="text-xs font-medium text-slate-500">The application and forms have
+                                    successfully processed through this stage.</p>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="relative z-10 flex items-center gap-6">
+                            <div class="w-10 h-10 rounded-full bg-slate-100 border-4 border-white shadow-sm shrink-0">
+                            </div>
+                            <p class="text-sm font-medium text-slate-400 italic">No activity recorded yet.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+    </main>
+
+    <!-- ── FOOTER ── -->
+    <footer class="w-full bg-white border-t border-slate-200 mt-auto">
+        <div class="max-w-[1200px] mx-auto px-6 py-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p class="text-xs font-semibold text-slate-400">© 2026 Cebu Provincial Assessor's Office. All rights
+                reserved.</p>
+            <div class="flex gap-6 text-xs font-bold text-slate-400">
+                <a href="#" class="hover:text-capitol-blue transition-colors">Privacy Policy</a>
+                <a href="#" class="hover:text-capitol-blue transition-colors">Terms of Service</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ── JAVASCRIPT LOGIC ── -->
+    <script>
+            (function () {
+                const STEPS = [
+                    { num: 1, name: 'Submitted', estDays: 0 },
+                    { num: 2, name: 'Received', estDays: 1 },
+                    { num: 3, name: 'To Examine', estDays: 3 },
+                    { num: 4, name: 'Approval', estDays: 3 },
+                    { num: 5, name: 'Numbering', estDays: 2 },
+                    { num: 6, name: 'Release', estDays: 1 }
+                ];
+
+                const rawStatus = "{{ public_status|lower|escapejs }}";
+
+                const timelineEvents = [
+                    {% for e in timeline %}
+        { label: "{{ e.label|escapejs|lower }}", dateStr: "{{ e.when|date:'d.m.Y H:i' }}" } {% if not forloop.last %}, {% endif %}
+        {% endfor %}
       ];
 
-      /* ── Read current status injected by Django ── */
-      const rawStatus = "{{ public_status|lower|escapejs }}";
+        STEPS.forEach((step) => {
+            let matchedEvent = timelineEvents.find(e => e.label.includes(step.name.toLowerCase()));
+            if (!matchedEvent && step.name === 'Submitted') matchedEvent = timelineEvents.find(e => e.label.includes('submitted'));
+            if (!matchedEvent && step.name === 'To Examine') matchedEvent = timelineEvents.find(e => e.label.includes('review') || e.label.includes('examin'));
+            if (!matchedEvent && step.num === 6) matchedEvent = timelineEvents.find(e => e.label.includes('released'));
+            if (matchedEvent) step.completedDate = matchedEvent.dateStr;
+        });
 
-      const timelineEvents = [
-        {% for e in timeline %}
-      { label: "{{ e.label|escapejs|lower }}", dateStr: "{{ e.when|date:'M d, Y' }}<br>{{ e.when|date:'H:i A' }}" } {% if not forloop.last %}, {% endif %}
-    {% endfor %}
-  ];
+        let isFullyCompleted = false;
 
-    STEPS.forEach((step) => {
-      let matchedEvent = timelineEvents.find(e => e.label.includes(step.name.toLowerCase()));
-      if (!matchedEvent && step.name === 'Submitted') {
-        matchedEvent = timelineEvents.find(e => e.label.includes('submitted'));
-      }
-      if (!matchedEvent && step.num === 6) {
-        matchedEvent = timelineEvents.find(e => e.label.includes('released'));
-      }
-      if (matchedEvent) {
-        step.completedDate = matchedEvent.dateStr;
-      }
-    });
-
-    let isFullyCompleted = false;
-
-    /* Map Django public_status string → step number (1-based) */
-    function detectCurrentStep(s) {
-      if (/released|claimed/i.test(s)) {
-        isFullyCompleted = true;
-        return 6;
-      }
-      if (/releas/i.test(s)) return 6;
-      if (/number/i.test(s)) return 5;
-      if (/approv/i.test(s)) return 4;
-      if (/review/i.test(s) || /examin/i.test(s)) return 3;
-      if (/receiv/i.test(s)) return 2;
-      return 1; // default: Submitted
-    }
-
-    const currentStep = detectCurrentStep(rawStatus);
-    const TOTAL = STEPS.length;
-
-    /* ── Helpers ── */
-    const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    function fmtDate(d) {
-      return MONTHS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
-    }
-    function addBusinessDays(date, n) {
-      let d = new Date(date);
-      let added = 0;
-      while (added < n) {
-        d.setDate(d.getDate() + 1);
-        const dow = d.getDay();
-        if (dow !== 0 && dow !== 6) added++;
-      }
-      return d;
-    }
-
-    /* ── Derive submission date from first timeline item's rendered text, or use today ── */
-    // We use updated_at passed by Django to anchor the estimates from current step.
-    const anchorRaw = "{{ updated_at|date:'Y-m-d' }}";
-    const anchor = anchorRaw && anchorRaw !== '' ? new Date(anchorRaw + 'T00:00:00') : new Date();
-
-    /* Build estimated dates: for steps after current, estimate forward */
-    const estDates = {}; // stepNum → Date
-    let cursor = new Date(anchor);
-    for (let i = currentStep; i < TOTAL; i++) {
-      const nextStep = STEPS[i]; // i is 0-indexed, steps are 1-indexed, so STEPS[i] = step i+1
-      cursor = addBusinessDays(cursor, nextStep.estDays || 1);
-      estDates[nextStep.num] = new Date(cursor);
-    }
-
-    /* ── Update stepper UI ── */
-    const stepEls = document.querySelectorAll('.pt-step[data-step]');
-    stepEls.forEach(el => {
-      const n = parseInt(el.dataset.step, 10);
-      const check = el.querySelector('.pt-step__check');
-      const dateEl = el.querySelector('.pt-step__date');
-
-      if (n <= currentStep && STEPS[n - 1].completedDate) {
-        dateEl.innerHTML = STEPS[n - 1].completedDate;
-      }
-
-      if (n < currentStep || (n === currentStep && isFullyCompleted)) {
-        el.classList.add('pt-step--done');
-        if (check) check.style.display = 'flex';
-      } else if (n === currentStep) {
-        el.classList.add('pt-step--active');
-        if (dateEl && !dateEl.textContent.trim()) {
-          dateEl.textContent = 'In Progress';
+        function detectCurrentStep(s) {
+            if (/released|claimed/i.test(s)) { isFullyCompleted = true; return 6; }
+            if (/releas/i.test(s)) return 6;
+            if (/number/i.test(s)) return 5;
+            if (/approv/i.test(s)) return 4;
+            if (/review/i.test(s) || /examin/i.test(s)) return 3;
+            if (/receiv/i.test(s)) return 2;
+            return 1;
         }
-      } else {
-        /* pending — show estimated date */
-        if (dateEl && estDates[n]) {
-          dateEl.innerHTML = '<em>Est. ' + fmtDate(estDates[n]) + '</em>';
+
+        const currentStep = detectCurrentStep(rawStatus);
+        const TOTAL = STEPS.length;
+
+        const MONTHS = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+        function fmtDate(d) {
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${day}.${MONTHS[d.getMonth()]}.${d.getFullYear()}`;
         }
-      }
-    });
 
-    /* ── Fill progress bar ── */
-    // Bar fills fully when a step is complete; halfway when it's active.
-    let fillPct = ((currentStep - 1) / (TOTAL - 1)) * 100;
-    if (isFullyCompleted) fillPct = 100;
-    document.getElementById('pt-stepper-fill').style.width = fillPct + '%';
+        function addBusinessDays(date, n) {
+            let d = new Date(date);
+            let added = 0;
+            while (added < n) {
+                d.setDate(d.getDate() + 1);
+                if (d.getDay() !== 0 && d.getDay() !== 6) added++;
+            }
+            return d;
+        }
 
-    /* ── Update stage info box ── */
-    const cur = STEPS[currentStep - 1];
-    document.getElementById('pt-stage-icon').innerHTML = cur.icon;
-    document.getElementById('pt-stage-name').textContent = isFullyCompleted ? 'Released' : cur.name;
-    document.getElementById('pt-stage-desc').textContent = isFullyCompleted
-        ? 'Your case has been released and completed.'
-        : cur.desc;
+        const anchorRaw = "{{ updated_at|date:'Y-m-d' }}";
+        const anchor = anchorRaw && anchorRaw !== '' ? new Date(anchorRaw + 'T00:00:00') : new Date();
 
-    const nextStep = (currentStep < TOTAL && !isFullyCompleted) ? STEPS[currentStep] : null;
-    if (nextStep) {
-      document.getElementById('pt-next-name').textContent = nextStep.name;
-      const estD = estDates[nextStep.num];
-      // Show a range: estD to estD + estDays - 1
-      const rangeEnd = addBusinessDays(estD, Math.max((nextStep.estDays || 1) - 1, 0));
-      const rangeText = fmtDate(estD) + (rangeEnd.getTime() !== estD.getTime() ? ' – ' + fmtDate(rangeEnd) : '');
-      document.getElementById('pt-next-date-text').textContent = rangeText;
-    } else {
-      /* Case is at final step */
-      document.getElementById('pt-next-block').innerHTML =
-        '<p class="pt-next-step__label">Status</p>' +
-        '<h4 style="color:#1a8a4a">Completed</h4>' +
-        '<p class="pt-next-step__note">Your case has reached the final stage.</p>';
-    }
+        const estDates = {};
+        let cursor = new Date(anchor);
+        for (let i = currentStep; i < TOTAL; i++) {
+            const nextStep = STEPS[i];
+            cursor = addBusinessDays(cursor, nextStep.estDays || 1);
+            estDates[nextStep.num] = new Date(cursor);
+        }
 
-    /* ── Append estimated future entries to timeline ── */
-    const timeline = document.getElementById('timeline');
-    if (timeline && nextStep) {
-      // Add a visual separator
-      const sep = document.createElement('li');
-      sep.style.cssText = 'padding: 8px 0 16px; list-style:none;';
-      sep.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-left:0;">' +
-        '<div style="flex:0 0 32px"></div>' +
-        '<span style="font-size:11px;font-weight:700;color:#a0aabf;text-transform:uppercase;letter-spacing:.8px;">Estimated Upcoming Steps</span>' +
-        '</div>';
-      timeline.appendChild(sep);
+        // ── UI Stepper Manipulation (Polished Pills & Shadows) ──
+        const stepEls = document.querySelectorAll('.pt-step[data-step]');
 
-      for (let i = currentStep; i < TOTAL; i++) {
-        const s = STEPS[i];
-        const estD = estDates[s.num];
-        const li = document.createElement('li');
-        li.className = 'pt-tl-item pt-tl-item--est';
-        li.innerHTML =
-          '<div class="pt-tl-dot pt-tl-dot--pending"></div>' +
-          '<div class="pt-tl-body">' +
-          '<h4>' + s.name +
-          '<span class="pt-tl-est-label">' +
-          '<svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' +
-          ' Estimated' +
-          '</span>' +
-          '</h4>' +
-          '<p>' + s.desc + '</p>' +
-          '</div>' +
-          '<span class="pt-tl-date">Est. ' + fmtDate(estD) + '</span>';
-        timeline.appendChild(li);
-      }
-    }
+        stepEls.forEach(el => {
+            const n = parseInt(el.dataset.step, 10);
+            const circle = el.querySelector('.step-circle');
+            const icon = el.querySelector('.step-icon');
+            const check = el.querySelector('.step-check');
+            const badge = el.querySelector('.step-badge');
 
-}) ();
-  </script>
+            if (n < currentStep || (n === currentStep && isFullyCompleted)) {
+                // COMPLETED 
+                circle.className = "w-12 h-12 rounded-full flex items-center justify-center bg-capitol-blue shadow-[0_10px_20px_-5px_rgba(0,82,204,0.4)] transition-all duration-500 z-10 border-4 border-white";
+                icon.classList.add('hidden');
+                check.classList.remove('hidden');
+                badge.className = "px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-600 border border-emerald-100";
+                badge.textContent = "Completed";
+            }
+            else if (n === currentStep) {
+                // ACTIVE
+                circle.className = "w-12 h-12 rounded-full flex items-center justify-center bg-white border-4 border-capitol-blue transition-all duration-500 z-10 shadow-sm animate-pulse-slow";
+                icon.className = "text-capitol-blue font-extrabold";
+                badge.className = "px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-capitol-blueLight text-capitol-blue border border-capitol-blue/20 shadow-sm";
+                badge.textContent = "In Progress";
+            }
+        });
 
-  {% endblock %}
+        // Horizontal Line Fill Calculation
+        setTimeout(() => {
+            let fillPct = ((currentStep - 1) / (TOTAL - 1)) * 100;
+            if (isFullyCompleted) fillPct = 100;
+            document.getElementById('pt-stepper-fill').style.width = `${fillPct}%`;
+        }, 300); // Slight delay for smooth load animation effect
+
+        // Handle Right Side Card Data
+        const nextStep = (currentStep < TOTAL && !isFullyCompleted) ? STEPS[currentStep] : null;
+        if (nextStep) {
+            document.getElementById('pt-next-date-text').textContent = fmtDate(estDates[nextStep.num]);
+        } else {
+            document.getElementById('pt-next-date-text').innerHTML = "Process Completed";
+            document.getElementById('pt-stage-name').innerHTML = "Released <i class='ri-checkbox-circle-fill ml-2 text-emerald-400'></i>";
+        }
+
+        // Append Estimated Steps to Timeline blocks
+        const timeline = document.getElementById('timeline');
+        if (timeline && nextStep) {
+            const sep = document.createElement('div');
+            sep.innerHTML = '<div class="relative z-10 py-6 flex items-center gap-4"><div class="h-px bg-slate-200 flex-1"></div><span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-slate-100">Estimated Upcoming</span><div class="h-px bg-slate-200 flex-1"></div></div>';
+            timeline.appendChild(sep);
+
+            for (let i = currentStep; i < TOTAL; i++) {
+                const s = STEPS[i];
+                const estD = estDates[s.num];
+                const div = document.createElement('div');
+                div.className = 'relative z-10 flex items-start gap-6 pb-6 group opacity-50';
+                div.innerHTML =
+                    '<div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 border-4 border-white bg-slate-100 text-slate-400 mt-1 shadow-sm"><i class="ri-time-line"></i></div>' +
+                    '<div class="flex-1 bg-white rounded-2xl p-5 border border-slate-200 border-dashed">' +
+                    '<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">' +
+                    '<h4 class="text-sm font-bold text-slate-500">' + s.name + '</h4>' +
+                    '<span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Est. ' + fmtDate(estD) + '</span>' +
+                    '</div>' +
+                    '</div>';
+                timeline.appendChild(div);
+            }
+        }
+
+    }) ();
+    </script>
+</body>
+
+</html>

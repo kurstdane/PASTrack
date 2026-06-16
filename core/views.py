@@ -4418,11 +4418,22 @@ PAStrack Document Tracking System"""
 
     send_case_email(
         to_email=(case.client_email or "").strip(),
-        subject=f"PAStrack — Case {case.tracking_id} Successfully Received",
-        message=plain_message,
-        html_message=html_message,
+        subject=f"PAStrack Update: Submission Received ({case.tracking_id})",
+        message=(
+            f"Dear Client,\n\n"
+            f"Your transaction has been successfully received by the Provincial Assessor's Office and is now awaiting review.\n\n"
+            f"Transaction Details:\n"
+            f"• Tracking ID: {case.tracking_id}\n"
+            f"• Current Status: {dict(Case.STATUS_CHOICES).get(case.status, case.status)}\n\n"
+            f"You may monitor the progress of your transaction through the PASTrack portal using your tracking ID.\n\n"
+            f"For transaction tracking, FAQs, and service information, please visit our website.\n\n"
+            f"If you require assistance, please contact the Provincial Assessor's Office.\n\n"
+            f"Thank you for using PASTrack."
+        ),
     )
     sns_hook(event="case_received", payload={"tracking_id": case.tracking_id, "status": case.status})
+
+
 
     messages.success(request, f"Case {case.tracking_id} marked as Received.")
     return redirect("case_detail", tracking_id=case.tracking_id)
@@ -4541,9 +4552,21 @@ PAStrack Document Tracking System"""
 
     email_ok = send_case_email(
         to_email=(case.client_email or "").strip(),
-        subject=f"PAStrack — Case {case.tracking_id} Requires Correction",
-        message=plain_message,
-        html_message=html_message,
+        subject=f"PAStrack Update: Additional Action Required ({case.tracking_id})",
+        message=(
+            f"Dear Client,\n\n"
+            f"Your transaction requires additional action before processing can continue.\n\n"
+            f"Transaction Details:\n"
+            f"• Tracking ID: {case.tracking_id}\n"
+            f"• Current Status: Returned for Correction\n\n"
+            f"Remarks:\n"
+            f"{reason}\n\n"
+            f"Correction Deadline: {case.client_correction_deadline}\n\n"
+            f"Please review the remarks and submit the required corrections before the stated deadline.\n\n"
+            f"You may track your transaction and review updates through the PASTrack portal.\n\n"
+            f"For FAQs and assistance, please contact the Provincial Assessor's Office.\n\n"
+            f"Thank you."
+        ),
     )
     phone = (case.client_number or "").strip()
     sns_ok = False
@@ -4790,9 +4813,18 @@ PAStrack Document Tracking System"""
 
     send_case_email(
         to_email=(case.client_email or "").strip(),
-        subject=f"PAStrack — Case {case.tracking_id} Has Been Approved",
-        message=plain_message,
-        html_message=html_message,
+        subject=f"PAStrack Update: Transaction Approved ({case.tracking_id})",
+        message=(
+            f"Dear Client,\n\n"
+            f"Your transaction has successfully passed review and has been approved for further processing.\n\n"
+            f"Transaction Details:\n"
+            f"• Tracking ID: {case.tracking_id}\n"
+            f"• Current Status: {dict(Case.STATUS_CHOICES).get(case.status, case.status)}\n\n"
+            f"No action is required from you at this time.\n\n"
+            f"You may continue monitoring your transaction through the PASTrack portal.\n\n"
+            f"For FAQs, updates, and assistance, please visit our website or contact the Provincial Assessor's Office.\n\n"
+            f"Thank you for your patience and cooperation."
+        ),
     )
     sns_hook(event="case_approved", payload={"tracking_id": case.tracking_id, "status": case.status})
 
@@ -5243,11 +5275,22 @@ PAStrack Document Tracking System"""
 
     send_case_email(
         to_email=(case.client_email or "").strip(),
-        subject=f"PAStrack — Case {case.tracking_id} Is Ready for Release",
-        message=plain_message,
-        html_message=html_message,
+        subject=f"PAStrack Update: Documents Ready for Release ({case.tracking_id})",
+        message=(
+            f"Dear Client,\n\n"
+            f"Your transaction has been completed and is now ready for release.\n\n"
+            f"Transaction Details:\n"
+            f"• Tracking ID: {case.tracking_id}\n"
+            f"• Current Status: {dict(Case.STATUS_CHOICES).get(case.status, case.status)}\n\n"
+            f"Please prepare any required identification or supporting documents when claiming your records, if applicable.\n\n"
+            f"You may review your transaction details through the PASTrack portal.\n\n"
+            f"For office schedules, FAQs, and assistance, please contact the Provincial Assessor's Office.\n\n"
+            f"Thank you for using PASTrack."
+        ),
     )
     sns_hook(event="case_released", payload={"tracking_id": case.tracking_id, "status": case.status})
+
+    
 
     messages.success(request, f"Case {case.tracking_id} marked as Released.")
     return redirect("case_detail", tracking_id=case.tracking_id)
