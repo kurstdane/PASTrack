@@ -287,6 +287,12 @@
                                         <input type="hidden" name="doc_id" value="{{ doc.id }}">
                                     </td>
                                     <td style="text-align: right; vertical-align: top;">
+                                        {% if case.returned_by and case.returned_by.role == 'capitol_approver' and doc.review_remark %}
+                                            <label class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; margin-right: 0.5rem; cursor: pointer; color: #3b82f6; border-color: #bfdbfe;">
+                                                <i class="ri-upload-cloud-2-line"></i> Upload New
+                                                <input type="file" class="examiner-correction-upload-input" data-doc-id="{{ doc.id }}" data-tracking-id="{{ case.tracking_id }}" style="display:none;" accept=".pdf,.jpg,.jpeg,.png">
+                                            </label>
+                                        {% endif %}
                                         <a href="{% url 'download_case_document' doc.id %}" target="_blank" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
                                             Preview <i class="ri-external-link-line"></i>
                                         </a>
@@ -367,6 +373,55 @@
                                             checkbox.checked = false;
                                         }
                                         updateRowStyle(docId);
+                                    });
+                                });
+                                document.querySelectorAll('.examiner-correction-upload-input').forEach(input => {
+                                    input.addEventListener('change', function(e) {
+                                        if (!this.files.length) return;
+                                        const file = this.files[0];
+                                        const docId = this.dataset.docId;
+                                        const trackingId = this.dataset.trackingId;
+                                        const row = document.getElementById('doc_row_' + docId);
+                                        
+                                        const formData = new FormData();
+                                        formData.append('file', file);
+                                        
+                                        const btnLabel = this.parentElement;
+                                        const originalText = btnLabel.innerHTML;
+                                        btnLabel.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Uploading...';
+                                        btnLabel.style.pointerEvents = 'none';
+                                        
+                                        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '{{ csrf_token }}';
+                                        
+                                        fetch(`/case/${trackingId}/upload-correction/${docId}/`, {
+                                            method: 'POST',
+                                            headers: { 'X-CSRFToken': csrfToken },
+                                            body: formData
+                                        })
+                                        .then(res => res.json())
+                                        .then(data => {
+                                            if (data.success) {
+                                                row.style.backgroundColor = '#eff6ff';
+                                                row.style.borderLeft = '4px solid #3b82f6';
+                                                btnLabel.innerHTML = '<i class="ri-check-line"></i> Uploaded';
+                                                
+                                                const remark = row.querySelector('.doc-review-remark');
+                                                if (remark) {
+                                                    remark.value = '';
+                                                    remark.dispatchEvent(new Event('input'));
+                                                }
+                                            } else {
+                                                alert(data.error || 'Failed to upload.');
+                                                btnLabel.innerHTML = originalText;
+                                                btnLabel.style.pointerEvents = 'auto';
+                                            }
+                                        })
+                                        .catch(err => {
+                                            console.error(err);
+                                            alert('An error occurred during upload.');
+                                            btnLabel.innerHTML = originalText;
+                                            btnLabel.style.pointerEvents = 'auto';
+                                        });
                                     });
                                 });
                             });

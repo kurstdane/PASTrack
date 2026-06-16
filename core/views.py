@@ -4937,11 +4937,15 @@ def upload_correction_document(request, tracking_id, doc_id):
     case = get_object_or_404(Case, tracking_id=tracking_id)
     doc = get_object_or_404(CaseDocument, id=doc_id, case=case)
 
-    if request.user.role != "capitol_receiving":
-        return JsonResponse({"error": "Only Receiver can upload corrections inline."}, status=403)
+    role = getattr(request.user, "role", "")
+    if role not in ["capitol_receiving", "capitol_examiner"]:
+        return JsonResponse({"error": "Unauthorized to upload corrections inline."}, status=403)
         
-    if case.status not in {"client_correction", "not_received"}:
-        return JsonResponse({"error": "Case is not in correction state."}, status=400)
+    if role == "capitol_receiving" and case.status not in {"client_correction", "not_received"}:
+        return JsonResponse({"error": "Case is not in correction state for Receiver."}, status=400)
+        
+    if role == "capitol_examiner" and case.status not in {"in_review", "to_examine"}:
+        return JsonResponse({"error": "Case is not in review state for Examiner."}, status=400)
         
     if "file" not in request.FILES:
         return JsonResponse({"error": "No file uploaded."}, status=400)
