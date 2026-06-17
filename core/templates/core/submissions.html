@@ -1,110 +1,466 @@
-{% extends "base.html" %}
-{% block title %}Submissions{% endblock %}
+{% extends 'base_new.html' %}
+{% load static %}
+
+{% block title %}Requests Queue | LegalTrack{% endblock %}
+
+{% block extra_css %}
+
+    <style>
+        /* ===== HEADER ===== */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .greeting h1 { font-size: 1.5rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.25rem; }
+        .greeting span { font-size: 0.875rem; color: var(--text-muted); }
+
+        /* ===== PANELS ===== */
+        .panel {
+            background: var(--bg-surface); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);
+            margin-bottom: 1.5rem; padding: 1.5rem;
+        }
+
+        /* ===== ADVANCED FILTER TOOLBAR ===== */
+        .filter-toolbar { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+        
+        .search-bar { flex: 1; min-width: 250px; position: relative; }
+        .search-bar input {
+            width: 100%; padding: 0.6rem 1rem 0.6rem 2.5rem;
+            border: 1px solid var(--border); border-radius: var(--radius-md);
+            font-size: 0.875rem; color: var(--text-main); outline: none; transition: 0.2s;
+        }
+        .search-bar input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+        .search-bar i { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-light); }
+
+        .filter-select, .filter-date {
+            padding: 0.6rem 1rem; border: 1px solid var(--border); border-radius: var(--radius-md);
+            font-size: 0.875rem; color: var(--text-main); outline: none; background: white;
+        }
+        .filter-select {
+            padding-right: 2rem; appearance: none; cursor: pointer;
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2364748b%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat; background-position: right 0.7rem top 50%; background-size: 0.65rem auto;
+        }
+        .filter-select:hover, .filter-date:hover { border-color: var(--border-hover); }
+
+        .btn-primary {
+            background-color: var(--primary); color: white; border: none;
+            padding: 0.6rem 1.25rem; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: 0.2s;
+        }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+
+        .btn-outline {
+            background-color: white; color: var(--text-main); border: 1px solid var(--border);
+            padding: 0.6rem 1rem; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: 0.2s; text-decoration: none; display: inline-flex; align-items: center;
+        }
+        .btn-outline:hover { background-color: var(--inactive-bg); border-color: var(--border-hover); }
+
+        /* ===== TABS ===== */
+        .tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        .tab {
+            font-size: 0.85rem; font-weight: 500; color: var(--text-muted); text-decoration: none;
+            padding: 0.5rem 0.75rem; border-radius: var(--radius-md); transition: 0.2s;
+        }
+        .tab:hover { color: var(--text-main); background: var(--inactive-bg); }
+        .tab.active { background-color: var(--primary-light); color: var(--primary); font-weight: 600; }
+
+        /* ===== TABLE ===== */
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { font-size: 0.75rem; font-weight: 600; color: var(--text-main); padding: 1rem 0.5rem; border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.05em; }
+        td { padding: 1.2rem 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.875rem; vertical-align: middle; transition: 0.2s; }
+        tbody tr:hover td { background-color: #fafbfc; }
+
+        .tracking-link { color: var(--text-main); font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
+        .tracking-link:hover { color: var(--primary); }
+
+        .owner-info strong { display: block; font-size: 0.875rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.1rem; }
+        .owner-info span { font-size: 0.75rem; color: var(--text-muted); }
+
+        /* Status Pills */
+        .status-pill {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            padding: 0.25rem 0.75rem; border-radius: 999px;
+            font-size: 0.75rem; font-weight: 600; text-transform: capitalize; border: 1px solid transparent; white-space: nowrap;
+        }
+        .status-pill::before { content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; }
+        
+        .status-not_received, .status-pending { background: #fef3c7; color: #b45309; border-color: #fde68a; }
+        .status-not_received::before, .status-pending::before { background-color: #b45309; }
+        
+        .status-to_examine, .status-in_review { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+        .status-to_examine::before, .status-in_review::before { background-color: #0369a1; }
+
+        .status-client_correction, .status-returned { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+        .status-client_correction::before, .status-returned::before { background-color: #991b1b; }
+        
+        .status-received { background: var(--primary-light); color: var(--primary); border-color: #bfdbfe; }
+        .status-received::before { background-color: var(--primary); }
+        
+        .status-approved, .status-released { background: var(--success-bg); color: var(--success-text); border-color: #bbf7d0; }
+        .status-approved::before, .status-released::before { background-color: var(--success-text); }
+
+        .status-for_taxmapping, .status-for_approval, .status-for_numbering, .status-for_release { background: #f3e8ff; color: #6b21a8; border-color: #e9d5ff; }
+        .status-for_taxmapping::before, .status-for_approval::before, .status-for_numbering::before, .status-for_release::before { background-color: #6b21a8; }
+
+        .action-btn { border: none; background: transparent; cursor: pointer; color: var(--primary); padding: 0.4rem; border-radius: var(--radius-md); transition: 0.2s; font-size: 1.1rem; text-decoration: none;}
+        .action-btn:hover { background: var(--primary-light); color: var(--primary-hover); }
+
+        /* Pagination */
+        .pagination-container { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; font-size: 0.875rem; color: var(--text-muted); }
+        .pagination-controls { display: flex; gap: 0.25rem; align-items: center; }
+        .page-btn { border: 1px solid transparent; background: transparent; color: var(--text-muted); padding: 0.4rem 0.75rem; border-radius: var(--radius-md); cursor: pointer; font-size: 0.875rem; font-weight: 500; transition: 0.2s; text-decoration: none;}
+        .page-btn.active { background: var(--primary); color: white; box-shadow: var(--shadow-sm); }
+        .page-btn:hover:not(.active) { background: var(--border); color: var(--text-main); }
+
+        /* Table Layout Refinements */
+.legal-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.legal-table th {
+    background: #f8fafc;
+    padding: 1rem 1.5rem;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid var(--border);
+}
+
+.legal-table td {
+    padding: 1.25rem 1.5rem; /* Increased vertical padding for air */
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+/* Specific Column Widths */
+.col-case-no { width: 15%; }
+.col-client { width: 30%; }
+.col-origin { width: 15%; }
+.col-date   { width: 15%; }
+.col-status { width: 15%; }
+.col-actions { width: 10%; text-align: right; }
+
+/* Enhanced Action Links */
+.action-group {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    align-items: center;
+}
+
+.action-link {
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: 0.2s;
+}
+
+.action-link.secondary {
+    color: var(--primary);
+    border-bottom: 1px solid transparent;
+}
+
+.action-link.secondary:hover {
+    border-bottom-color: var(--primary);
+}
+
+.action-link.primary {
+    background: var(--primary-light);
+    color: var(--primary);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+}
+
+.action-link.primary:hover {
+    background: var(--primary);
+    color: white;
+}
+
+/* Tracking ID Styling */
+.tracking-code {
+    font-family: 'Inter', monospace;
+    font-weight: 700;
+    color: var(--text-main);
+    letter-spacing: -0.02em;
+}
+    </style>
+{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="row-between">
-        <div>
-            <h2 class="page-title">Submissions</h2>
-            <p class="page-subtitle">{{ role_display }}</p>
+    <div class="header">
+        <div class="greeting">
+            <h1>{{ page_title }}</h1>
+            <span>{{ page_subtitle }} | Access level: <strong>{{ role_display }}</strong></span>
         </div>
-        <form method="get" class="searchbar m-0">
-            <div class="grow">
-                <label for="id_q">Search</label>
-                <input id="id_q" name="q" value="{{ q }}" placeholder="Tracking ID, owner, email..." />
-            </div>
-            <div style="min-width:220px;">
-                <label for="id_case_type">Transaction Type</label>
-                <select id="id_case_type" name="case_type">
-                    <option value="">All</option>
-                    {% for v,l in case_type_choices %}
-                        <option value="{{ v }}" {% if filter_case_type == v %}selected{% endif %}>{{ l }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div style="min-width:220px;">
-                <label for="id_lgu">LGU</label>
-                <select id="id_lgu" name="lgu">
-                    <option value="">All</option>
-                    {% for v,l in lgu_choices %}
-                        <option value="{{ v }}" {% if filter_lgu == v %}selected{% endif %}>{{ l }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div style="display:flex; gap:10px; align-items:end; min-width:340px;">
-                <div style="min-width:160px; flex:1;">
-                    <label for="id_date_from">From</label>
-                    <input id="id_date_from" type="date" name="date_from" value="{{ filter_date_from }}" />
-                </div>
-                <div style="min-width:160px; flex:1;">
-                    <label for="id_date_to">To</label>
-                    <input id="id_date_to" type="date" name="date_to" value="{{ filter_date_to }}" />
-                </div>
+    </div>
+
+    <!-- FILTER TOOLBAR -->
+    <div class="panel" style="padding: 1rem 1.5rem;">
+        <form id="filter-form" method="GET" action="" class="filter-toolbar">
+            <!-- Preserve tab and scope state when searching -->
+            <input type="hidden" name="tab" value="{{ tab }}">
+            <input type="hidden" name="scope" value="{{ scope }}">
+            
+            <div class="search-bar">
+                <i class="ri-search-line"></i>
+                <input type="text" name="search" value="{{ selected_search }}" placeholder="Search tracking no, client name, or email...">
             </div>
 
-            <input type="hidden" name="tab" value="{{ tab }}" />
-            <div>
-                <button class="btn btn-primary" type="submit">Filter</button>
-            </div>
+            <select name="time_range" class="filter-select" title="Sort/Filter by Date">
+                <option value="all" {% if selected_time_range == 'all' %}selected{% endif %}>All Time</option>
+                <option value="today" {% if selected_time_range == 'today' %}selected{% endif %}>Today</option>
+                <option value="this_week" {% if selected_time_range == 'this_week' %}selected{% endif %}>This Week</option>
+                <option value="this_month" {% if selected_time_range == 'this_month' %}selected{% endif %}>This Month</option>
+                <option value="this_year" {% if selected_time_range == 'this_year' %}selected{% endif %}>This Year</option>
+            </select>
+
+            <!-- Only show advanced filters for Global Transactions -->
+            {% if scope == 'all' %}
+                <select name="lgu" class="filter-select">
+                    <option value="all">All LGUs</option>
+                    {% for item in lgu_list %}
+                        <option value="{{ item }}" {% if selected_lgu == item %}selected{% endif %}>{{ item }}</option>
+                    {% endfor %}
+                </select>
+
+                <select name="transaction_type" class="filter-select">
+                    <option value="all">All Transaction Types</option>
+                    {% for key, val in type_list %}
+                        <option value="{{ key }}" {% if selected_transaction_type == key %}selected{% endif %}>{{ val }}</option>
+                    {% endfor %}
+                </select>
+
+                <input type="date" name="date_from" class="filter-date" value="{{ selected_date_from }}" title="Date From">
+                <input type="date" name="date_to" class="filter-date" value="{{ selected_date_to }}" title="Date To">
+            {% endif %}
+
+            <!-- Clear Filters Button -->
+            {% if selected_search or selected_time_range != 'all' or selected_lgu != 'all' or selected_transaction_type != 'all' or selected_date_from or selected_date_to %}
+                <a href="?scope={{ scope }}&tab={{ tab }}" class="btn-outline" title="Clear Filters"><i class="ri-close-line" style="font-size: 1.2rem;"></i></a>
+            {% endif %}
         </form>
     </div>
 
-    <div class="subtabs" role="tablist" aria-label="Status">
-        {% for key,label in tabs %}
-            <a href="?tab={{ key }}{% if qs_params_no_tab %}&{{ qs_params_no_tab }}{% endif %}">
-                <span class="{% if tab == key %}active{% endif %}">{{ label }}</span>
-            </a>
-        {% endfor %}
-    </div>
-</div>
+    <!-- MAIN DATA PANEL -->
+    <div class="panel">
+        
+        <!-- Status Tabs -->
+        <div class="tabs">
+            {% for key, label in tabs %}
+                <!-- Note: qs_params_no_tab preserves your current search/date filters while swapping tabs -->
+                <a href="?tab={{ key }}{% if qs_params_no_tab %}&{{ qs_params_no_tab }}{% endif %}" class="tab {% if tab == key %}active{% endif %}">
+                    {{ label }}
+                </a>
+            {% endfor %}
+        </div>
 
-<div class="card card--flat">
-    <div class="card__header">
-        <strong>Transactions</strong>
-        <span class="muted">{{ page_obj.paginator.count }} total</span>
-    </div>
-    <div class="card__body card__body--flush">
-        {% if page_obj.object_list %}
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th style="width:22%">Tracking No.</th>
-                        <th>Owner</th>
-                        <th style="width:16%">Status</th>
-                        <th style="width:22%">Updated</th>
-                        <th style="width:12%">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for case in page_obj.object_list %}
-                        <tr>
-                            <td><strong><a href="{% url 'case_detail' case.tracking_id %}">{{ case.tracking_id }}</a></strong></td>
-                            <td>
-                                {{ case.client_display_name }}
-                                <div class="muted mt-4 fs-92">Submitted by: {{ case.submitted_by|default:"—" }}</div>
-                            </td>
-                            <td class="muted">{{ case.get_status_display }}</td>
-                            <td class="muted">{{ case.updated_at|date:"M d, Y H:i" }}</td>
-                            <td><a class="btn btn-secondary btn-sm" href="{% url 'case_detail' case.tracking_id %}">Open</a></td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <!-- Data Table -->
+<div style="overflow-x: auto;">
+            {% if page_obj and page_obj.object_list %}
+<table class="legal-table">
+    <thead>
+    <tr>
+        <th class="col-case-no">Case Number</th>
+        <th class="col-client">Client & Request</th>
+        {% if request.user.role == 'capitol_numberer' %}
+            <th>Transaction Number</th>
+        {% endif %}
+        
+        {% if tab == 'to_examine' or tab == 'in_review' %}
+            <th>Assigned To</th>
+            <th>Date Assigned</th>
         {% else %}
-            <div class="card__body"><p class="muted" style="margin:0;">No transactions found.</p></div>
+            <th>LGU Origin</th>
+            <th>Date Submitted</th>
+        {% endif %}
+        
+        <th class="col-status">Status</th>
+        
+        {% if scope == 'me' and tab != 'to_examine' %}
+            <th style="text-align: right;">Action</th>
+        {% endif %}
+    </tr>
+</thead>
+    <tbody>
+    {% for case in page_obj %}
+    <tr class="clickable-row" data-url="{% url 'case_detail' case.tracking_id %}" onclick="window.location=this.dataset.url">
+        <td><span class="tracking-code">{{ case.tracking_id }}</span></td>
+        <td>
+            <div class="client-name">{{ case.client_name }}</div>
+            <div class="request-subtext">{{ case.get_case_type_display }}</div>
+            {% if case.status in "for_taxmapping,for_approval,approved,for_numbering,for_release,released" %}
+                <div class="request-subtext" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.3rem;">
+                    Examined by: <strong>{{ case.assigned_to.full_name|default:case.assigned_to.email }}</strong>
+                </div>
+            {% endif %}
+            {% if case.approver_name %}
+                <div class="request-subtext" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.1rem;">
+                    Approved by: <strong>{{ case.approver_name }}</strong>
+                </div>
+            {% endif %}
+        </td>
+
+        {% if request.user.role == 'capitol_numberer' %}
+            <td style="font-family: monospace; font-weight: 700; color: #1e293b;">
+                {{ case.td_number|default:"—" }}
+            </td>
+        {% endif %}
+
+        {% if tab == 'to_examine' or tab == 'in_review' %}
+            <td>
+                {% if case.assigned_to %}
+                <div class="user-info-cell">
+                    <div class="avatar-circle">
+                        {{ case.assigned_to.first_name|slice:":1" }}{{ case.assigned_to.last_name|slice:":1" }}
+                    </div>
+                    <div class="user-details">
+                        <span class="user-name">{{ case.assigned_to.get_full_name }}</span>
+                        <span class="user-role">Examiner</span>
+                    </div>
+                </div>
+                {% else %}
+                <span class="text-muted italic">Not yet assigned</span>
+                {% endif %}
+            </td>
+            <td><span class="date-text">{{ case.updated_at|date:"M d, Y" }}</span></td>
+        {% else %}
+            <td><span class="date-text">{{ case.area|default:"Direct" }}</span></td>
+            <td><span class="date-text">{{ case.created_at|date:"M d, Y" }}</span></td>
+        {% endif %}
+
+        <td>
+            <span class="status-pill status-{{ case.status }}">
+                {{ case.get_status_display }}
+            </span>
+        </td>
+
+        {% if scope == 'me' and tab != 'to_examine' %}
+        <td style="text-align: right;">
+            <a href="{% url 'case_detail' case.tracking_id %}" class="view-btn">
+                <i class="ri-arrow-right-line"></i>
+            </a>
+        </td>
+        {% endif %}
+    </tr>
+    {% endfor %}
+</tbody>
+</table>
+            {% else %}
+            {% endif %}
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+            <div class="pagination-container">
+                <span>Showing page <strong>{{ page_obj.number }}</strong> of <strong>{{ page_obj.paginator.num_pages }}</strong></span>
+                
+                <div class="pagination-controls">
+                    {% if page_obj.has_previous %}
+                        <!-- Preserve all URL params when paginating -->
+                        <a href="?page={{ page_obj.previous_page_number }}{% if qs_params %}&{{ qs_params }}{% endif %}" class="page-btn"><i class="ri-arrow-left-s-line"></i> Prev</a>
+                    {% endif %}
+                    
+                    {% for n in page_obj.paginator.page_range %}
+                        {% if n == page_obj.number %}
+                            <span class="page-btn active">{{ n }}</span>
+                        {% elif n > page_obj.number|add:'-3' and n < page_obj.number|add:'3' %}
+                            <a href="?page={{ n }}{% if qs_params %}&{{ qs_params }}{% endif %}" class="page-btn">{{ n }}</a>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if qs_params %}&{{ qs_params }}{% endif %}" class="page-btn">Next <i class="ri-arrow-right-s-line"></i></a>
+                    {% endif %}
+                </div>
+            </div>
         {% endif %}
     </div>
 
-    {% if page_obj.paginator.num_pages > 1 %}
-        <div class="pagination">
-            {% if page_obj.has_previous %}
-                <a class="pagepill" href="?{% if qs_params %}{{ qs_params }}&{% endif %}page={{ page_obj.previous_page_number }}">Prev</a>
-            {% endif %}
-            <span class="pagepill active">{{ page_obj.number }}</span>
-            {% if page_obj.has_next %}
-                <a class="pagepill" href="?{% if qs_params %}{{ qs_params }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
-            {% endif %}
+
+    <div id="assignModal" class="assign-modal-backdrop" onclick="if(event.target === this) closeAssignModal()">
+    <div class="assign-modal-panel">
+        <div class="assign-header">
+            <h3>Assign Case <span id="modalTrackingId" style="color: var(--primary);"></span></h3>
+            <button type="button" class="close-modal-btn" onclick="closeAssignModal()">&times;</button>
         </div>
-    {% endif %}
+        <form id="assignForm" method="POST" action="">
+            {% csrf_token %}
+            <div class="assign-body">
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+                    Client Name: <strong id="modalClientName" style="color: var(--text-main);"></strong>
+                </p>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">Assign to Examiner</label>
+                    <select name="assigned_to" required class="assign-select" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px;">
+                        <option value="" disabled selected>Select an examiner...</option>
+                        {% for ex in examiners %}
+                            <option value="{{ ex.id }}">{{ ex.full_name|default:ex.email }} ({{ ex.active_load|default:0 }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; height: 45px;">
+                    Confirm Assignment
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
+
+<script>
+    function openAssignModal(trackingId, clientName) {
+        // Set the visible text in the modal
+        document.getElementById('modalTrackingId').innerText = trackingId;
+        document.getElementById('modalClientName').innerText = clientName;
+        
+        // Dynamically set the POST URL for this specific case
+        // This matches path('case/<str:tracking_id>/assign/', views.assign_case, name='assign_case')
+        document.getElementById('assignForm').action = `/case/${trackingId}/assign/`;
+        
+        // Show the modal
+        document.getElementById('assignModal').classList.add('active');
+    }
+
+    function closeAssignModal() {
+        document.getElementById('assignModal').classList.remove('active');
+    }
+
+    // Optional: Close modal if 'Esc' key is pressed
+    document.addEventListener('keydown', function(event) {
+        if (event.key === "Escape") {
+            closeAssignModal();
+        }
+    });
+
+    (function () {
+      const filterForm = document.getElementById('filter-form');
+      if (!filterForm) return;
+
+      // Auto-submit on dropdown or date change
+      const autoSubmitFields = filterForm.querySelectorAll(
+        'select, input[type="date"]'
+      );
+
+      autoSubmitFields.forEach(function (field) {
+        field.addEventListener('change', function () {
+          filterForm.submit();
+        });
+      });
+
+      // Auto-submit search with debounce (wait 500ms after typing stops)
+      const searchInput = filterForm.querySelector('input[type="text"]');
+      if (searchInput) {
+        let debounceTimer;
+        searchInput.addEventListener('input', function () {
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(function () {
+            filterForm.submit();
+          }, 500);
+        });
+      }
+    })();
+</script>
+
 {% endblock %}

@@ -126,6 +126,13 @@ class GmailEmailBackend(SMTPBackend):
 
             # For STARTTLS connections (usually port 587/2525/443)
             if self.use_tls and active_port != 465:
+                try:
+                    if hasattr(self.connection, "_host"):
+                        self.connection._host = host
+                    if hasattr(self.connection, "host"):
+                        self.connection.host = host
+                except Exception:
+                    pass
                 print("[SMTP-DEBUG] Enabling STARTTLS", file=sys.stderr)
                 self.connection.starttls(context=context)
 

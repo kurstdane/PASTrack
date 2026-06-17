@@ -1,0 +1,540 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PASTrack{% endblock %}</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --bg-body: #f8fafc;
+            --bg-surface: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --text-light: #94a3b8;
+            --primary: #1d4ed8;
+            --primary-hover: #1e3a8a;
+            --primary-light: #eff6ff;
+            --border: #e2e8f0;
+            --border-hover: #cbd5e1;
+            
+            --danger-bg: #fee2e2;
+            --danger-text: #dc2626;
+            --success-bg: #dcfce7;
+            --success-text: #166534;
+            --inactive-bg: #f1f5f9;
+            --inactive-text: #475569;
+            
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05);
+            
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body[data-theme="dark"] {
+            --bg-body: #0b1220;
+            --bg-surface: #0f172a;
+            --text-main: #e5e7eb;
+            --text-muted: #94a3b8;
+            --text-light: #64748b;
+            --primary: #60a5fa;
+            --primary-hover: #3b82f6;
+            --primary-light: rgba(96, 165, 250, 0.16);
+            --border: #1f2a44;
+            --border-hover: #334155;
+            --inactive-bg: rgba(148, 163, 184, 0.12);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body[data-theme="system"] {
+                --bg-body: #0b1220;
+                --bg-surface: #0f172a;
+                --text-main: #e5e7eb;
+                --text-muted: #94a3b8;
+                --text-light: #64748b;
+                --primary: #60a5fa;
+                --primary-hover: #3b82f6;
+                --primary-light: rgba(96, 165, 250, 0.16);
+                --border: #1f2a44;
+                --border-hover: #334155;
+                --inactive-bg: rgba(148, 163, 184, 0.12);
+            }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* STRICT FULL-SCREEN LOCK */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;           /* Exactly 100% of viewport height */
+            width: 100vw;            /* Exactly 100% of viewport width */
+            overflow: hidden;        /* Prevents the entire browser window from scrolling */
+            -webkit-font-smoothing: antialiased;
+        }
+
+        input, select, textarea, button { font-family: inherit; }
+        input, select, textarea {
+            background-color: var(--bg-surface);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+        input::placeholder, textarea::placeholder { color: var(--text-light); }
+
+        /* ===== INTERACTIVE SIDEBAR ===== */
+        .sidebar {
+            width: 80px; /* Collapsed state */
+            background-color: var(--bg-surface);
+            border-right: 1px solid var(--border);
+            display: flex; 
+            flex-direction: column; 
+            padding: 2rem 0.75rem; /* Tighter padding when collapsed */
+            z-index: 20;
+            flex-shrink: 0;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s;
+            overflow-x: hidden; /* Hides text when collapsed */
+            white-space: nowrap; /* Prevents text from wrapping to next line */
+        }
+
+        /* Hover expansion */
+        .sidebar:hover {
+            width: 260px;
+            padding: 2rem 1.25rem;
+        }
+
+        .brand-logo { 
+            display: flex; align-items: center; 
+            margin-bottom: 2.5rem; padding-left: 0.25rem;
+            font-size: 1.5rem; font-weight: 800; color: var(--text-main);
+        }
+        .brand-logo i { 
+            font-size: 1.75rem; min-width: 32px; margin-right: 0.75rem;
+            background: linear-gradient(to bottom, #f59e0b, #dc2626, #2563eb); 
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .nav-menu { display: flex; flex-direction: column; gap: 0.5rem; width: 100%; }
+        
+        .nav-item {
+            display: flex; align-items: center;
+            color: var(--text-muted); text-decoration: none;
+            padding: 0.75rem; border-radius: var(--radius-md);
+            cursor: pointer; transition: background 0.2s, color 0.2s; font-size: 0.9rem; font-weight: 500;
+        }
+        /* Ensure icons stay fixed size and spacing */
+        .nav-item i, .logout-btn i { font-size: 1.25rem; min-width: 24px; text-align: center; margin-right: 1rem; }
+        
+        .nav-item:hover { color: var(--text-main); background: var(--inactive-bg); }
+        .nav-item.active { color: var(--primary); background: var(--primary-light); font-weight: 600; }
+        .nav-item.active i { color: var(--primary); }
+
+        .sidebar-bottom { margin-top: auto; display: flex; flex-direction: column; gap: 0.5rem; overflow: hidden; }
+        
+        .user-profile-nav {
+            display: flex; align-items: center; padding: 1rem 0.25rem;
+            border-top: 1px solid var(--border); margin-bottom: 0.5rem;
+        }
+        .user-avatar {
+            width: 36px; height: 36px; border-radius: 50%;
+            background-color: var(--primary-light); color: var(--primary);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
+        }
+        .user-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+        .user-info-nav { margin-left: 0.75rem; }
+        .user-info-nav strong { display: block; font-size: 0.875rem; color: var(--text-main); font-weight: 600;}
+        .user-info-nav span { font-size: 0.75rem; color: var(--text-muted); }
+
+        .logout-btn {
+            display: flex; align-items: center; color: var(--danger-text); text-decoration: none;
+            padding: 0.75rem; border-radius: var(--radius-md); cursor: pointer; transition: 0.2s;
+            font-size: 0.9rem; font-weight: 500;
+            background: transparent; border: none; width: 100%; text-align: left;
+        }
+        .logout-btn:hover { background: var(--danger-bg); }
+
+        /* TEXT FADE ANIMATION: Hide text by default, reveal on sidebar hover */
+        .hide-text { opacity: 0; transition: opacity 0.2s ease; }
+        .sidebar:hover .hide-text { opacity: 1; transition-delay: 0.1s; }
+
+        /* ===== MOBILE HEADER & SIDEBAR ===== */
+        .mobile-header {
+            display: none;
+            padding: 0 0 1rem 0;
+            margin-bottom: 1.5rem;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+        }
+        .mobile-menu-toggle {
+            background: transparent; border: none; font-size: 1.5rem; color: var(--text-main); cursor: pointer; padding: 4px;
+        }
+
+        @media (max-width: 1023px) {
+            .mobile-header { display: flex; }
+            .sidebar {
+                position: fixed; top: 0; left: -100%; height: 100vh; width: 260px !important; z-index: 2000;
+                box-shadow: var(--shadow-md);
+            }
+            .sidebar.mobile-open { left: 0; }
+            .main-content { padding: 1.5rem; }
+            
+            /* Responsive Utilities */
+            .table, .legal-table { display: block; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .table th, .table td, .legal-table th, .legal-table td { white-space: nowrap; padding: 0.75rem; }
+            
+            /* Forms */
+            .form-grid { grid-template-columns: 1fr !important; gap: 1rem; }
+            input, select, textarea { width: 100%; font-size: 16px !important; }
+        }
+
+        @media (max-width: 767px) {
+            /* Modals & Drawers full width on mobile */
+            .assign-modal-panel, .drawer-panel { width: 100vw !important; max-width: 100vw; margin: 0; border-radius: 0; }
+            .drawer-panel { right: -100vw; }
+            .drawer-panel.active { right: 0; }
+            .assign-modal-panel { height: 100vh; display: flex; flex-direction: column; justify-content: center; transform: translateY(100vh); }
+            .assign-modal-backdrop.active .assign-modal-panel { transform: translateY(0); }
+            
+            /* Stacking advanced filters */
+            .filter-toolbar { flex-direction: column; align-items: stretch; }
+            .search-bar, .filter-select, .filter-date, .btn-primary { width: 100%; }
+        }
+
+        /* ===== MAIN CONTENT WRAPPER ===== */
+        .main-content {
+            flex: 1;               /* Fills all remaining space */
+            height: 100vh;         /* Strict 100vh limit */
+            padding: 2.5rem 3rem;
+            overflow-y: auto;      /* Allows ONLY this specific box to scroll if content gets too tall */
+            background-color: var(--bg-body);
+        }
+
+            /* Slide-in Drawer Mechanics */
+        .drawer-backdrop { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.4); z-index: 1040; opacity: 0; visibility: hidden; transition: 0.3s; }
+        .drawer-backdrop.active { opacity: 1; visibility: visible; }
+        .drawer-panel { position: fixed; top: 0; right: -550px; width: 500px; max-width: 90vw; height: 100vh; background: white; z-index: 1050; box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1); transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; }
+        .drawer-panel.active { right: 0; }
+
+
+        .assign-modal-backdrop {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+    z-index: 3000; display: flex; align-items: center; justify-content: center;
+    opacity: 0; visibility: hidden; transition: 0.2s;
+}
+.assign-modal-backdrop.active { opacity: 1; visibility: visible; }
+.assign-modal-panel {
+    background: white; width: 100%; max-width: 400px; border-radius: 12px;
+    transform: translateY(20px); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.assign-modal-backdrop.active .assign-modal-panel { transform: translateY(0); }
+
+
+/* Better Pill Styling */
+.status-pill {
+    padding: 0.35rem 0.8rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 6px; /* Slightly squarer modern look */
+    text-transform: capitalize;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+/* Purple Theme for To Examine */
+
+.status-to_examine::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: #7c3aed;
+    border-radius: 50%;
+}
+
+/* Ensure Received looks distinct */
+.status-received {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+/* Table Interaction */
+.clickable-row {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+.clickable-row:hover {
+    background-color: #f8fafc !important;
+}
+
+/* Typography Improvements */
+.client-name {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 0.9rem;
+}
+.request-subtext {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 2px;
+}
+.date-text {
+    font-size: 0.85rem;
+    color: #475569;
+}
+
+/* User Info & Avatar Styling */
+.user-info-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.avatar-circle {
+    width: 32px;
+    height: 32px;
+    background: #e0f2fe;
+    color: #0369a1;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    border: 1px solid #bae6fd;
+}
+.user-details {
+    display: flex;
+    flex-direction: column;
+}
+.user-name {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #1e293b;
+}
+.user-role {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+/* Polished Status Pills */
+.status-pill {
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 9999px; /* Pill shape */
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+
+.status-to_examine::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: #8b5cf6;
+    border-radius: 50%;
+}
+
+/* View Button */
+.view-btn {
+    color: #94a3b8;
+    font-size: 1.2rem;
+    transition: color 0.2s;
+}
+.clickable-row:hover .view-btn {
+    color: var(--primary);
+}
+
+
+.status-to_examine {
+    background: #f5f3ff;
+    color: #6d28d9;
+    border: 1px solid #ddd6fe;
+}
+
+.status-received {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+    </style>
+
+    <!-- Block for page-specific CSS -->
+    {% block extra_css %}{% endblock %}
+</head>
+<body data-theme="{{ request.user.theme_preference|default:'light' }}">
+
+    <!-- INTERACTIVE SIDEBAR -->
+    <aside class="sidebar">
+    <div class="brand-logo" style="display: flex; align-items: center; gap: 2px; padding: 0 ;">
+        <!-- The Logo Mark -->
+        <img src="{% static 'core/logo.png' %}" alt="Logo" style="width: 54px; height: 54px; object-fit: contain;">
+        
+        <!-- The Brand Name SVG -->
+        <img src="{% static 'core/sub-logo.png' %}" alt="PAStrack" class="hide-text" style="height: 24px; object-fit: contain;">
+    </div>
+        
+        <nav class="nav-menu">
+            <!-- 1. Universal: Dashboard -->
+            <a href="{% url 'dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i class="ri-dashboard-line"></i> <span class="hide-text">Dashboard</span>
+            </a>
+
+            <!-- 2. Super Admin ONLY -->
+            {% if request.user.role == "super_admin" %}
+            <a href="{% url 'submissions' %}?scope=all" class="nav-item {% if request.resolver_match.url_name == 'submissions' %}active{% endif %}">
+                <i class="ri-global-line"></i> <span class="hide-text">All Transactions</span>
+            </a>
+            <a href="{% url 'user_management' %}" class="nav-item {% if 'user' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="ri-group-line"></i> <span class="hide-text">User Management</span>
+            </a>
+            <a href="{% url 'reports' %}" class="nav-item {% if 'report' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="ri-bar-chart-2-line"></i> <span class="hide-text">System Reports</span>
+            </a>
+            {% endif %}
+
+            <!-- 3. LGU Admin ONLY -->
+            {% if request.user.role == "lgu_admin" %}
+            <a href="{% url 'my_submissions' %}?tab=all" class="nav-item {% if request.resolver_match.url_name == 'my_submissions' %}active{% endif %}">
+                <i class="ri-folder-user-line"></i> <span class="hide-text">My Workspace</span>
+            </a>
+            <a href="{% url 'drafts' %}" class="nav-item {% if request.resolver_match.url_name == 'drafts' %}active{% endif %}">
+                <i class="ri-file-edit-line"></i> <span class="hide-text">Drafts</span>
+            </a>
+            <a href="{% url 'reports' %}" class="nav-item {% if 'report' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="ri-bar-chart-2-line"></i> <span class="hide-text">Reports</span>
+            </a>
+            {% endif %}
+
+            <!-- 4. Capitol Staff (Receiver, Examiner, Approver, Numberer, Releaser) -->
+            {% if request.user.role in "capitol_receiving,capitol_examiner,capitol_approver,capitol_taxmapper,capitol_numberer,capitol_releaser" %}
+            <a href="{% url 'submissions' %}?scope=me&tab=all_assigned" class="nav-item {% if request.resolver_match.url_name == 'submissions' and request.GET.scope == 'me' %}active{% endif %}">
+                <i class="ri-folder-user-line"></i> <span class="hide-text">My Workspace</span>
+            </a>
+            {% if request.user.role == "capitol_receiving" %}
+            <a href="{% url 'drafts' %}" class="nav-item {% if request.resolver_match.url_name == 'drafts' %}active{% endif %}">
+                <i class="ri-file-edit-line"></i> <span class="hide-text">Drafts</span>
+            </a>
+            {% endif %}
+            <a href="{% url 'submissions' %}?scope=all" class="nav-item {% if request.resolver_match.url_name == 'submissions' and request.GET.scope == 'all' %}active{% endif %}">
+                <i class="ri-global-line"></i> <span class="hide-text">All Transactions</span>
+            </a>
+            <a href="{% url 'staff_reports' %}" class="nav-item {% if 'report' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="ri-bar-chart-2-line"></i> <span class="hide-text">My Reports</span>
+            </a>
+            {% endif %}
+
+            <!-- 5. Universal: Activity Logs & Settings -->
+            <a href="{% url 'audit_logs' %}" class="nav-item {% if 'log' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="ri-history-line"></i> <span class="hide-text">Activity Logs</span>
+            </a>
+            
+            <a href="{% url 'settings' %}" class="nav-item {% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
+                <i class="ri-settings-4-line"></i> <span class="hide-text">Settings</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="user-profile-nav">
+                <div class="user-avatar">
+                    {% if request.user.photo %}
+                        <img src="{{ request.user.photo.url }}" alt="Avatar">
+                    {% else %}
+                        {{ request.user.first_name|slice:":2"|upper|default:"AD" }}
+                    {% endif %}
+                </div>
+                <div class="user-info-nav hide-text">
+                    <strong>{{ request.user.first_name|default:"User" }}</strong>
+                    <span>{{ request.user.get_role_display|default:"System User" }}</span>
+                </div>
+            </div>
+            
+            <form method="post" action="{% url 'logout' %}" style="margin:0;">
+                {% csrf_token %}
+                <button type="submit" class="logout-btn">
+                    <i class="ri-logout-box-r-line"></i> <span class="hide-text">Sign Out</span>
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- MAIN APP FRAME -->
+    <main class="main-content">
+        <div class="mobile-header">
+            <button type="button" class="mobile-menu-toggle" aria-label="Toggle Menu" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')">
+                <i class="ri-menu-line"></i>
+            </button>
+            <div style="font-weight: 700; color: var(--text-main); font-size: 1.2rem;">PASTrack</div>
+        </div>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Block for page-specific JavaScript -->
+    {% block extra_js %}{% endblock %}
+
+    <div id="quickViewBackdrop" class="drawer-backdrop" onclick="closeQuickView()"></div>
+    <div id="quickViewDrawer" class="drawer-panel">
+        <div style="display:flex; height:100%; align-items:center; justify-content:center;">
+            <i class="ri-loader-4-line ri-spin" style="font-size: 2rem; color: #1d4ed8;"></i>
+        </div>
+    </div>
+
+    <script>
+        function openQuickView(trackingId) {
+            const backdrop = document.getElementById('quickViewBackdrop');
+            const drawer = document.getElementById('quickViewDrawer');
+
+            // Show loading spinner
+            drawer.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center;"><i class="ri-loader-4-line ri-spin" style="font-size: 2rem; color: #1d4ed8;"></i></div>';
+            backdrop.classList.add('active');
+            drawer.classList.add('active');
+            
+            // Lock the main page from scrolling
+            document.body.style.overflow = 'hidden';
+
+            // Fetch the drawer HTML from the server
+            fetch(`/case/${trackingId}/quick-view/`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.text();
+                })
+                .then(html => {
+                    drawer.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error fetching quick view:', error);
+                    drawer.innerHTML = '<div style="padding: 2rem; text-align: center; color: #dc2626;">Error loading case preview.</div>';
+                });
+        }
+
+        function closeQuickView() {
+            document.getElementById('quickViewBackdrop').classList.remove('active');
+            document.getElementById('quickViewDrawer').classList.remove('active');
+            
+            // Restore background scrolling
+            document.body.style.overflow = '';
+        }
+    </script>
+
+</body>
+</html>

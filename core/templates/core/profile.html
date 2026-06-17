@@ -1,59 +1,170 @@
-{% extends "base.html" %}
-{% block title %}Profile{% endblock %}
+{% extends "base_new.html" %}
+{% block title %}Profile | PAStrack{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-wrap { max-width: 980px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem; }
+    .header h1 { font-size: 1.5rem; font-weight: 700; color: var(--text-main); margin: 0; }
+    .header .subtitle { font-size: 0.875rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+    .panel {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        padding: 1.5rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .grid .span-2 { grid-column: 1 / -1; }
+    @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+
+    label { display:block; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.35rem; }
+    input, select, textarea {
+        width: 100%;
+        padding: 0.65rem 0.85rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        font-size: 0.9rem;
+        outline: none;
+        transition: var(--transition);
+        background: var(--bg-surface);
+        color: var(--text-main);
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+    input[disabled] { background: var(--inactive-bg); color: var(--text-muted); }
+
+    .help { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem; }
+    .errors { margin-top: 0.35rem; color: #b91c1c; font-size: 0.8rem; }
+
+    .btn-row { display:flex; justify-content:flex-end; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
+    .btn-primary {
+        background-color: var(--primary); color: white; border: none;
+        padding: 0.65rem 1.1rem; border-radius: var(--radius-md);
+        font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: 0.2s;
+        display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none;
+        box-shadow: var(--shadow-sm);
+    }
+    .btn-primary:hover { background-color: var(--primary-hover); color: white; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn-outline {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.65rem 1.1rem; border: 1px solid var(--border); border-radius: var(--radius-md);
+        background: var(--bg-surface); color: var(--text-main); font-size: 0.875rem; font-weight: 600;
+        cursor: pointer; transition: 0.2s; text-decoration: none;
+    }
+    .btn-outline:hover { background: var(--inactive-bg); border-color: var(--border-hover); }
+
+    .msg { border: 1px solid var(--border); background: var(--bg-surface); border-radius: var(--radius-md); padding: 0.75rem 0.9rem; margin-bottom: 1rem; font-size: 0.875rem; }
+    .msg.success { border-color: #bbf7d0; background: #f0fdf4; color: #166534; }
+    .msg.error { border-color: #fecaca; background: #fef2f2; color: #991b1b; }
+
+    .avatar-row { display:flex; align-items:center; gap: 1rem; }
+    .avatar { width: 64px; height: 64px; border-radius: 999px; border: 1px solid var(--border); overflow: hidden; background: var(--inactive-bg); flex: 0 0 auto; display:flex; align-items:center; justify-content:center; }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; display:block; }
+    .avatar-fallback { width: 100%; height: 100%; display:flex; align-items:center; justify-content:center; font-weight: 800; color: var(--primary); background: var(--primary-light); letter-spacing: 0.05em; }
+    .avatar-meta { display:flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
+    .avatar-hint { font-size: 0.75rem; color: var(--text-muted); }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="card">
-    <h2 class="page-title">Profile</h2>
-    <p class="page-subtitle">{{ role_display }}</p>
-
-    <div class="form-grid">
+<div class="page-wrap">
+    <div class="header">
         <div>
-            <label>Email</label>
-            <input value="{{ user.email }}" disabled />
+            <h1>Profile</h1>
+            <div class="subtitle">{{ role_display }}</div>
         </div>
-        <div>
-            <label>Role</label>
-            <input value="{{ user.get_role_display }}" disabled />
-        </div>
-        <div class="span-2">
-            <label>LGU Assigned</label>
-            <input value="{{ user.lgu_municipality|default:'—' }}" disabled />
-        </div>
+        <a class="btn-outline" href="{% url 'set_password' %}"><i class="ri-shield-keyhole-line"></i> Change Password</a>
     </div>
 
-    <div class="row-end mt-12">
-        <a class="btn btn-secondary" href="{% url 'set_password' %}">Change Password</a>
-    </div>
-</div>
-
-<form class="card" method="post">
-    {% csrf_token %}
-
-    {% if form.non_field_errors %}
-        <div class="msg error">{{ form.non_field_errors }}</div>
+    {% if messages %}
+        {% for msg in messages %}
+            <div class="msg {{ msg.tags|default:'info' }}">{{ msg }}</div>
+        {% endfor %}
     {% endif %}
 
-    <div class="form-grid">
-        <div>
-            <label for="{{ form.username.id_for_label }}">Username (Staff ID)</label>
-            {{ form.username }}
-            {{ form.username.errors }}
-        </div>
-        <div>
-            <label for="{{ form.position.id_for_label }}">Position</label>
-            {{ form.position }}
-            {{ form.position.errors }}
-        </div>
-        <div class="span-2">
-            <label for="{{ form.email_verify.id_for_label }}">{{ form.email_verify.label }}</label>
-            {{ form.email_verify }}
-            {% if form.email_verify.help_text %}<div class="muted mt-4 fs-92">{{ form.email_verify.help_text }}</div>{% endif %}
-            {{ form.email_verify.errors }}
+    <div class="panel">
+        <div class="grid">
+            <div>
+                <label>Email</label>
+                <input value="{{ user.email }}" disabled />
+            </div>
+            <div>
+                <label>Role</label>
+                <input value="{{ user.get_role_display }}" disabled />
+            </div>
+            <div class="span-2">
+                <label>LGU Assigned</label>
+                <input value="{{ user.lgu_municipality|default:'—' }}" disabled />
+            </div>
         </div>
     </div>
 
-    <div style="display:flex; justify-content:flex-end; margin-top:14px;">
-        <button class="btn btn-primary" type="submit">Save Changes</button>
-    </div>
-</form>
+    <form class="panel" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="msg error">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="grid">
+            <div class="span-2">
+                <label>Photo</label>
+                <div class="avatar-row">
+                    <div class="avatar">
+                            {% if user.photo %}
+                                <img src="{{ user.photo.url }}" alt="Avatar">
+                            {% else %}
+                                <div class="avatar-fallback">
+                                    {{ user.first_name|slice:":1"|upper|default:"U" }}{{ user.last_name|slice:":1"|upper|default:"" }}
+                                </div>
+                            {% endif %}
+                    </div>
+                    <div class="avatar-meta">
+                        <button class="btn-outline" type="button" id="change-photo-btn"><i class="ri-upload-cloud-2-line"></i> Change Photo</button>
+                        <div class="avatar-hint">JPG, GIF or PNG. Max size of 2MB.</div>
+                        <div style="display:none;">{{ form.photo }}</div>
+                        {% if form.photo.errors %}<div class="errors">{{ form.photo.errors }}</div>{% endif %}
+                    </div>
+                </div>
+            </div>
+            <div>
+                <label for="{{ form.username.id_for_label }}">Staff ID</label>
+                {{ form.username }}
+                {% if form.username.errors %}<div class="errors">{{ form.username.errors }}</div>{% endif %}
+            </div>
+            <div>
+                <label for="{{ form.position.id_for_label }}">Position</label>
+                {{ form.position }}
+                {% if form.position.errors %}<div class="errors">{{ form.position.errors }}</div>{% endif %}
+            </div>
+            <div class="span-2">
+                <label for="{{ form.email_verify.id_for_label }}">{{ form.email_verify.label }}</label>
+                {{ form.email_verify }}
+                {% if form.email_verify.help_text %}<div class="help">{{ form.email_verify.help_text }}</div>{% endif %}
+                {% if form.email_verify.errors %}<div class="errors">{{ form.email_verify.errors }}</div>{% endif %}
+            </div>
+        </div>
+
+        <div class="btn-row">
+            <button class="btn-primary" type="submit"><i class="ri-save-3-line"></i> Save Changes</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var btn = document.getElementById("change-photo-btn");
+        var input = document.getElementById("id_photo");
+        if (btn && input) {
+            btn.addEventListener("click", function () {
+                input.click();
+            });
+        }
+    });
+</script>
 {% endblock %}

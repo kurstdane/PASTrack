@@ -1,0 +1,323 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PASTrack{% endblock %}</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --bg-body: #f8fafc;
+            --bg-surface: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --text-light: #94a3b8;
+            --primary: #1d4ed8;
+            --primary-hover: #1e3a8a;
+            --primary-light: #eff6ff;
+            --border: #e2e8f0;
+            --border-hover: #cbd5e1;
+            
+            --danger-bg: #fee2e2;
+            --danger-text: #dc2626;
+            --success-bg: #dcfce7;
+            --success-text: #166534;
+            --inactive-bg: #f1f5f9;
+            --inactive-text: #475569;
+            
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05);
+            
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body[data-theme="dark"] {
+            --bg-body: #0b1220;
+            --bg-surface: #0f172a;
+            --text-main: #e5e7eb;
+            --text-muted: #94a3b8;
+            --text-light: #64748b;
+            --primary: #60a5fa;
+            --primary-hover: #3b82f6;
+            --primary-light: rgba(96, 165, 250, 0.16);
+            --border: #1f2a44;
+            --border-hover: #334155;
+            --inactive-bg: rgba(148, 163, 184, 0.12);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body[data-theme="system"] {
+                --bg-body: #0b1220;
+                --bg-surface: #0f172a;
+                --text-main: #e5e7eb;
+                --text-muted: #94a3b8;
+                --text-light: #64748b;
+                --primary: #60a5fa;
+                --primary-hover: #3b82f6;
+                --primary-light: rgba(96, 165, 250, 0.16);
+                --border: #1f2a44;
+                --border-hover: #334155;
+                --inactive-bg: rgba(148, 163, 184, 0.12);
+            }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* STRICT FULL-SCREEN LOCK */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;           /* Exactly 100% of viewport height */
+            width: 100vw;            /* Exactly 100% of viewport width */
+            overflow: hidden;        /* Prevents the entire browser window from scrolling */
+            -webkit-font-smoothing: antialiased;
+        }
+
+        input, select, textarea, button { font-family: inherit; }
+        input, select, textarea {
+            background-color: var(--bg-surface);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+        input::placeholder, textarea::placeholder { color: var(--text-light); }
+
+        /* ===== INTERACTIVE SIDEBAR ===== */
+        .sidebar {
+            width: 80px; /* Collapsed state */
+            background-color: var(--bg-surface);
+            border-right: 1px solid var(--border);
+            display: flex; 
+            flex-direction: column; 
+            padding: 2rem 0.75rem; /* Tighter padding when collapsed */
+            z-index: 20;
+            flex-shrink: 0;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s;
+            overflow-x: hidden; /* Hides text when collapsed */
+            white-space: nowrap; /* Prevents text from wrapping to next line */
+        }
+
+        /* Hover expansion */
+        .sidebar:hover {
+            width: 260px;
+            padding: 2rem 1.25rem;
+        }
+
+        .brand-logo { 
+            display: flex; align-items: center; 
+            margin-bottom: 3rem; padding-left: 0.25rem;
+            font-size: 1.5rem; font-weight: 800; color: var(--text-main);
+        }
+        .brand-logo i { 
+            font-size: 1.75rem; min-width: 32px; margin-right: 0.75rem;
+            background: linear-gradient(to bottom, #f59e0b, #dc2626, #2563eb); 
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .nav-menu { display: flex; flex-direction: column; gap: 0.5rem; width: 100%; }
+        
+        .nav-item {
+            display: flex; align-items: center;
+            color: var(--text-muted); text-decoration: none;
+            padding: 0.75rem; border-radius: var(--radius-md);
+            cursor: pointer; transition: background 0.2s, color 0.2s; font-size: 0.9rem; font-weight: 500;
+        }
+        /* Ensure icons stay fixed size and spacing */
+        .nav-item i, .logout-btn i { font-size: 1.25rem; min-width: 24px; text-align: center; margin-right: 1rem; }
+        
+        .nav-item:hover { color: var(--text-main); background: var(--inactive-bg); }
+        .nav-item.active { color: var(--primary); background: var(--primary-light); font-weight: 600; }
+        .nav-item.active i { color: var(--primary); }
+
+        .sidebar-bottom { margin-top: auto; display: flex; flex-direction: column; gap: 0.5rem; overflow: hidden; }
+        
+        .user-profile-nav {
+            display: flex; align-items: center; padding: 1rem 0.25rem;
+            border-top: 1px solid var(--border); margin-bottom: 0.5rem;
+        }
+        .user-avatar {
+            width: 36px; height: 36px; border-radius: 50%;
+            background-color: var(--primary-light); color: var(--primary);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
+        }
+        .user-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+        .user-info-nav { margin-left: 0.75rem; }
+        .user-info-nav strong { display: block; font-size: 0.875rem; color: var(--text-main); font-weight: 600;}
+        .user-info-nav span { font-size: 0.75rem; color: var(--text-muted); }
+
+        .logout-btn {
+            display: flex; align-items: center; color: var(--danger-text); text-decoration: none;
+            padding: 0.75rem; border-radius: var(--radius-md); cursor: pointer; transition: 0.2s;
+            font-size: 0.9rem; font-weight: 500;
+            background: transparent; border: none; width: 100%; text-align: left;
+        }
+        .logout-btn:hover { background: var(--danger-bg); }
+
+        /* TEXT FADE ANIMATION: Hide text by default, reveal on sidebar hover */
+        .hide-text { opacity: 0; transition: opacity 0.2s ease; }
+        .sidebar:hover .hide-text { opacity: 1; transition-delay: 0.1s; }
+
+        /* ===== MAIN CONTENT WRAPPER ===== */
+        .main-content {
+            flex: 1;               /* Fills all remaining space */
+            height: 100vh;         /* Strict 100vh limit */
+            padding: 2.5rem 3rem;
+            overflow-y: auto;      /* Allows ONLY this specific box to scroll if content gets too tall */
+            background-color: var(--bg-body);
+        }
+
+        /* ===== GLOBAL QUICK VIEW DRAWER CSS ===== */
+        .drawer-backdrop { 
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+            background: rgba(0, 0, 0, 0.4); z-index: 1040; opacity: 0; visibility: hidden; transition: 0.3s; 
+        }
+        .drawer-backdrop.active { opacity: 1; visibility: visible; }
+
+        .drawer-panel { 
+            position: fixed; top: 0; right: -550px; width: 500px; max-width: 90vw; height: 100vh; 
+            background: white; z-index: 1050; box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1); 
+            transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; 
+        }
+        .drawer-panel.active { right: 0; }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body data-theme="{{ request.user.theme_preference|default:'light' }}">
+
+    <aside class="sidebar">
+        <div class="brand-logo">
+            <i class="ri-blaze-fill"></i> <span class="hide-text">PAStrack</span>
+        </div>
+        
+        <nav class="nav-menu">
+            <a href="{% url 'dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i class="ri-dashboard-line"></i> <span class="hide-text">Dashboard</span>
+            </a>
+
+            {% if request.user.role == "super_admin" %}
+            <a href="{% url 'user_management' %}" class="nav-item {% if 'user' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="ri-group-line"></i> <span class="hide-text">User Management</span>
+            </a>
+            <a href="{% url 'reports' %}" class="nav-item {% if 'report' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="ri-bar-chart-2-line"></i> <span class="hide-text">System Reports</span>
+            </a>
+            {% endif %}
+
+            {% if request.user.role == "lgu_admin" %}
+            <a href="{% url 'my_submissions' %}" class="nav-item {% if request.resolver_match.url_name == 'my_submissions' %}active{% endif %}">
+                <i class="ri-folder-open-line"></i> <span class="hide-text">Submissions</span>
+            </a>
+            <a href="{% url 'drafts' %}" class="nav-item {% if request.resolver_match.url_name == 'drafts' %}active{% endif %}">
+                <i class="ri-file-edit-line"></i> <span class="hide-text">Drafts</span>
+            </a>
+            <a href="{% url 'reports' %}" class="nav-item {% if 'report' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="ri-bar-chart-2-line"></i> <span class="hide-text">Reports</span>
+            </a>
+            {% endif %}
+
+            {% if request.user.role in "capitol_receiving,capitol_examiner,capitol_approver,capitol_taxmapper,capitol_numberer,capitol_releaser" %}
+            <a href="{% url 'submissions' %}?scope=me" class="nav-item {% if request.resolver_match.url_name == 'submissions' and request.GET.scope != 'all' %}active{% endif %}">
+                <i class="ri-inbox-archive-line"></i> <span class="hide-text">My Workspace</span>
+            </a>
+            <a href="{% url 'submissions' %}?scope=all" class="nav-item {% if request.resolver_match.url_name == 'submissions' and request.GET.scope == 'all' %}active{% endif %}">
+                <i class="ri-global-line"></i> <span class="hide-text">All Transactions</span>
+            </a>
+            <a href="{% url 'staff_reports' %}" class="nav-item {% if 'report' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="ri-bar-chart-2-line"></i> <span class="hide-text">My Reports</span>
+            </a>
+            {% endif %}
+
+            <a href="{% url 'audit_logs' %}" class="nav-item {% if 'log' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="ri-history-line"></i> <span class="hide-text">Activity Logs</span>
+            </a>
+
+            <a href="{% url 'settings' %}" class="nav-item {% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
+                <i class="ri-settings-4-line"></i> <span class="hide-text">Settings</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="user-profile-nav">
+                <div class="user-avatar">
+                    {% if request.user.photo %}
+                        <img src="{{ request.user.photo.url }}" alt="Avatar">
+                    {% else %}
+                        {{ request.user.first_name|slice:":2"|upper|default:"AD" }}
+                    {% endif %}
+                </div>
+                <div class="user-info-nav hide-text">
+                    <strong>{{ request.user.first_name|default:"User" }}</strong>
+                    <span>{{ request.user.get_role_display|default:"System User" }}</span>
+                </div>
+            </div>
+            
+            <form method="post" action="{% url 'logout' %}" style="margin:0;">
+                {% csrf_token %}
+                <button type="submit" class="logout-btn">
+                    <i class="ri-logout-box-r-line"></i> <span class="hide-text">Sign Out</span>
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    {% block extra_js %}{% endblock %}
+
+    <div id="quickViewBackdrop" class="drawer-backdrop" onclick="closeQuickView()"></div>
+    <div id="quickViewDrawer" class="drawer-panel">
+        <div style="display:flex; height:100%; align-items:center; justify-content:center;">
+            <i class="ri-loader-4-line ri-spin" style="font-size: 2rem; color: var(--primary);"></i>
+        </div>
+    </div>
+
+    <script>
+        function openQuickView(trackingId) {
+            const backdrop = document.getElementById('quickViewBackdrop');
+            const drawer = document.getElementById('quickViewDrawer');
+
+            // Show loading state
+            drawer.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center;"><i class="ri-loader-4-line ri-spin" style="font-size: 2rem; color: var(--primary);"></i></div>';
+            backdrop.classList.add('active');
+            drawer.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Lock background scroll
+
+            fetch(`/case/${trackingId}/quick-view/`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.text();
+                })
+                .then(html => {
+                    drawer.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    drawer.innerHTML = '<div style="padding: 2rem; text-align: center; color: #dc2626;">Error loading preview. Please try again.</div>';
+                });
+        }
+
+        function closeQuickView() {
+            document.getElementById('quickViewBackdrop').classList.remove('active');
+            document.getElementById('quickViewDrawer').classList.remove('active');
+            document.body.style.overflow = ''; // Restore scroll
+        }
+    </script>
+
+</body>
+</html>

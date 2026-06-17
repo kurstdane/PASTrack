@@ -1,118 +1,350 @@
-{% extends "base.html" %}
-{% block title %}User Management{% endblock %}
+{% extends "base_new.html" %}
+
+{% block title %}User Management | LegalTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Specific styles for the User Management list page */
+    .page-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .page-header { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        margin-bottom: 2rem; 
+    }
+    
+    .page-title { font-size: 1.5rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.35rem; }
+    .page-subtitle { font-size: 0.875rem; color: var(--text-muted); }
+
+    .btn {
+        padding: 0.6rem 1.25rem; border-radius: var(--radius-md);
+        font-size: 0.875rem; font-weight: 500; cursor: pointer;
+        transition: var(--transition); display: inline-flex;
+        align-items: center; justify-content: center; text-decoration: none;
+        gap: 0.5rem;
+    }
+    .btn-primary { background: var(--primary); color: white; border: 1px solid var(--primary); box-shadow: var(--shadow-sm); }
+    .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); transform: translateY(-1px); }
+    .btn-secondary { background: white; color: var(--text-main); border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
+    .btn-secondary:hover { background: var(--inactive-bg); border-color: var(--border-hover); }
+
+    /* ===== PANEL & TABS ===== */
+    .panel {
+        background: var(--bg-surface); border: 1px solid var(--border);
+        border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);
+        margin-bottom: 2rem; padding: 1.5rem;
+    }
+
+    .tabs { display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+    .tab {
+        font-size: 0.875rem; font-weight: 500; color: var(--text-muted);
+        padding: 0.5rem 1rem; border-radius: var(--radius-md);
+        cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: var(--transition);
+    }
+    .tab:hover { color: var(--text-main); background: var(--inactive-bg); }
+    .tab.active { background-color: var(--primary-light); color: var(--primary); }
+
+    /* ===== TOOLBAR & DJANGO FORM STYLING ===== */
+    .table-toolbar { display: flex; gap: 1rem; margin-bottom: 1.5rem; align-items: center; flex-wrap: wrap; }
+    
+    .search-bar { flex: 1; min-width: 250px; position: relative; }
+    
+    /* Styling Django's generated input for {{ search_form.q }} */
+    .search-bar input {
+        width: 100%; padding: 0.6rem 1rem 0.6rem 2.5rem;
+        border: 1px solid var(--border); border-radius: var(--radius-md);
+        font-size: 0.875rem; color: var(--text-main); transition: var(--transition);
+        outline: none; font-family: 'Inter', sans-serif;
+    }
+    .search-bar input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+    .search-bar i { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-light); }
+    
+    /* Styling Django's generated select for {{ search_form.role }} */
+    .filter-wrapper { min-width: 200px; }
+    .filter-wrapper select {
+        width: 100%; padding: 0.6rem 2rem 0.6rem 1rem; border: 1px solid var(--border); 
+        border-radius: var(--radius-md); font-size: 0.875rem; color: var(--text-main); 
+        background-color: white; cursor: pointer; outline: none; appearance: none; font-family: 'Inter', sans-serif;
+        background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2364748b%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+        background-repeat: no-repeat; background-position: right 0.7rem top 50%; background-size: 0.65rem auto;
+        transition: var(--transition);
+    }
+    .filter-wrapper select:hover { border-color: var(--border-hover); }
+
+    /* ===== TABLE STYLING ===== */
+    .table-responsive { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); padding: 1rem 0.5rem; border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.05em; }
+    td { padding: 1rem 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.875rem; vertical-align: middle; transition: var(--transition); }
+    tbody tr:hover td { background-color: #fafbfc; }
+
+    .staff-id { font-family: monospace; font-size: 0.85rem; color: var(--primary); background: var(--primary-light); padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600; }
+    .user-name { font-weight: 600; color: var(--text-main); display: block; margin-bottom: 0.15rem; }
+    .user-email { font-size: 0.75rem; color: var(--text-muted); }
+    .role-text { font-weight: 500; color: var(--text-main); }
+
+    /* Status Pills */
+    .status-pill {
+        display: inline-flex; align-items: center; gap: 0.3rem;
+        padding: 0.25rem 0.75rem; border-radius: 999px;
+        font-size: 0.75rem; font-weight: 600; text-transform: capitalize;
+    }
+    .status-pill::before { content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; }
+    .status-active { background: var(--success-bg); color: var(--success-text); }
+    .status-active::before { background-color: var(--success-text); }
+    .status-inactive { background: var(--danger-bg); color: var(--danger-text); }
+    .status-inactive::before { background-color: var(--danger-text); }
+    .status-pending { background: #fef3c7; color: #b45309; }
+    .status-pending::before { background-color: #b45309; }
+
+    /* Action Buttons (Icons) */
+    .action-group { display: flex; gap: 0.25rem; align-items: center; }
+    .action-btn { 
+        border: none; background: transparent; cursor: pointer; color: var(--text-light); 
+        width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+        border-radius: var(--radius-md); transition: var(--transition); font-size: 1.1rem; text-decoration: none;
+    }
+    .action-btn:hover { background: var(--inactive-bg); }
+    .action-btn.text-primary:hover { color: var(--primary); background: var(--primary-light); }
+    .action-btn.text-danger:hover { color: var(--danger-text); background: var(--danger-bg); }
+    .action-btn.text-success:hover { color: var(--success-text); background: var(--success-bg); }
+    .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ===== PAGINATION ===== */
+    .pagination-container { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; font-size: 0.875rem; color: var(--text-muted); }
+    .pagination-controls { display: flex; gap: 0.25rem; align-items: center; }
+    .page-btn { border: 1px solid transparent; background: transparent; color: var(--text-muted); padding: 0.4rem 0.75rem; border-radius: var(--radius-md); cursor: pointer; font-size: 0.875rem; font-weight: 500; transition: var(--transition); text-decoration: none; display: inline-flex; align-items: center;}
+    .page-btn.active { background: var(--primary); color: white; box-shadow: var(--shadow-sm); }
+    .page-btn:hover:not(.active):not([disabled]) { background: var(--border); color: var(--text-main); }
+    .page-btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+    /* Empty State */
+    .empty-state { text-align: center; padding: 3rem 0; }
+    .empty-state i { font-size: 3rem; color: var(--border-hover); margin-bottom: 1rem; display: block; }
+    .empty-state h3 { font-size: 1.125rem; color: var(--text-main); margin-bottom: 0.5rem; }
+    .empty-state p { color: var(--text-muted); font-size: 0.875rem; }
+
+</style>
+{% endblock %}
 
 {% block content %}
-<h1 class="page-title">Manage Users</h1>
-<div class="subtabs" aria-hidden="true">
-    <span class="active">Users</span>
-    <span>Groups</span>
-    <span>Organization</span>
-</div>
-
-<div class="card" style="margin-top:14px;">
-    <form method="get" class="searchbar" id="user-search-form">
-        <div class="grow">
-            <label for="id_q">Search</label>
-            {{ search_form.q }}
-        </div>
-        <div style="min-width:220px;">
-            <label for="id_role">Role</label>
-            {{ search_form.role }}
-        </div>
+<div class="page-container">
+    
+    <!-- Header -->
+    <div class="page-header">
         <div>
+            <h1 class="page-title">Manage Users</h1>
+            <p class="page-subtitle">View, edit, and manage all system user accounts.</p>
+        </div>
+        <a class="btn btn-primary" href="{% url 'create_staff_account' %}">
+            <i class="ri-user-add-line"></i> Add New User
+        </a>
+    </div>
+
+    <!-- Main Panel -->
+    <div class="panel">
+        
+        <!-- Tabs
+        <div class="tabs" aria-hidden="true">
+            <div class="tab active">Users</div>
+        </div> -->
+
+        <!-- Search & Filter Toolbar -->
+        <form method="get" class="table-toolbar" id="user-search-form">
+            <div class="search-bar">
+                <i class="ri-search-line"></i>
+                <!-- Django Form Input -->
+                {{ search_form.q }}
+            </div>
+            
+            <div class="filter-wrapper">
+                <!-- Django Form Select -->
+                {{ search_form.role }}
+            </div>
+            
             <button class="btn btn-secondary" type="submit">Search</button>
-        </div>
-        <div style="margin-left:auto;">
-            <a class="btn btn-primary" href="{% url 'create_staff_account' %}">+ Add New User</a>
-        </div>
-    </form>
+        </form>
+
+        <!-- Data Table -->
+        {% if page_obj.object_list %}
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 120px;">Staff ID</th>
+                            <th>User Details</th>
+                            <th style="width: 220px;">System Role</th>
+                            <th style="width: 150px;">Status</th>
+                            <th style="width: 160px; text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in page_obj.object_list %}
+                            <tr>
+                                <td><span class="staff-id">{{ u.username }}</span></td>
+                                <td>
+                                    <span class="user-name">{{ u.full_name|default:"—" }}</span>
+                                    <span class="user-email">{{ u.email }}</span>
+                                </td>
+                                <td><span class="role-text">{{ u.get_role_display }}</span></td>
+                                <td>
+                                    <span class="status-pill {% if u.account_status == 'active' %}status-active{% elif u.account_status == 'inactive' %}status-inactive{% else %}status-pending{% endif %}">
+                                        {{ u.get_account_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <!-- Action Button Group -->
+                                    <div class="action-group" style="justify-content: flex-end;">
+                                        
+                                        <!-- Edit Link -->
+                                        <a class="action-btn text-primary" href="{% url 'edit_staff_account' u.id %}" title="Edit User">
+                                            <i class="ri-pencil-line"></i>
+                                        </a>
+                                        
+                                        <!-- Toggle Status Form -->
+                                        <form method="post" action="{% url 'toggle_staff_active' u.id %}" style="margin: 0;">
+                                            {% csrf_token %}
+                                            {% if u.account_status == 'active' %}
+                                                <button class="action-btn text-danger" type="submit" title="Deactivate Account">
+                                                    <i class="ri-user-unfollow-line"></i>
+                                                </button>
+                                            {% elif u.account_status == 'inactive' %}
+                                                <button class="action-btn text-success" type="submit" title="Reactivate Account">
+                                                    <i class="ri-user-follow-line"></i>
+                                                </button>
+                                            {% else %}
+                                                <button class="action-btn" type="submit" disabled title="Pending Activation">
+                                                    <i class="ri-time-line"></i>
+                                                </button>
+                                            {% endif %}
+                                        </form>
+
+                                        <!-- Resend Activation Form -->
+                                        {% if u.account_status == 'pending' %}
+                                            <form method="post" action="{% url 'resend_activation' u.id %}" style="margin: 0;">
+                                                {% csrf_token %}
+                                                <button class="action-btn text-primary" type="submit" title="Resend Activation Link">
+                                                    <i class="ri-mail-send-line"></i>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+
+                                        <!-- Delete User Form (Super Admin only) -->
+                                        {% if request.user.role == "super_admin" and u.id != request.user.id %}
+                                            <button class="action-btn text-danger" type="button" title="Delete User Account" onclick="openDeleteUserModal('{{ u.id }}', '{{ u.email|escapejs }}')">
+                                                <i class="ri-delete-bin-line"></i>
+                                            </button>
+                                        {% endif %}
+
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination Controls -->
+            <div class="pagination-container">
+                <span>Page <strong>{{ page_obj.number }}</strong> of <strong>{{ page_obj.paginator.num_pages }}</strong></span>
+                
+                <div class="pagination-controls">
+                    {% if page_obj.has_previous %}
+                        <a class="page-btn" href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q }}&role={{ request.GET.role }}">
+                            <i class="ri-arrow-left-s-line" style="vertical-align: middle;"></i> Prev
+                        </a>
+                    {% else %}
+                        <button class="page-btn" disabled><i class="ri-arrow-left-s-line" style="vertical-align: middle;"></i> Prev</button>
+                    {% endif %}
+
+                    {% for p in page_obj.paginator.page_range %}
+                        {% if p == page_obj.number %}
+                            <button class="page-btn active">{{ p }}</button>
+                        {% else %}
+                            <a class="page-btn" href="?page={{ p }}&q={{ request.GET.q }}&role={{ request.GET.role }}">{{ p }}</a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <a class="page-btn" href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q }}&role={{ request.GET.role }}">
+                            Next <i class="ri-arrow-right-s-line" style="vertical-align: middle;"></i>
+                        </a>
+                    {% else %}
+                        <button class="page-btn" disabled>Next <i class="ri-arrow-right-s-line" style="vertical-align: middle;"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+
+        {% else %}
+            <!-- Empty State -->
+            <div class="empty-state">
+                <i class="ri-search-eye-line"></i>
+                <h3>No users found</h3>
+                <p>Try adjusting your search criteria or adding a new user.</p>
+            </div>
+        {% endif %}
+
+    </div>
 </div>
 
-<div class="card card--flat">
-    {% if page_obj.object_list %}
-        <table class="table">
-            <thead>
-                <tr>
-                    <th style="width:160px;">Staff ID</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th style="width:190px;">Role</th>
-                    <th style="width:170px;">Status</th>
-                    <th style="width:210px;">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for u in page_obj.object_list %}
-                <tr>
-                    <td><strong>{{ u.username }}</strong></td>
-                    <td>{{ u.full_name|default:"—" }}</td>
-                    <td class="muted">{{ u.email }}</td>
-                    <td>{{ u.get_role_display }}</td>
-                    <td class="muted">{{ u.get_account_status_display }}</td>
-                    <td>
-                        <a class="btn btn-secondary btn-sm" href="{% url 'edit_staff_account' u.id %}" title="Edit">✎</a>
-                        <form method="post" action="{% url 'toggle_staff_active' u.id %}" style="display:inline;">
-                            {% csrf_token %}
-                            {% if u.account_status == 'active' %}
-                                <button class="btn btn-danger btn-sm" type="submit">Deactivate</button>
-                            {% elif u.account_status == 'inactive' %}
-                                <button class="btn btn-primary btn-sm" type="submit">Reactivate</button>
-                            {% else %}
-                                <button class="btn btn-secondary btn-sm" type="submit" disabled>Pending</button>
-                            {% endif %}
-                        </form>
-
-                        {% if u.account_status == 'pending' %}
-                            <form method="post" action="{% url 'resend_activation' u.id %}" style="display:inline;">
-                                {% csrf_token %}
-                                <button class="btn btn-secondary btn-sm" type="submit">Resend</button>
-                            </form>
-                        {% endif %}
-                    </td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-
-        <div class="pagination">
-            {% if page_obj.has_previous %}
-                <a class="pagepill" href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q }}&role={{ request.GET.role }}">Previous</a>
-            {% else %}
-                <span class="pagepill" style="opacity:.5;">Previous</span>
-            {% endif %}
-
-            {% for p in page_obj.paginator.page_range %}
-                {% if p == page_obj.number %}
-                    <span class="pagepill active">{{ p }}</span>
-                {% else %}
-                    <a class="pagepill" href="?page={{ p }}&q={{ request.GET.q }}&role={{ request.GET.role }}">{{ p }}</a>
-                {% endif %}
-            {% endfor %}
-
-            {% if page_obj.has_next %}
-                <a class="pagepill" href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q }}&role={{ request.GET.role }}">Next</a>
-            {% else %}
-                <span class="pagepill" style="opacity:.5;">Next</span>
-            {% endif %}
+<!-- DELETE USER CONFIRMATION MODAL -->
+<div id="deleteUserModal" class="drawer-backdrop" style="display:none; justify-content:center; align-items:center; opacity:1; visibility:visible;">
+    <div class="panel" style="width: 400px; padding: 2rem; border-radius: 12px;">
+        <h3 class="panel-title" style="margin-bottom: 1rem;">Delete User Account</h3>
+        <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 2rem;">
+            Are you sure you want to <strong style="color: #dc2626;">permanently delete</strong> account for <strong id="modalUserEmail" style="color: var(--text-main);"></strong>? This action cannot be undone.
         </div>
-    {% else %}
-        <div class="card__body">
-            <p class="muted"><em>No users found.</em></p>
-        </div>
-    {% endif %}
+        
+        <form id="deleteUserForm" method="POST" action="">
+            {% csrf_token %}
+            <div style="display: flex; gap: 1rem;">
+                <button type="button" class="btn btn-text" style="flex:1; border: 1px solid var(--border);" onclick="closeDeleteUserModal()">Cancel</button>
+                <button type="submit" class="btn btn-danger" style="flex:1; background: #dc2626; color: white;">Delete Permanently</button>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+    function openDeleteUserModal(userId, email) {
+        const modal = document.getElementById('deleteUserModal');
+        const form = document.getElementById('deleteUserForm');
+        const emailSpan = document.getElementById('modalUserEmail');
+        
+        emailSpan.textContent = email;
+        form.action = `/users/${userId}/delete/`;
+        modal.style.display = 'flex';
+    }
+
+    function closeDeleteUserModal() {
+        document.getElementById('deleteUserModal').style.display = 'none';
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         var form = document.getElementById('user-search-form');
-        var roleSelect = document.getElementById('id_role');
+        // This relies on Django outputting the select with id="id_role" 
+        var roleSelect = document.getElementById('id_role'); 
+        
         if (!form || !roleSelect) return;
 
+        // Auto-submit the form when the role dropdown changes
         roleSelect.addEventListener('change', function () {
             form.submit();
         });
+
+        // Close on click outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('deleteUserModal');
+            if (event.target == modal) {
+                closeDeleteUserModal();
+            }
+        }
     });
 </script>
 {% endblock %}

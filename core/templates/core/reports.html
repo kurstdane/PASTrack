@@ -1,94 +1,245 @@
-{% extends "base.html" %}
-{% block title %}Reports{% endblock %}
+{% extends "base_new.html" %}
+
+{% block title %}System Reports | LegalTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .page-header { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: flex-end; 
+        margin-bottom: 2rem; 
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
+    .page-title { font-size: 1.5rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.35rem; }
+    .page-subtitle { font-size: 0.875rem; color: var(--text-muted); text-transform: capitalize; }
+
+    .btn {
+        padding: 0.6rem 1.25rem; border-radius: var(--radius-md);
+        font-size: 0.875rem; font-weight: 500; cursor: pointer;
+        transition: var(--transition); display: inline-flex;
+        align-items: center; justify-content: center; text-decoration: none;
+        gap: 0.5rem; border: none;
+    }
+    .btn-primary { background: var(--primary); color: white; box-shadow: var(--shadow-sm); }
+    .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+    .btn-secondary { background: white; color: var(--text-main); border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
+    .btn-secondary:hover { background: var(--inactive-bg); border-color: var(--border-hover); }
+
+    .card {
+        background: var(--bg-surface); border: 1px solid var(--border);
+        border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);
+        margin-bottom: 1.5rem; padding: 1.5rem;
+    }
+    
+    .card-header-flex {
+        display: flex; justify-content: space-between; align-items: center;
+        border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1rem;
+    }
+    .card-title { font-size: 1.125rem; font-weight: 600; color: var(--text-main); }
+
+    /* ===== FORM STYLING ===== */
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.25rem;
+        align-items: end;
+    }
+
+    .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+    .form-group label { font-size: 0.875rem; font-weight: 600; color: var(--text-main); }
+    
+    /* Target Django Inputs */
+    .form-group input, .form-group select {
+        width: 100%; padding: 0.6rem 1rem; border: 1px solid var(--border);
+        border-radius: var(--radius-md); font-size: 0.875rem; font-family: 'Inter', sans-serif;
+        color: var(--text-main); background-color: var(--bg-surface); transition: var(--transition);
+        outline: none;
+    }
+    .form-group select {
+        appearance: none; padding-right: 2.5rem;
+        background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2364748b%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+        background-repeat: no-repeat; background-position: right 1rem top 50%; background-size: 0.65rem auto;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+
+    .msg.error {
+        background-color: var(--danger-bg); color: var(--danger-text);
+        padding: 1rem; border-radius: var(--radius-md); font-size: 0.875rem;
+        margin-top: 1.5rem; font-weight: 500; border: 1px solid #fca5a5;
+    }
+
+    /* ===== TABLE STYLING ===== */
+    .table-responsive { overflow-x: auto; margin-top: 1rem; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); padding: 1rem 0.5rem; border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.05em; }
+    td { padding: 1rem 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.875rem; vertical-align: middle; transition: var(--transition); }
+    tbody tr:hover td { background-color: #fafbfc; }
+
+    .muted { color: var(--text-muted); }
+    .tracking-id { font-family: monospace; font-weight: 600; color: var(--primary); text-decoration: none; }
+    .tracking-id:hover { text-decoration: underline; }
+
+    /* Empty State */
+    .empty-state { text-align: center; padding: 3rem 0; }
+    .empty-state i { font-size: 3rem; color: var(--border-hover); margin-bottom: 1rem; display: block; }
+    .empty-state h3 { font-size: 1.125rem; color: var(--text-main); margin-bottom: 0.5rem; }
+    .empty-state p { color: var(--text-muted); font-size: 0.875rem; }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap;">
+<div class="page-container">
+    
+    <!-- Header -->
+    <div class="page-header">
         <div>
-            <h2 class="page-title">Reports</h2>
-            <p class="page-subtitle">{{ role_display }}</p>
+            <h1 class="page-title">Generate Reports</h1>
+            <p class="page-subtitle">Access level: <strong>{{ role_display }}</strong></p>
         </div>
-        <div style="display:flex; gap:10px;">
-            <a class="btn btn-secondary" href="{% url 'analytics_dashboard' %}">Analytics</a>
+        <div>
+            <a class="btn btn-secondary" href="{% url 'analytics_dashboard' %}">
+                <i class="ri-bar-chart-2-line"></i> View Visual Analytics
+            </a>
         </div>
     </div>
 
-    <form method="get" class="form-grid" style="margin-top:12px;">
-        <div>
-            {{ form.report_type.label_tag }}
-            {{ form.report_type }}
-        </div>
-        <div>
-            {{ form.status.label_tag }}
-            {{ form.status }}
-        </div>
-        <div>
-            {{ form.date_from.label_tag }}
-            {{ form.date_from }}
-        </div>
-        <div>
-            {{ form.date_to.label_tag }}
-            {{ form.date_to }}
-        </div>
-        <div class="span-2" style="display:flex; justify-content:flex-end; gap:10px; align-items:flex-end;">
-            <div style="min-width:220px;">
+    <!-- Filters Card -->
+    <div class="card">
+        <form method="get" class="filter-grid">
+            <div class="form-group">
+                {{ form.report_type.label_tag }}
+                {{ form.report_type }}
+            </div>
+            
+            <div class="form-group">
+                {{ form.status.label_tag }}
+                {{ form.status }}
+            </div>
+            
+            <div class="form-group">
+                {{ form.date_from.label_tag }}
+                {{ form.date_from }}
+            </div>
+            
+            <div class="form-group">
+                {{ form.date_to.label_tag }}
+                {{ form.date_to }}
+            </div>
+            
+            <div class="form-group">
                 {{ form.sort.label_tag }}
                 {{ form.sort }}
             </div>
-            <button class="btn btn-primary" type="submit">Generate</button>
-        </div>
-    </form>
 
-    {% if form.is_bound and not form.is_valid %}
-        <div class="msg error" style="margin-top:12px;">Invalid report parameters.</div>
-    {% endif %}
-</div>
+            <div class="form-group" style="margin-top: auto;">
+                <button class="btn btn-primary" type="submit" style="height: 42px; width: 100%;">
+                    <i class="ri-filter-3-line"></i> Generate Report
+                </button>
+            </div>
+        </form>
 
-<div class="card card--flat">
-    <div class="card__header">
-        <strong>{{ title }}</strong>
-        {% if form.is_valid %}
-            <a class="btn btn-secondary btn-sm" href="{% url 'export_reports_csv' %}?{{ request.GET.urlencode }}">Export CSV</a>
+        {% if form.is_bound and not form.is_valid %}
+            <div class="msg error">
+                <i class="ri-error-warning-line" style="vertical-align: middle;"></i> Invalid report parameters provided. Please check your dates and selections.
+            </div>
         {% endif %}
     </div>
-    <div class="card__body card__body--flush">
-        {% if rows %}
-            <table class="table">
-                <thead>
-                    {% if title == 'Status Breakdown' %}
-                        <tr><th>Status</th><th style="width:18%">Count</th></tr>
-                    {% elif title == 'Monthly Accomplishment' %}
-                        <tr><th>Month</th><th style="width:18%">Total</th></tr>
-                    {% else %}
-                        <tr><th style="width:22%">Tracking No.</th><th style="width:26%">Created</th><th style="width:26%">Released</th><th>Days</th></tr>
-                    {% endif %}
-                </thead>
-                <tbody>
-                    {% for r in rows %}
+
+    <!-- Results Data Card -->
+    <div class="card" style="padding: 1.5rem;">
+        
+        <!-- Table Header & Actions -->
+        <div class="card-header-flex">
+            <h2 class="card-title">{{ title|default:"Report Results" }}</h2>
+            
+            {% if rows and form.is_valid %}
+                <a class="btn btn-secondary" href="{% url 'export_reports_csv' %}?{{ request.GET.urlencode }}">
+                    <i class="ri-file-download-line"></i> Export to CSV
+                </a>
+            {% endif %}
+        </div>
+
+        <!-- Dynamic Table Rendering -->
+        <div class="table-responsive">
+            {% if rows %}
+                <table>
+                    <thead>
                         {% if title == 'Status Breakdown' %}
-                            <tr><td>{{ r.status }}</td><td class="muted">{{ r.count }}</td></tr>
+                            <tr>
+                                <th>Status Category</th>
+                                <th style="width:20%; text-align: right;">Total Count</th>
+                            </tr>
                         {% elif title == 'Monthly Accomplishment' %}
-                            <tr><td class="muted">{{ r.month|date:"Y-m" }}</td><td class="muted">{{ r.total }}</td></tr>
+                            <tr>
+                                <th>Month</th>
+                                <th style="width:20%; text-align: right;">Total Accomplished</th>
+                            </tr>
                         {% else %}
                             <tr>
-                                <td><strong><a href="{% url 'case_detail' r.tracking_id %}">{{ r.tracking_id }}</a></strong></td>
-                                <td class="muted">{{ r.created_at|date:"M d, Y H:i" }}</td>
-                                <td class="muted">{{ r.released_at|date:"M d, Y H:i" }}</td>
-                                <td class="muted">
-                                    {% if r.released_at %}
-                                        {{ r.released_at|timesince:r.created_at }}
-                                    {% else %}
-                                        —
-                                    {% endif %}
-                                </td>
+                                <th style="width:25%">Tracking No.</th>
+                                <th style="width:25%">Date Created</th>
+                                <th style="width:25%">Date Released</th>
+                                <th style="text-align: right;">Processing Days</th>
                             </tr>
                         {% endif %}
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <div class="card__body"><p class="muted" style="margin:0;">No report data yet. Choose parameters and click Generate.</p></div>
-        {% endif %}
+                    </thead>
+                    <tbody>
+                        {% for r in rows %}
+                            {% if title == 'Status Breakdown' %}
+                                <tr>
+                                    <td style="text-transform: capitalize; font-weight: 500;">{{ r.status }}</td>
+                                    <td style="text-align: right;" class="muted">{{ r.count }}</td>
+                                </tr>
+                            {% elif title == 'Monthly Accomplishment' %}
+                                <tr>
+                                    <td class="muted">{{ r.month|date:"F Y" }}</td>
+                                    <td style="text-align: right; font-weight: 600;">{{ r.total }}</td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'case_detail' r.tracking_id %}" class="tracking-id">{{ r.tracking_id }}</a>
+                                    </td>
+                                    <td class="muted">{{ r.created_at|date:"M d, Y h:i A" }}</td>
+                                    <td class="muted">
+                                        {% if r.released_at %}
+                                            {{ r.released_at|date:"M d, Y h:i A" }}
+                                        {% else %}
+                                            —
+                                        {% endif %}
+                                    </td>
+                                    <td class="muted" style="text-align: right;">
+                                        {% if r.released_at %}
+                                            <span style="background: var(--info-bg); color: var(--info-text); padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem;">
+                                                {{ r.released_at|timesince:r.created_at }}
+                                            </span>
+                                        {% else %}
+                                            —
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <!-- Empty State -->
+                <div class="empty-state">
+                    <i class="ri-folder-chart-line"></i>
+                    <h3>No Report Data</h3>
+                    <p>Select your parameters above and click "Generate Report" to view data.</p>
+                </div>
+            {% endif %}
+        </div>
     </div>
+
 </div>
 {% endblock %}

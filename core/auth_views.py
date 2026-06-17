@@ -1,6 +1,7 @@
 # pyright: reportAttributeAccessIssue=false, reportIncompatibleMethodOverride=false
 
 from datetime import timedelta
+import logging
 
 from django.conf import settings
 from django.contrib import messages
@@ -23,16 +24,24 @@ LOCKOUT_DURATION = timedelta(minutes=30)
 PASSWORD_RESET_THROTTLE_LIMIT = 3
 PASSWORD_RESET_THROTTLE_WINDOW = timedelta(hours=1)
 
+logger = logging.getLogger(__name__)
+
 
 class LegalTrackLoginView(LoginView):
     template_name = "registration/login.html"
+    redirect_authenticated_user = True
+
+    def dispatch(self, request, *args, **kwargs):
+        list(messages.get_messages(request))
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         user = form.get_user()
         now = timezone.now()
 
         if user.lockout_until and user.lockout_until > now:
-            messages.error(self.request, "Account temporarily locked. Try again later.")
+            form.add_error(None, "Account temporarily locked. Try again later.")
+            logger.warning("Login blocked due to lockout for user_id=%s", getattr(user, "id", None))
 
             AuditLog.objects.create(
                 actor=user,
@@ -57,14 +66,6 @@ class LegalTrackLoginView(LoginView):
         posted_identifier = (self.request.POST.get("username") or "").strip()
         now = timezone.now()
 
-        # UX guidance: by default, this system authenticates via Staff ID.
-        # Avoid giving away whether an email exists; keep it generic.
-        if posted_identifier and "@" in posted_identifier and posted_identifier.lower() != "admin@gmail.com":
-            messages.error(
-                self.request,
-                "Use your Staff ID (not email) to log in. If your account is pending activation, activate it first.",
-            )
-
         user = None
         if posted_identifier:
             if posted_identifier.lower() == "admin@gmail.com":
@@ -73,17 +74,12 @@ class LegalTrackLoginView(LoginView):
                 user = CustomUser.objects.filter(username__iexact=posted_identifier).first()
 
         if user:
-            # Provide a helpful message for common states.
-            if user.account_status == "pending":
-                messages.error(
-                    self.request,
-                    "This account is pending activation. Check your email for the activation link or contact the Super Admin.",
-                )
-            elif user.account_status == "inactive" or not user.is_active:
-                messages.error(
-                    self.request,
-                    "This account is inactive. Contact the Super Admin to reactivate it.",
-                )
+            logger.info(
+                "Login failed for user_id=%s status=%s active=%s",
+                getattr(user, "id", None),
+                getattr(user, "account_status", None),
+                bool(getattr(user, "is_active", False)),
+            )
 
             # If already locked, do not increment attempts further.
             if user.lockout_until and user.lockout_until > now:
@@ -181,7 +177,7 @@ class LoggedPasswordResetConfirmView(PasswordResetConfirmView):
                 created_at__gte=cutoff,
             ).count()
             if recent_changes >= 2:
-                messages.error(self.request, "Password change limit reached. Contact the Super Admin for approval.")
+                logger.warning("Password reset blocked (limit) user_id=%s", getattr(user, "id", None))
                 return redirect("login")
 
         response = super().form_valid(form)
@@ -213,7 +209,7 @@ def activate_account(request, token: str):
 
     user = get_object_or_404(CustomUser, pk=user_id)
     if user.account_status != "pending":
-        messages.info(request, "This account is already activated.")
+        logger.info("Activation link used for already active user_id=%s", getattr(user, "id", None))
         return redirect("login")
 
     if nonce != user.activation_nonce:
@@ -236,7 +232,7 @@ def activate_account(request, token: str):
                 details={"method": "activation_link"}
             )
 
-            messages.success(request, "Account activated. You can now log in.")
+            logger.info("Account activated user_id=%s", getattr(user, "id", None))
             return redirect("login")
     else:
         form = AccountActivationForm(user)

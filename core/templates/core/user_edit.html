@@ -1,73 +1,378 @@
-{% extends "base.html" %}
-{% block title %}Edit Staff Account{% endblock %}
+{% extends "base_new.html" %}
+
+{% block title %}Edit Staff Account | LegalTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Specific styles for the User Edit page */
+    .page-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin-bottom: 0.35rem;
+    }
+
+    .page-subtitle {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+    }
+
+    .card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* ===== USER SUMMARY CARD ===== */
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        background: var(--bg-body);
+        padding: 1.5rem;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+    }
+
+    .summary-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .summary-item label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .summary-item .value {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-main);
+    }
+
+    .summary-item .value.muted {
+        color: var(--text-muted);
+        font-weight: 400;
+    }
+
+    .staff-id-badge {
+        font-family: monospace;
+        color: var(--primary);
+        background: var(--primary-light);
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+    }
+
+    /* ===== FORM STYLING ===== */
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+    }
+
+    .span-2 {
+        grid-column: span 2;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .form-group label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-main);
+    }
+
+    /* Targeting default Django rendered inputs */
+    .form-group input[type="text"],
+    .form-group input[type="email"],
+    .form-group input[type="password"],
+    .form-group input[type="number"],
+    .form-group select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        font-size: 0.875rem;
+        font-family: 'Inter', sans-serif;
+        color: var(--text-main);
+        background-color: var(--bg-surface);
+        transition: var(--transition);
+        outline: none;
+        appearance: none;
+    }
+
+    .form-group select {
+        background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2364748b%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+        background-repeat: no-repeat;
+        background-position: right 1rem top 50%;
+        background-size: 0.65rem auto;
+        padding-right: 2.5rem;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    .form-group .errorlist {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        color: var(--danger-text);
+        font-size: 0.75rem;
+        margin-top: 0.2rem;
+    }
+
+    .msg.error {
+        background-color: var(--danger-bg);
+        color: var(--danger-text);
+        padding: 1rem;
+        border-radius: var(--radius-md);
+        font-size: 0.875rem;
+        margin-bottom: 1.5rem;
+        font-weight: 500;
+        border: 1px solid #fca5a5;
+    }
+
+    .help-text {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+
+    /* ===== BUTTONS ===== */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        border-top: 1px solid var(--border);
+        padding-top: 1.5rem;
+        justify-content: flex-end;
+    }
+
+    .btn {
+        padding: 0.6rem 1.5rem;
+        border-radius: var(--radius-md);
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        gap: 0.5rem;
+    }
+
+    .btn-primary {
+        background: var(--primary);
+        color: white;
+        border: 1px solid var(--primary);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .btn-primary:hover {
+        background: var(--primary-hover);
+        border-color: var(--primary-hover);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .btn-secondary {
+        background: transparent;
+        color: var(--text-main);
+        border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+        background: var(--bg-body);
+        border-color: var(--border-hover);
+    }
+
+    /* ===== INFO BOX ===== */
+    .info-box {
+        background: var(--info-bg);
+        border: 1px solid var(--info-border);
+        border-radius: var(--radius-lg);
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+
+    .info-icon {
+        color: var(--info-text);
+        font-size: 1.25rem;
+        background: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: var(--shadow-sm);
+        flex-shrink: 0;
+    }
+
+    .info-content {
+        font-size: 0.875rem;
+        color: var(--text-main);
+        line-height: 1.5;
+        align-self: center;
+    }
+
+    .info-content strong {
+        color: var(--info-text);
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<h1 class="page-title">Edit Staff Account</h1>
-<p class="page-subtitle">Update staff details. Role changes require a new account.</p>
+<div class="page-container">
 
-<div class="card">
-    <div class="form-grid">
-        <div>
-            <label>Staff ID</label>
-            <div><strong>{{ target_user.username }}</strong></div>
-        </div>
-        <div>
-            <label>Email</label>
-            <div class="muted">{{ target_user.email }}</div>
-        </div>
-        <div>
-            <label>Role</label>
-            <div>{{ target_user.get_role_display }}</div>
-        </div>
-        <div>
-            <label>Status</label>
-            <div class="muted">{{ target_user.get_account_status_display }}</div>
+    <!-- Header -->
+    <div class="page-header">
+        <h1 class="page-title">Edit Staff Account</h1>
+        <p class="page-subtitle">Update staff details. System role changes require creating a new account.</p>
+    </div>
+
+    <!-- User Summary Card (Read-Only) -->
+    <div class="card" style="padding: 1.5rem;">
+        <div class="summary-grid">
+            <div class="summary-item">
+                <label>Staff ID</label>
+                <div class="value"><span class="staff-id-badge">{{ target_user.username }}</span></div>
+            </div>
+            <div class="summary-item">
+                <label>Email Address</label>
+                <div class="value muted">{{ target_user.email }}</div>
+            </div>
+            <div class="summary-item">
+                <label>System Role</label>
+                <div class="value">{{ target_user.get_role_display }}</div>
+            </div>
         </div>
     </div>
-</div>
 
-<div class="card">
-    <form method="post">
-        {% csrf_token %}
+    <!-- Edit Form Card -->
+    <div class="card">
+        <form method="post" class="custom-form">
+            {% csrf_token %}
 
-        {% if form.non_field_errors %}
-            <div class="msg error">{{ form.non_field_errors }}</div>
-        {% endif %}
-
-        <div class="form-grid">
-            <div>
-                <label for="{{ form.full_name.id_for_label }}">Full Name</label>
-                {{ form.full_name }}
-                {{ form.full_name.errors }}
+            {% if form.non_field_errors %}
+            <div class="msg error">
+                <i class="ri-error-warning-line" style="vertical-align: middle; margin-right: 5px;"></i>
+                {{ form.non_field_errors }}
             </div>
-            <div>
-                <label for="{{ form.designation.id_for_label }}">Designation</label>
-                {{ form.designation }}
-                {{ form.designation.errors }}
-            </div>
-            <div class="span-2">
-                <label for="{{ form.position.id_for_label }}">Position</label>
-                {{ form.position }}
-                {{ form.position.errors }}
-            </div>
-            {% if form.lgu_municipality %}
-                <div class="span-2">
-                    <label for="{{ form.lgu_municipality.id_for_label }}">LGU Assigned</label>
-                    {{ form.lgu_municipality }}
-                    {{ form.lgu_municipality.errors }}
-                    {% if form.lgu_municipality.help_text %}<div class="muted mt-4 fs-92">{{ form.lgu_municipality.help_text }}</div>{% endif %}
-                </div>
             {% endif %}
-        </div>
 
-        <div style="display:flex; gap:10px; margin-top:14px;">
-            <button class="btn btn-primary" type="submit">Save Changes</button>
-            <a class="btn btn-secondary" href="{% url 'user_management' %}">Cancel</a>
-        </div>
-    </form>
-</div>
+            <div class="form-grid">
+                <!-- Username -->
+                <div class="form-group span-2">
+                    <label for="{{ form.username.id_for_label }}">Username / Staff ID</label>
+                    {{ form.username }}
+                    {{ form.username.errors }}
+                    {% if form.username.help_text %}
+                    <span class="help-text">{{ form.username.help_text }}</span>
+                    {% endif %}
+                </div>
 
-<div class="card">
-    <p class="muted"><strong>Note:</strong> Role changes are handled by creating a new account (per Module 1 policy) and deactivating the old one.</p>
+                <!-- Name Fields Horizontal Row -->
+                <div class="form-group span-2" style="display: grid; grid-template-columns: 3fr 1.5fr 3fr 1.5fr; gap: 1rem;">
+                    <div>
+                        <label for="{{ form.first_name.id_for_label }}">First Name <span style="color: #ef4444;">*</span></label>
+                        {{ form.first_name }}
+                        {{ form.first_name.errors }}
+                    </div>
+                    <div>
+                        <label for="{{ form.middle_initial.id_for_label }}">Middle Initial</label>
+                        {{ form.middle_initial }}
+                        {{ form.middle_initial.errors }}
+                    </div>
+                    <div>
+                        <label for="{{ form.last_name.id_for_label }}">Last Name <span style="color: #ef4444;">*</span></label>
+                        {{ form.last_name }}
+                        {{ form.last_name.errors }}
+                    </div>
+                    <div>
+                        <label for="{{ form.suffix.id_for_label }}">Suffix</label>
+                        {{ form.suffix }}
+                        {{ form.suffix.errors }}
+                    </div>
+                </div>
+
+                <!-- Position Field (Display Only) -->
+                <div class="form-group span-2">
+                    <label>Position</label>
+                    <input type="text" class="custom-input" value="{{ target_user.get_role_display }}" disabled
+                        style="background-color: #f1f5f9; cursor: not-allowed; color: #475569; width: 100%; padding: 0.75rem 1rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                </div>
+
+                <!-- Conditional Assignment Fields -->
+                {% if target_user.role == 'lgu_admin' %}
+                <div class="form-group span-2">
+                    <label>Municipal Assessors - Assigned Location</label>
+                    <input type="text" class="custom-input" value="{{ target_user.lgu_municipality }}" disabled
+                        style="background-color: #f1f5f9; cursor: not-allowed; color: #475569; width: 100%; padding: 0.75rem 1rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                    <!-- Hidden field to ensure form logic remains intact if needed -->
+                    <div style="display: none;">{{ form.lgu_municipality }}</div>
+                </div>
+                {% else %}
+                <div class="form-group span-2">
+                    <label for="{{ form.capitol_role.id_for_label }}">Capitol Assigned Role</label>
+                    {{ form.capitol_role }}
+                    {{ form.capitol_role.errors }}
+                </div>
+                {% endif %}
+                
+                <!-- Account Status -->
+                <div class="form-group span-2">
+                    <label for="{{ form.account_status.id_for_label }}">Account Status</label>
+                    {{ form.account_status }}
+                    {{ form.account_status.errors }}
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <a class="btn btn-secondary" href="{% url 'user_management' %}">Cancel</a>
+                <button class="btn btn-primary" type="submit"><i class="ri-save-3-line"></i> Save Changes</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Info Notice -->
+    <div class="info-box">
+        <div class="info-icon">
+            <i class="ri-information-line"></i>
+        </div>
+        <div class="info-content">
+            <strong>Policy Note:</strong> Direct role changes are disabled for security reasons. To change a user's role
+            (per Module 1 policy), you must deactivate this account and <a href="{% url 'create_staff_account' %}"
+                style="color: var(--primary); font-weight: 500;">create a new account</a>.
+        </div>
+    </div>
+
 </div>
 {% endblock %}

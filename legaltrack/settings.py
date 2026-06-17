@@ -19,13 +19,14 @@ import uuid
 import socket
 import tempfile
 
+from dotenv import load_dotenv
+
 from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-DOTENV_PATH = BASE_DIR / ".env"
-
+DOTENV_PATH = BASE_DIR / '.env'
+load_dotenv(DOTENV_PATH)
 
 def _parse_dotenv_file(path: Path) -> dict[str, str]:
     values: dict[str, str] = {}
@@ -91,7 +92,7 @@ def _env(key: str, default: str | None = None) -> str | None:
     if val is not None and str(val).strip() != "":
         return str(val).strip()
     res = os.getenv(key)
-    if res is not None:
+    if res is not None and res.strip() != "":
         return res.strip()
     return default
 
@@ -568,8 +569,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 LOGIN_REDIRECT_URL = "dashboard"
 LOGOUT_REDIRECT_URL = "login"
+LOGIN_URL = "/login/"
 
 
 # MEDIA
-MEDIA_URL = "/media/"
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+MEDIA_URL = (_env("DJANGO_MEDIA_URL", "/media/") or "/media/").strip()
+MEDIA_ROOT = (_env("DJANGO_MEDIA_ROOT") or os.path.join(BASE_DIR, "media")).strip()

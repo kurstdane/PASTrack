@@ -4,8 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>PAStrack – {% block title %}{% endblock %}</title>
+    <title>{% block title %}PASTrack{% endblock %}</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    {% block extra_head %}{% endblock %}
     <style>
         [x-cloak] { display: none !important; }
         :root {
@@ -20,6 +23,36 @@
             --danger: #b42318;
             --sidebar: #ffffff;
             --shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+        }
+
+        body[data-theme="dark"] {
+            --bg: #0b1220;
+            --card: #0f172a;
+            --text: #e5e7eb;
+            --muted: #94a3b8;
+            --border: #1f2a44;
+            --border-strong: #334155;
+            --primary: #60a5fa;
+            --accent: #f7d400;
+            --danger: #f87171;
+            --sidebar: #0f172a;
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body[data-theme="system"] {
+                --bg: #0b1220;
+                --card: #0f172a;
+                --text: #e5e7eb;
+                --muted: #94a3b8;
+                --border: #1f2a44;
+                --border-strong: #334155;
+                --primary: #60a5fa;
+                --accent: #f7d400;
+                --danger: #f87171;
+                --sidebar: #0f172a;
+                --shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+            }
         }
 
         * { box-sizing: border-box; }
@@ -95,20 +128,6 @@
 
         .card-elevated {box-shadow: var(--shadow);}
 
-        .section-title{margin:0; font-size:1.05rem; font-weight:900;}
-        .statgrid{display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:16px;}
-        .statcard{background:#fff; border:1px solid var(--border); border-radius:14px; padding:16px; display:flex; gap:14px; align-items:center; box-shadow:var(--shadow);}
-        .staticon{width:48px; height:48px; border-radius:14px; background:rgba(31,58,138,.08); border:1px solid rgba(31,58,138,.10);}
-        .statnum{font-weight:900; font-size:1.2rem; margin:0; line-height:1;}
-        .statlabel{margin:6px 0 0 0; color:var(--muted); font-weight:800; font-size:.86rem;}
-
-        .filters{background:#fff; border:1px solid var(--border); border-radius:14px; padding:12px; box-shadow:var(--shadow); margin-bottom:14px;}
-        .filters .searchbar{margin:0;}
-        .filters-row{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;}
-        .filters-row > *{min-width:170px;}
-
-        .cards3{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:16px;}
-
         .btn {display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px; border-radius:10px; border:1px solid var(--border-strong); background:#fff; cursor:pointer; font-weight:700;}
         .btn-primary {background:var(--primary); color:#fff; border-color:var(--primary);}
         .btn-primary:hover {background:#1e40af; border-color:#1e40af;}
@@ -164,8 +183,6 @@
         .drawer{position:fixed; top:0; right:0; height:100vh; width:min(560px, 94vw); background:#fff; border-left:1px solid var(--border); z-index:60; transform:translateX(100%); transition:transform .18s ease; display:flex; flex-direction:column;}
         .drawer.open{transform:translateX(0);}
         .drawer__top{display:flex; align-items:center; gap:10px; padding:14px 16px; border-bottom:1px solid var(--border);}
-        .drawer__back{width:34px; height:34px; border-radius:10px; border:1px solid var(--border); background:#fff; cursor:pointer;}
-        .drawer__back:hover{background:#f3f4f6;}
         .drawer__close{margin-left:auto; width:34px; height:34px; border-radius:10px; border:1px solid var(--border); background:#fff; cursor:pointer;}
         .drawer__close:hover{background:#f3f4f6;}
         .drawer__title{font-weight:900; font-size:0.95rem;}
@@ -235,29 +252,56 @@
         .pagepill.active {background:var(--primary); color:var(--accent); border-color:var(--primary);}
         .pagepill:hover {text-decoration:none; color:var(--text);}
 
+        .mobile-menu-toggle {
+            display: none;
+            background: transparent;
+            border: none;
+            color: var(--text);
+            cursor: pointer;
+            padding: 4px;
+        }
+
         @media (max-width: 900px) {
-            .sidebar {width:72px; padding:14px 10px;}
+            .mobile-menu-toggle { display: block; }
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: -100%;
+                height: 100vh;
+                width: 260px !important;
+                z-index: 2000;
+                transition: left 0.3s ease-in-out;
+                box-shadow: var(--shadow);
+            }
+            .sidebar.mobile-open { left: 0; }
             .sidebar__brand img {height:38px;}
-            .app-header {padding:16px;}
+            .app-header {padding:16px; gap: 12px; justify-content: flex-start;}
+            .header-actions { margin-left: auto; }
             .container {padding:0 16px 16px 16px;}
         }
 
-        @media (max-width:1100px){.statgrid{grid-template-columns:repeat(2,1fr);} .cards3{grid-template-columns:1fr;}}
-        @media (max-width:760px){.statgrid{grid-template-columns:1fr;}}
-
-        @media (max-width: 760px) {
+        @media (max-width: 1023px) {
+            .statgrid { grid-template-columns: repeat(2, 1fr) !important; gap: 1rem; }
+        }
+        @media (max-width: 767px) {
+            .statgrid { grid-template-columns: 1fr !important; }
+            .searchbar, .filters-row { flex-direction: column; align-items: stretch !important; gap: 1rem; }
+            .searchbar .grow, .filters-row > div { width: 100%; min-width: 100%; }
+            .filters-row button[type="submit"] { width: 100%; margin-top: 0.5rem; }
+            .subtabs { overflow-x: auto; white-space: nowrap; padding-bottom: 0.5rem; -webkit-overflow-scrolling: touch; }
             .table {display:block; width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch;}
+            .table th, .table td { white-space: nowrap; }
             .header-user__title {font-size:1.15rem;}
         }
     </style>
 </head>
-<body>
-    {% if user.is_authenticated %}
-        <div class="app">
+<body data-theme="{% if user.is_authenticated %}{{ user.theme_preference|default:'light' }}{% else %}light{% endif %}">
+    <div class="{% if user.is_authenticated %}app{% endif %}">
+        {% if user.is_authenticated %}
             <aside class="sidebar {% block sidebar_class %}{% endblock %}" aria-label="Sidebar">
                 <div class="sidebar__brand">
                     <a href="{% url 'dashboard' %}">
-                        <img src="{% static 'core/PAStrackLOGO.png' %}" alt="PAStrack" />
+                        <img src="{% static 'core/logo.png' %}" alt="PAStrack" />
                         <span class="brand-text">PAStrack</span>
                     </a>
                 </div>
@@ -342,7 +386,7 @@
                         </a>
                     {% endif %}
 
-                    <a class="sideitem {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'profile' %}" title="Settings">
+                    <a class="sideitem {% if request.resolver_match.url_name == 'settings' %}active{% endif %}" href="{% url 'settings' %}" title="Settings">
                         <svg class="sideicon" viewBox="0 0 24 24" fill="none">
                             <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM19.4 15a7.9 7.9 0 0 0 .1-2l2-1.5-2-3.5-2.4 1a8 8 0 0 0-1.7-1l-.3-2.6H9l-.3 2.6a8 8 0 0 0-1.7 1l-2.4-1-2 3.5 2 1.5a7.9 7.9 0 0 0 0 2l-2 1.5 2 3.5 2.4-1a8 8 0 0 0 1.7 1L9 22h6l.3-2.6a8 8 0 0 0 1.7-1l2.4 1 2-3.5-2-1.5Z" fill="currentColor" opacity=".9"/>
                         </svg>
@@ -362,9 +406,16 @@
                     </button>
                 </form>
             </aside>
+        {% endif %}
 
-            <div class="app-main">
+        <div class="{% if user.is_authenticated %}app-main{% endif %}">
+            {% if user.is_authenticated %}
                 <header class="app-header">
+                    <button type="button" class="mobile-menu-toggle" aria-label="Toggle Menu" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 24px; height: 24px;">
+                            <path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"/>
+                        </svg>
+                    </button>
                     <div class="header-user">
                         <h1 class="header-user__title">{% block header_title %}{{ user.full_name|default:user.email }}{% endblock %}</h1>
                         <p class="header-user__subtitle">{% block header_subtitle %}{{ user.username }} | {{ user.get_role_display }}{% endblock %}</p>
@@ -373,61 +424,15 @@
                         {% block header_actions %}{% endblock %}
                     </div>
                 </header>
+            {% endif %}
 
-                <main class="container {% block container_class %}{% endblock %}">
-    {% else %}
-        <main class="container {% block container_class_anon %}{% endblock %}">
-    {% endif %}
-
-        {% if messages %}
-            {% for msg in messages %}
-                <div class="msg {{ msg.tags|default:'info' }}">{{ msg }}</div>
-            {% endfor %}
-        {% endif %}
-        {% block content %}{% endblock %}
-    </main>
-
-    {% if user.is_authenticated %}
-            </div>
+            <main class="container {% block container_class %}{% endblock %}">
+                {% if user.is_authenticated and messages %}
+                    {% for msg in messages %}
+                        <div class="msg {{ msg.tags|default:'info' }}">{{ msg }}</div>
+                    {% endfor %}
+                {% endif %}
+                {% block content %}{% endblock %}
+            </main>
         </div>
-    {% endif %}
-
-    <script>
-        (function () {
-            function attachPasswordToggles(root) {
-                var inputs = (root || document).querySelectorAll('input[type="password"]:not([data-pwd-toggle-bound="1"])');
-                inputs.forEach(function (input) {
-                    input.setAttribute('data-pwd-toggle-bound', '1');
-                    input.setAttribute('data-pwd-toggle-target', '1');
-
-                    var wrapper = document.createElement('div');
-                    wrapper.className = 'pwd-field';
-                    input.parentNode.insertBefore(wrapper, input);
-                    wrapper.appendChild(input);
-
-                    var btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.className = 'pwd-toggle-btn';
-                    btn.setAttribute('aria-label', 'Show password');
-                    btn.textContent = 'Show';
-
-                    btn.addEventListener('click', function () {
-                        var isPassword = input.getAttribute('type') === 'password';
-                        input.setAttribute('type', isPassword ? 'text' : 'password');
-                        btn.textContent = isPassword ? 'Hide' : 'Show';
-                        btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
-                    });
-
-                    wrapper.appendChild(btn);
-                });
-            }
-
-            document.addEventListener('DOMContentLoaded', function () {
-                attachPasswordToggles(document);
-            });
-        })();
-    </script>
-
-    {% block extra_js %}{% endblock %}
-</body>
-</html>
+    </div>

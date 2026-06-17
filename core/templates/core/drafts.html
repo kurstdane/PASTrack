@@ -1,47 +1,172 @@
-{% extends "base.html" %}
-{% block title %}Drafts{% endblock %}
+{% extends 'base_new.html' %}
+{% load static %}
+
+{% block title %}My Drafts | LegalTrack{% endblock %}
+
+{% block extra_css %}
+    <style>
+        /* ===== HEADER ===== */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .greeting h1 { font-size: 1.5rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.25rem; }
+        .greeting span { font-size: 0.875rem; color: var(--text-muted); }
+        
+        .btn-primary {
+            background-color: var(--primary); color: white; border: none;
+            padding: 0.6rem 1.25rem; border-radius: var(--radius-md);
+            font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: 0.2s;
+            display: flex; align-items: center; gap: 0.5rem; box-shadow: var(--shadow-sm); text-decoration: none;
+        }
+        .btn-primary:hover { background-color: var(--primary-hover); box-shadow: var(--shadow-md); transform: translateY(-1px); color: white; }
+
+        /* ===== MAIN PANEL ===== */
+        .panel {
+            background: var(--bg-surface); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);
+            margin-bottom: 2rem; padding: 1.5rem;
+        }
+
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+        .panel-title { font-size: 1.125rem; font-weight: 600; margin: 0; color: var(--text-main); }
+        .panel-subtitle { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.2rem; }
+
+        /* Table */
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { font-size: 0.75rem; font-weight: 600; color: var(--text-main); padding: 1rem 0.5rem; border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.05em; }
+        td { padding: 1.25rem 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.875rem; vertical-align: middle; transition: 0.2s; }
+        tbody tr:hover td { background-color: #fafbfc; }
+
+        .owner-info strong { display: block; font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.1rem; }
+        
+        .type-badge {
+            display: inline-flex; padding: 0.25rem 0.6rem; border-radius: 6px; 
+            font-size: 0.75rem; font-weight: 600; background: var(--inactive-bg); color: var(--text-muted);
+        }
+
+        /* Action Buttons */
+        .action-group { display: flex; gap: 0.5rem; justify-content: flex-end; }
+        .action-btn { 
+            width: 32px; height: 32px; border-radius: 6px; border: none; display: flex; 
+            align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; text-decoration: none; font-size: 1.1rem;
+        }
+        .edit-btn { background-color: #eff6ff; color: #3b82f6; }
+        .edit-btn:hover { background-color: #dbeafe; }
+        .delete-btn { background-color: #fee2e2; color: #ef4444; }
+        .delete-btn:hover { background-color: #fecaca; }
+
+        .empty-state { text-align: center; padding: 4rem 2rem; color: var(--text-muted); }
+        .empty-state i { font-size: 3rem; display: block; margin-bottom: 1rem; opacity: 0.5; color: var(--text-light); }
+        .empty-state h3 { font-size: 1.1rem; color: var(--text-main); margin-bottom: 0.5rem; }
+    </style>
+{% endblock %}
 
 {% block content %}
-<div class="card">
-    <h2 class="page-title">Drafts</h2>
-    <p class="page-subtitle">Saved drafts that have no tracking number yet.</p>
-</div>
+    <div class="header">
+        <div class="greeting">
+            <h1>My Drafts</h1>
+            <span>Saved, incomplete transactions without a tracking number.</span>
+        </div>
+        <a href="{% url 'submit_case' %}" class="btn-primary"><i class="ri-file-add-line"></i> Create New Transaction</a>
+    </div>
 
-<div class="card card--flat">
-    <div class="card__header">
-        <strong>Your Draft Transactions</strong>
-    </div>
-    <div class="card__body card__body--flush">
-        {% if drafts %}
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Owner</th>
-                        <th>Type</th>
-                        <th style="width:22%">Last Updated</th>
-                        <th style="width:18%">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for d in drafts %}
+    <div class="panel">
+        <div class="panel-header">
+            <div>
+                <h3 class="panel-title">Draft Transactions</h3>
+                <div class="panel-subtitle">Resume your progress or discard old records.</div>
+            </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+            {% if drafts %}
+                <table>
+                    <thead>
                         <tr>
-                            <td><strong>{{ d.client_display_name|default:d.client_name }}</strong></td>
-                            <td class="muted">{{ d.get_case_type_display|default:"—" }}</td>
-                            <td class="muted">{{ d.updated_at|date:"M d, Y H:i" }}</td>
-                            <td>
-                                <a class="btn btn-secondary btn-sm" href="{% url 'draft_wizard' d.draft_id 1 %}">Continue</a>
-                                <form method="post" action="{% url 'delete_draft' d.draft_id %}" style="display:inline;" onsubmit="return confirm('Delete this draft? This cannot be undone.');">
-                                    {% csrf_token %}
-                                    <button class="btn btn-danger btn-sm" type="submit">Delete</button>
-                                </form>
-                            </td>
+                            <th>Owner Details</th>
+                            <th>Transaction Type</th>
+                            <th>Last Saved</th>
+                            <th style="text-align: right;">Action</th>
                         </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <div style="padding:16px;" class="muted">No drafts yet.</div>
-        {% endif %}
+                    </thead>
+                    <tbody>
+                        {% for d in drafts %}
+                            <tr>
+                                <td>
+                                    <div class="owner-info">
+                                        <strong>{{ d.client_display_name|default:d.client_name|default:"Unspecified Client" }}</strong>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="type-badge">{{ d.get_case_type_display|default:"Not selected yet" }}</span>
+                                </td>
+                                <td style="color: var(--text-muted);">
+                                    {{ d.updated_at|date:"M d, Y" }} <br> 
+                                    <span style="font-size: 0.75rem;">{{ d.updated_at|time:"h:i A" }}</span>
+                                </td>
+                                <td>
+                                    <div class="action-group">
+                                        <!-- Resume Draft -->
+                                        <a href="{% url 'draft_wizard' d.draft_id 1 %}" class="action-btn edit-btn" title="Resume Draft">
+                                            <i class="ri-play-line"></i>
+                                        </a>
+                                        
+                                        <!-- Delete Draft (Trigger Modal) -->
+                                        <button type="button" class="action-btn delete-btn" title="Delete Draft" onclick="openDeleteModal('{{ d.draft_id }}')">
+                                            <i class="ri-delete-bin-line"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty-state">
+                    <i class="ri-file-edit-line"></i>
+                    <h3>No drafts found</h3>
+                    <p>You don't have any saved drafts right now.</p>
+                </div>
+            {% endif %}
+        </div>
     </div>
-</div>
+
+    <!-- DELETE CONFIRMATION MODAL -->
+    <div id="deleteModal" class="drawer-backdrop" style="display:none; justify-content:center; align-items:center; opacity:1; visibility:visible;">
+        <div class="panel" style="width: 400px; padding: 2rem; border-radius: 12px;">
+            <h3 class="panel-title" style="margin-bottom: 1rem;">Delete Draft</h3>
+            <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 2rem;">
+                Are you sure you want to <strong style="color: #dc2626;">permanently delete</strong> this draft? This action cannot be undone.
+            </div>
+            
+            <form id="deleteForm" method="POST" action="">
+                {% csrf_token %}
+                <div style="display: flex; gap: 1rem;">
+                    <button type="button" class="btn btn-text" style="flex:1; border: 1px solid var(--border);" onclick="closeDeleteModal()">Cancel</button>
+                    <button type="submit" class="btn btn-danger" style="flex:1; background: #dc2626; color: white;">Delete Permanently</button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function openDeleteModal(draftId) {
+        const modal = document.getElementById('deleteModal');
+        const form = document.getElementById('deleteForm');
+        form.action = `/draft/${draftId}/delete/`;
+        modal.style.display = 'flex';
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').style.display = 'none';
+    }
+
+    // Close on click outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('deleteModal');
+        if (event.target == modal) {
+            closeDeleteModal();
+        }
+    }
+</script>
 {% endblock %}

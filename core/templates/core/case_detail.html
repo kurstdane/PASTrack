@@ -1,515 +1,1355 @@
-{% extends "base.html" %}
-{% block title %}Transaction {{ case.tracking_id }}{% endblock %}
+{% extends "base_new.html" %}
+
+{% block title %}Transaction {{ case.tracking_id }} | LegalTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== LAYOUT ===== */
+    .case-container {
+        max-width: 1400px; margin: 0 auto;
+    }
+    
+    .header { margin-bottom: 2rem; }
+    .back-link { 
+        color: var(--text-muted); text-decoration: none; font-size: 0.85rem; font-weight: 600; 
+        display: inline-flex; align-items: center; gap: 0.25rem; transition: 0.2s; 
+    }
+    .back-link:hover { color: var(--primary); }
+    
+    .header-main { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 0.5rem; }
+    .title-block { display: flex; align-items: center; gap: 1rem; }
+    .title-block h1 { font-size: 1.75rem; font-weight: 800; color: var(--text-main); margin: 0; }
+
+    .detail-grid {
+        display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; align-items: start;
+    }
+
+    /* ===== PANELS & CARDS ===== */
+    .panel {
+        background: var(--bg-surface); border: 1px solid var(--border);
+        border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); margin-bottom: 1.5rem;
+    }
+    .panel-header { 
+        padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); 
+        display: flex; justify-content: space-between; align-items: center; 
+    }
+    .panel-title { font-size: 1rem; font-weight: 700; color: var(--text-main); margin: 0; }
+    .panel-body { padding: 1.5rem; }
+
+    /* ===== INFO GRID ===== */
+    .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem 1rem; }
+    .info-item { display: flex; flex-direction: column; gap: 0.25rem; }
+    .info-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .info-value { font-size: 0.95rem; color: var(--text-main); font-weight: 500; }
+
+    /* ===== DOCUMENT CHECKLIST ===== */
+    .doc-table { width: 100%; border-collapse: collapse; }
+    .doc-table tr { border-bottom: 1px solid var(--border); }
+    .doc-table tr:last-child { border-bottom: none; }
+    .doc-table td { padding: 1rem 0; vertical-align: middle; }
+    .doc-icon { width: 40px; color: #dc2626; font-size: 1.5rem; }
+    .doc-name { font-size: 0.9rem; font-weight: 600; color: var(--text-main); }
+    .doc-meta { font-size: 0.75rem; color: var(--text-muted); }
+
+    /* ===== BUTTONS & BADGES ===== */
+    .btn {
+        padding: 0.6rem 1.25rem; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 600; 
+        cursor: pointer; transition: 0.2s; border: none; text-decoration: none; 
+        display: inline-flex; align-items: center; gap: 0.5rem; justify-content: center;
+    }
+    .btn-block { width: 100%; display: flex; margin-bottom: 0.5rem; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-outline { background: white; color: var(--text-main); border: 1px solid var(--border); }
+    .btn-outline:hover { background: var(--inactive-bg); border-color: var(--border-hover); }
+    .btn-danger { background: #fee2e2; color: #dc2626; }
+    .btn-danger:hover { background: #fecaca; }
+    .btn-success { background: var(--success-bg); color: var(--success-text); }
+
+    .status-pill {
+        padding: 0.3rem 0.8rem; border-radius: 99px; font-size: 0.75rem; font-weight: 700; text-transform: capitalize;
+        border: 1px solid transparent; background: var(--inactive-bg); color: var(--text-muted);
+    }
+    .status-to_examine, .status-in_review { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+    .status-for_approval { background: #f3e8ff; color: #6b21a8; border-color: #e9d5ff; }
+    .status-client_correction { background: #fee2e2; color: #dc2626; border-color: #fecaca; }
+
+    /* ===== SIDEBAR & TIMELINE ===== */
+    .sticky-sidebar { position: sticky; top: 1.5rem; }
+    
+    .timeline { position: relative; padding-left: 1.5rem; list-style: none; margin: 0; }
+    .timeline::before { content: ''; position: absolute; left: 0.4rem; top: 0; bottom: 0; width: 2px; background: var(--border); }
+    .timeline-item { position: relative; padding-bottom: 1.5rem; }
+    .timeline-item:last-child { padding-bottom: 0; }
+    .timeline-icon {
+        position: absolute; left: -1.5rem; top: 0; width: 1rem; height: 1rem; border-radius: 50%;
+        background: var(--bg-surface); border: 2px solid var(--primary); z-index: 1;
+    }
+    .timeline-time { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem; display: block; }
+    .timeline-content { background: #f8fafc; padding: 0.75rem; border-radius: var(--radius-md); font-size: 0.85rem; color: var(--text-main); border: 1px solid var(--border); }
+
+    /* ===== IMPROVED REMARKS FIELD ===== */
+    .remarks-input {
+        width: 100%;
+        min-height: 100px;
+        padding: 0.75rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        font-family: inherit;
+        font-size: 0.875rem;
+        resize: vertical;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        background-color: #fff;
+    }
+
+    .remarks-input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    .btn-submit-note {
+        width: 100%;
+        margin-top: 0.75rem;
+        background-color: var(--primary);
+        color: white;
+        border: none;
+        padding: 0.6rem;
+        border-radius: var(--radius-md);
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .btn-submit-note:hover {
+        background-color: var(--primary-hover);
+    }
+
+    /* ===== RESPONSIVE FIXES ===== */
+    @media (max-width: 1023px) {
+        .detail-grid { grid-template-columns: 1fr; }
+        .sticky-sidebar { position: static; margin-top: 2rem; }
+        .doc-table { display: block; width: 100%; overflow-x: auto; }
+        .doc-table th, .doc-table td { white-space: nowrap; }
+    }
+    
+    @media (max-width: 767px) {
+        .header-main { flex-direction: column; align-items: flex-start; gap: 1rem; }
+        .header-actions, .header-actions .btn { width: 100%; justify-content: center; }
+        .info-grid { grid-template-columns: 1fr; gap: 1rem; }
+        .doc-table td { display: block; width: 100%; text-align: left !important; }
+        .doc-icon { display: none; }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="card">
-    <h2 class="page-title">Transaction {{ case.tracking_id }}</h2>
-    <p class="page-subtitle">Status: <strong>{{ case.get_status_display }}</strong></p>
-
-    <div class="row">
-        <a class="btn btn-secondary btn-sm" href="{% url 'dashboard' %}">Back</a>
-        {% if user.is_authenticated and user.role|slice:":8" == 'capitol_' %}
-            <a class="btn btn-secondary btn-sm" href="{% url 'submissions' %}">Submissions</a>
-        {% endif %}
-        {% if can_edit %}
-            <a class="btn btn-secondary btn-sm" href="{% url 'case_wizard' case.tracking_id 1 %}">Edit Submission</a>
-        {% endif %}
-    </div>
-</div>
-
-<div class="card card--flat">
-    <div class="card__header">
-        <strong>Transaction Information</strong>
-    </div>
-    <div class="card__body card__body--flush">
-        <table class="table">
-            <tbody>
-                <tr><td style="width:22%" class="muted"><strong>Owner</strong></td><td>{{ case.client_display_name }}</td></tr>
-                <tr><td class="muted"><strong>Owner Number</strong></td><td>{{ case.client_number|default:"—" }}</td></tr>
-                <tr><td class="muted"><strong>Owner Email</strong></td><td>{{ case.client_email|default:"—" }}</td></tr>
-                <tr><td class="muted"><strong>Type of Transaction</strong></td><td>{{ case.get_case_type_display|default:"—" }}</td></tr>
-                <tr><td class="muted"><strong>Taxmapped?</strong></td><td>{{ case.needs_taxmapping|yesno:"Yes,No" }}</td></tr>
-                <tr><td class="muted"><strong>Municipality</strong></td><td>{{ case.area|default:"—" }}</td></tr>
-                {% if case.case_type == "land_first_time" or case.case_type == "transfer_ownership_tax_decl" %}
-                    <tr><td class="muted"><strong>Property Title Type</strong></td><td>{{ case.get_property_title_type_display|default:"—" }}</td></tr>
+<div class="case-container">
+    
+    <!-- HEADER / IDENTITY STRIP -->
+    <div class="header">
+        <a href="{% url 'submissions' %}?scope=me" class="back-link"><i class="ri-arrow-left-line"></i> Back to Workspace</a>
+        <div class="header-main">
+            <div class="title-block">
+                <h1>{{ case.tracking_id }}</h1>
+                <span class="status-pill status-{{ case.status }}">{{ case.get_status_display }}</span>
+            </div>
+            <div class="header-actions">
+                {% if can_edit %}
+                    <a class="btn btn-outline" href="{% url 'case_wizard' case.tracking_id 1 %}"><i class="ri-edit-line"></i> Edit Data</a>
                 {% endif %}
-                {% if case_numbers %}
-                    <tr>
-                        <td class="muted"><strong>Numbers</strong></td>
-                        <td>
-                            {% for n in case_numbers %}
-                                <span class="pagepill" style="margin-right:6px;">{{ n }}</span>
-                            {% endfor %}
-                        </td>
-                    </tr>
-                {% endif %}
-                <tr><td class="muted"><strong>Submitted by</strong></td><td>{{ case.submitted_by|default:"—" }}</td></tr>
-                <tr><td class="muted"><strong>LGU Code</strong></td><td>{{ case.lgu_area_code|default:"—" }}</td></tr>
-                <tr><td class="muted"><strong>Created</strong></td><td>{{ case.created_at|date:"M d, Y H:i" }}</td></tr>
-                {% if case.received_at %}
-                    <tr><td class="muted"><strong>Received</strong></td><td>{{ case.received_at|date:"M d, Y H:i" }}{% if case.received_by %} (by {{ case.received_by.full_name }}){% endif %}</td></tr>
-                {% endif %}
-                {% if case.assigned_to %}
-                    <tr><td class="muted"><strong>Assigned to</strong></td><td>{{ case.assigned_to.full_name }}{% if case.assigned_at %} ({{ case.assigned_at|date:"M d, Y H:i" }}){% endif %}</td></tr>
-                {% endif %}
-                {% if case.taxmapper_assigned_to %}
-                    <tr><td class="muted"><strong>Tax Mapper</strong></td><td>{{ case.taxmapper_assigned_to.full_name|default:case.taxmapper_assigned_to.email }}</td></tr>
-                {% endif %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-{% if case.return_reason and case.returned_at %}
-    <div class="card">
-        {% if case.status == "client_correction" %}
-            <h3 class="m-0" style="margin-bottom:8px;">Owner Correction Window</h3>
-        {% else %}
-            <h3 class="m-0" style="margin-bottom:8px;">Returned for Correction</h3>
-        {% endif %}
-        <p class="m-0"><strong>Reason:</strong> {{ case.return_reason }}</p>
-        {% if case.returned_at %}
-            <p class="muted" style="margin:8px 0 0 0;">Returned: {{ case.returned_at|date:"M d, Y H:i" }}</p>
-        {% endif %}
-        {% if case.status == "client_correction" and case.client_correction_deadline %}
-            <p class="muted" style="margin:6px 0 0 0;">Deadline: {{ case.client_correction_deadline|date:"M d, Y H:i" }}</p>
-        {% endif %}
-    </div>
-{% endif %}
-
-<div class="card card--flat">
-    <div class="card__header">
-        <strong>Document Checklist</strong>
-    </div>
-    <div class="card__body card__body--flush">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Document</th>
-                    <th style="width:18%">Uploaded</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in case.checklist %}
-                    <tr>
-                        <td>{{ item.doc_type }}</td>
-                        <td>{{ item.uploaded|yesno:"Yes,No" }}</td>
-                    </tr>
-                {% empty %}
-                    <tr><td colspan="2" class="muted"><em>No items</em></td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-{% if documents %}
-    <div class="card card--flat">
-        <div class="card__header" style="display:flex; justify-content:space-between; align-items:center;">
-            <strong>Uploaded Documents</strong>
-            {% if show_internal %}
-                <button form="doc-review-form" class="btn btn-primary btn-sm" type="submit">Save</button>
-            {% endif %}
+            </div>
         </div>
-        <div class="card__body card__body--flush">
-            {% if show_internal %}
-                <form id="doc-review-form" method="post" action="{% url 'review_case_documents' case.tracking_id %}" style="margin:0;">
-                    {% csrf_token %}
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Document Type</th>
-                                <th>File</th>
-                                <th style="width:14%">View File</th>
-                                <th style="width:22%">Uploaded</th>
-                                <th style="width:42%">Review</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for doc in documents %}
-                                <tr>
-                                    <td>{{ doc.doc_type }}</td>
-                                    <td class="muted">{{ doc.file.name|cut:"cases/" }}</td>
-                                    <td><a class="btn btn-secondary btn-sm" href="{% url 'download_case_document' doc.id %}" target="_blank" rel="noopener">View</a></td>
-                                    <td class="muted">{{ doc.uploaded_at|date:"M d, Y H:i" }}</td>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="detail-grid">
+        
+        <!-- LEFT COLUMN: INFORMATION CORE -->
+        <div class="main-column">
+            
+            {% if show_correction_required_banner %}
+            <div class="panel" style="border-left: 4px solid #dc2626; background: #fff5f5;">
+                <div class="panel-body">
+                    <div class="info-label" style="color: #dc2626; margin-bottom: 0.5rem;">Correction Required</div>
+                    <div class="info-value" style="color: #991b1b; line-height: 1.5;">{{ case.return_reason|default:"Case was returned for missing or incorrect information."|linebreaksbr }}</div>
+                </div>
+            </div>
+            {% elif is_receiver and case.status == 'client_correction' %}
+            <div class="panel" style="border-left: 4px solid #dc2626; background: #fff5f5;">
+                <div class="panel-body">
+                    <div class="info-label" style="color: #dc2626; margin-bottom: 0.5rem;">For Correction — Return Reason</div>
+                    <div class="info-value" style="color: #991b1b; line-height: 1.5;">{{ case.return_reason|default:"Case was returned for missing or incorrect information."|linebreaksbr }}</div>
+                    {% if case.client_correction_deadline %}
+                    <div style="margin-top: 0.5rem; font-size: 0.8rem; color: #b91c1c;">Client deadline: {{ case.client_correction_deadline|date:"M d, Y" }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="panel">
+                <div class="panel-header"><h2 class="panel-title">Transaction Information</h2></div>
+                <div class="panel-body">
+                    <div class="info-grid">
+                        <div class="info-item"><span class="info-label">Client Name</span><span class="info-value">{{ case.client_display_name }}</span></div>
+                        {% if case.ownership_type and case.ownership_type != 'single' %}
+                        <div class="info-item"><span class="info-label">Ownership Type</span><span class="info-value">{{ case.get_ownership_type_display }}</span></div>
+                        {% if case.ownership_type == 'married' and case.spouse_name %}
+                        <div class="info-item"><span class="info-label">Spouse Name</span><span class="info-value">{{ case.spouse_name }}</span></div>
+                        {% elif case.ownership_type == 'corporation' and case.corporation_name %}
+                        <div class="info-item"><span class="info-label">Corporation Name</span><span class="info-value">{{ case.corporation_name }}</span></div>
+                        {% elif case.ownership_type == 'others' and case.co_owners %}
+                        <div class="info-item">
+                            <span class="info-label">Co-owners</span>
+                            <span class="info-value" style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                {% for owner in case.co_owners_list %}
+                                    <span>{{ owner }}</span>
+                                {% endfor %}
+                            </span>
+                        </div>
+                        {% endif %}
+                        {% endif %}
+                        <div class="info-item"><span class="info-label">Transaction Type</span><span class="info-value">{{ case.get_case_type_display }}</span></div>
+                        <div class="info-item"><span class="info-label">Contact Number</span><span class="info-value">{{ case.client_number|default:"—" }}</span></div>
+                        <div class="info-item"><span class="info-label">Email Address</span><span class="info-value">{{ case.client_email|default:"—" }}</span></div>
+                        <div class="info-item"><span class="info-label">LGU Origin</span><span class="info-value">{{ case.area|default:"Direct" }}</span></div>
+                        <div class="info-item"><span class="info-label">Classification</span><span class="info-value">{{ case.get_classification_display|default:"—" }}</span></div>
+                        <div class="info-item"><span class="info-label">Property Area</span><span class="info-value">{% if case.area_value %}{{ case.area_value }} {{ case.get_area_unit_display }}{% else %}—{% endif %}</span></div>
+                        <div class="info-item"><span class="info-label">Date Submitted</span><span class="info-value">{{ case.created_at|date:"M d, Y g:i A" }}</span></div>
+                        <div class="info-item">
+                            <span class="info-label">Transaction Number</span>
+                            <span class="info-value">{{ case.td_number|default:"—" }}</span>
+                        </div>
+                        {% if case.claimed_by_name %}
+                        <div class="info-item" style="border-top: 1px dashed var(--border); padding-top: 0.5rem;">
+                            <span class="info-label" style="color: var(--primary);">Claimed By</span>
+                            <span class="info-value">{{ case.claimed_by_name }}</span>
+                        </div>
+                        <div class="info-item" style="border-top: 1px dashed var(--border); padding-top: 0.5rem;">
+                            <span class="info-label" style="color: var(--primary);">Claimant Contact</span>
+                            <span class="info-value">{{ case.claimed_by_contact }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header"><h2 class="panel-title">Documents Checklist</h2></div>
+                <div class="panel-body" style="padding-top: 0; padding-bottom: 0;">
+                    {% if show_internal and is_examiner %}
+                        <form method="post" action="{% url 'review_case_documents' case.tracking_id %}">
+                            {% csrf_token %}
+                            <table class="doc-table">
+                                {% for doc in documents %}
+                                <tr id="doc_row_{{ doc.id }}" class="examiner-doc-row" data-is-new="{% if case.returned_at and doc.uploaded_at > case.returned_at %}true{% else %}false{% endif %}" style="transition: all 0.2s; border-left: 4px solid transparent;">
+                                    <td class="doc-icon"><i class="ri-file-pdf-2-line"></i></td>
                                     <td>
-                                        <input type="hidden" name="doc_id" value="{{ doc.id }}" />
-                                        <div style="display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap;">
-                                            <label style="display:flex; align-items:center; gap:8px; margin:0;">
-                                                <input type="checkbox" name="reviewed_ok_{{ doc.id }}" value="1" {% if doc.reviewed_ok %}checked{% endif %} style="width:auto;" />
-                                                <span class="muted">Checked / OK</span>
+                                        <div class="doc-name" style="font-weight: 600;">{{ doc.doc_type }}</div>
+                                        <div class="doc-meta">Uploaded {{ doc.uploaded_at|date:"M d, Y" }}</div>
+                                        {% if case.returned_at and doc.uploaded_at > case.returned_at %}
+                                            <div class="flagged-badge" style="margin-top: 0.5rem; font-size: 0.8rem; color: #2563eb; font-weight: 500;">
+                                                <i class="ri-check-double-line"></i> New File Uploaded
+                                            </div>
+                                        {% endif %}
+                                        <div class="doc-meta" style="margin-top: 0.5rem;">
+                                            <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+                                                <input type="checkbox" name="reviewed_ok_{{ doc.id }}" value="1" class="doc-reviewed-ok" data-doc-id="{{ doc.id }}" {% if doc.reviewed_ok %}checked{% endif %}>
+                                                <span style="font-weight: 500;">Reviewed OK</span>
                                             </label>
-                                            <div style="flex:1; min-width:260px;">
-                                                <textarea name="review_remark_{{ doc.id }}" rows="2" placeholder="If not OK, explain what’s wrong...">{{ doc.review_remark|default:"" }}</textarea>
+                                        </div>
+                                        <div class="doc-meta" style="margin-top: 0.5rem;">
+                                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                                <input
+                                                    type="text"
+                                                    id="review_remark_{{ doc.id }}"
+                                                    name="review_remark_{{ doc.id }}"
+                                                    class="doc-review-remark"
+                                                    data-doc-id="{{ doc.id }}"
+                                                    data-doc-name="{{ doc.doc_type|escapejs }}"
+                                                    value="{{ doc.review_remark|default:'' }}"
+                                                    placeholder="Remark (optional)"
+                                                    style="flex: 1; padding:0.5rem 0.75rem; border:1px solid var(--border); border-radius:8px; transition: all 0.2s;"
+                                                >
+                                                {% if case.returned_by and case.returned_by.role == 'capitol_approver' or doc.review_remark %}
+                                                    <button type="button" class="btn btn-outline" style="padding: 0.4rem 0.6rem; color: #dc2626; border-color: #fca5a5;" onclick="clearExaminerRemark('{{ doc.id }}')" title="Delete Remark">
+                                                        <i class="ri-close-line"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline" style="padding: 0.4rem 0.6rem; color: #16a34a; border-color: #86efac;" onclick="postExaminerRemark('{{ doc.id }}')" title="Post Remark to Receiver">
+                                                        <i class="ri-check-line"></i>
+                                                    </button>
+                                                {% endif %}
+                                            </div>
+                                            <div id="remark_status_{{ doc.id }}" style="font-size: 0.75rem; color: #16a34a; margin-top: 0.25rem; display: none; font-weight: 500;">
+                                                <i class="ri-checkbox-circle-line"></i> Remark confirmed and ready to be posted.
                                             </div>
                                         </div>
+                                        <input type="hidden" name="doc_id" value="{{ doc.id }}">
+                                    </td>
+                                    <td style="text-align: right; vertical-align: top;">
+                                        {% if case.returned_by and case.returned_by.role == 'capitol_approver' and doc.review_remark %}
+                                            <label class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; margin-right: 0.5rem; cursor: pointer; color: #3b82f6; border-color: #bfdbfe;">
+                                                <i class="ri-upload-cloud-2-line"></i> Upload New
+                                                <input type="file" class="examiner-correction-upload-input" data-doc-id="{{ doc.id }}" data-tracking-id="{{ case.tracking_id }}" style="display:none;" accept=".pdf,.jpg,.jpeg,.png">
+                                            </label>
+                                        {% endif %}
+                                        <a href="{% url 'download_case_document' doc.id %}" target="_blank" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                                            Preview <i class="ri-external-link-line"></i>
+                                        </a>
                                     </td>
                                 </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </form>
-            {% else %}
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Document Type</th>
-                            <th>File</th>
-                            <th style="width:14%">View File</th>
-                            <th style="width:22%">Uploaded</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for doc in documents %}
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" style="text-align: center; padding: 2rem; color: var(--text-muted);">No documents uploaded for this case.</td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                            
+                            <script>
+                            function clearExaminerRemark(docId) {
+                                const input = document.getElementById('review_remark_' + docId);
+                                if (input) {
+                                    input.value = '';
+                                    input.dispatchEvent(new Event('input')); // Triggers updateRowStyle
+                                    document.getElementById('remark_status_' + docId).style.display = 'none';
+                                    input.style.borderColor = 'var(--border)';
+                                    input.style.backgroundColor = '';
+                                }
+                            }
+
+                            function postExaminerRemark(docId) {
+                                const input = document.getElementById('review_remark_' + docId);
+                                if (input && input.value.trim() !== '') {
+                                    input.style.borderColor = '#16a34a';
+                                    input.style.backgroundColor = '#f0fdf4';
+                                    document.getElementById('remark_status_' + docId).style.display = 'block';
+                                } else {
+                                    alert("There is no remark text to post.");
+                                }
+                            }
+
+                            document.addEventListener("DOMContentLoaded", function() {
+                                function updateRowStyle(docId) {
+                                    const row = document.getElementById('doc_row_' + docId);
+                                    if (!row) return;
+                                    const checkbox = row.querySelector('.doc-reviewed-ok');
+                                    const remark = row.querySelector('.doc-review-remark');
+                                    const isNew = row.dataset.isNew === 'true';
+                                    
+                                    if (remark.value.trim() !== "") {
+                                        row.style.backgroundColor = '#fef2f2';
+                                        row.style.borderLeft = '4px solid #dc2626';
+                                    } else if (checkbox.checked) {
+                                        row.style.backgroundColor = '#f0fdf4';
+                                        row.style.borderLeft = '4px solid #16a34a';
+                                    } else if (isNew) {
+                                        row.style.backgroundColor = '#eff6ff';
+                                        row.style.borderLeft = '4px solid #3b82f6';
+                                    } else {
+                                        row.style.backgroundColor = '';
+                                        row.style.borderLeft = '4px solid transparent';
+                                    }
+                                }
+                                
+                                document.querySelectorAll('.doc-reviewed-ok').forEach(cb => {
+                                    cb.addEventListener('change', function() {
+                                        const docId = this.dataset.docId;
+                                        const row = document.getElementById('doc_row_' + docId);
+                                        const remark = row.querySelector('.doc-review-remark');
+                                        if (this.checked) {
+                                            remark.value = '';
+                                        }
+                                        updateRowStyle(docId);
+                                    });
+                                    updateRowStyle(cb.dataset.docId);
+                                });
+                                
+                                document.querySelectorAll('.doc-review-remark').forEach(input => {
+                                    input.addEventListener('input', function() {
+                                        const docId = this.dataset.docId;
+                                        const row = document.getElementById('doc_row_' + docId);
+                                        const checkbox = row.querySelector('.doc-reviewed-ok');
+                                        if (this.value.trim() !== "") {
+                                            checkbox.checked = false;
+                                        }
+                                        updateRowStyle(docId);
+                                    });
+                                });
+                                document.querySelectorAll('.examiner-correction-upload-input').forEach(input => {
+                                    input.addEventListener('change', function(e) {
+                                        if (!this.files.length) return;
+                                        const file = this.files[0];
+                                        const docId = this.dataset.docId;
+                                        const trackingId = this.dataset.trackingId;
+                                        const row = document.getElementById('doc_row_' + docId);
+                                        
+                                        const formData = new FormData();
+                                        formData.append('file', file);
+                                        
+                                        const btnLabel = this.parentElement;
+                                        const originalText = btnLabel.innerHTML;
+                                        btnLabel.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Uploading...';
+                                        btnLabel.style.pointerEvents = 'none';
+                                        
+                                        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '{{ csrf_token }}';
+                                        
+                                        fetch(`/case/${trackingId}/upload-correction/${docId}/`, {
+                                            method: 'POST',
+                                            headers: { 'X-CSRFToken': csrfToken },
+                                            body: formData
+                                        })
+                                        .then(res => res.json())
+                                        .then(data => {
+                                            if (data.success) {
+                                                row.style.backgroundColor = '#eff6ff';
+                                                row.style.borderLeft = '4px solid #3b82f6';
+                                                btnLabel.innerHTML = '<i class="ri-check-line"></i> Uploaded';
+                                                
+                                                const remark = row.querySelector('.doc-review-remark');
+                                                if (remark) {
+                                                    remark.value = '';
+                                                    remark.dispatchEvent(new Event('input'));
+                                                }
+                                            } else {
+                                                alert(data.error || 'Failed to upload.');
+                                                btnLabel.innerHTML = originalText;
+                                                btnLabel.style.pointerEvents = 'auto';
+                                            }
+                                        })
+                                        .catch(err => {
+                                            console.error(err);
+                                            alert('An error occurred during upload.');
+                                            btnLabel.innerHTML = originalText;
+                                            btnLabel.style.pointerEvents = 'auto';
+                                        });
+                                    });
+                                });
+                            });
+                            </script>
+
+                            {% if documents %}
+                                <div style="padding: 1rem 0;">
+                                    <button class="btn btn-outline" type="submit" style="width:100%;">
+                                        <i class="ri-save-3-line"></i> Save Document Review
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </form>
+
+                        {% if document_versions %}
+                        <div style="margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+                            <h3 style="font-size: 1rem; margin-bottom: 0.5rem; color: var(--text-muted);"><i class="ri-history-line"></i> Document Version History</h3>
+                            <table class="doc-table">
+                                {% for version in document_versions %}
+                                <tr>
+                                    <td class="doc-icon"><i class="ri-file-pdf-2-line" style="color: #94a3b8;"></i></td>
+                                    <td>
+                                        <div class="doc-name" style="font-weight: 500; color: #475569;">{{ version.doc_type }}</div>
+                                        <div class="doc-meta">Replaced on {{ version.uploaded_at|date:"M d, Y, h:i A" }}</div>
+                                    </td>
+                                    <td style="text-align: right; vertical-align: top;">
+                                        <a href="{{ version.file.url }}" target="_blank" class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">
+                                            View Old Version <i class="ri-external-link-line"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                        </div>
+                        {% endif %}
+                    {% elif show_internal and is_receiver %}
+                        <div style="margin-top: 1rem;">
+                            <table class="doc-table">
+                                {% for doc in documents %}
+                                <tr id="receiver_doc_row_{{ doc.id }}" style="{% if doc.reviewed_ok %}background-color: #f0fdf4; border-left: 4px solid #16a34a;{% elif case.returned_at and doc.uploaded_at > case.returned_at %}background-color: #eff6ff; border-left: 4px solid #3b82f6;{% elif case.return_reason and not doc.reviewed_ok %}background-color: #fef2f2; border-left: 4px solid #dc2626;{% endif %} transition: all 0.2s;">
+                                    <td class="doc-icon"><i class="ri-file-pdf-2-line"></i></td>
+                                    <td>
+                                        <div class="doc-name" style="font-weight: 600;">{{ doc.doc_type }}</div>
+                                        <div class="doc-meta">Uploaded {{ doc.uploaded_at|date:"M d, Y" }}</div>
+                                        {% if doc.reviewed_ok %}
+                                            <div style="margin-top: 0.5rem; font-size: 0.8rem; color: #15803d; font-weight: 600;">
+                                                <i class="ri-lock-fill"></i> Locked / Final
+                                            </div>
+                                        {% elif case.returned_at and doc.uploaded_at > case.returned_at %}
+                                            <div class="flagged-badge" style="margin-top: 0.5rem; font-size: 0.8rem; color: #2563eb; font-weight: 500;">
+                                                <i class="ri-check-double-line"></i> New File Uploaded
+                                            </div>
+                                        {% elif case.return_reason and not doc.reviewed_ok %}
+                                            <div class="flagged-badge" style="margin-top: 0.5rem; font-size: 0.8rem; color: #b91c1c; font-weight: 500;">
+                                                <i class="ri-error-warning-line"></i> Flagged: {{ doc.review_remark|default:"Needs correction" }}
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                    <td style="text-align: right; vertical-align: top;">
+                                        {% if case.status == 'client_correction' or case.status == 'not_received' %}
+                                            {% if case.return_reason and not doc.reviewed_ok %}
+                                                <label class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; margin-right: 0.5rem; cursor: pointer;">
+                                                    <i class="ri-upload-cloud-2-line"></i> Upload New
+                                                    <input type="file" class="correction-upload-input" data-doc-id="{{ doc.id }}" data-tracking-id="{{ case.tracking_id }}" style="display:none;" accept=".pdf,.jpg,.jpeg,.png">
+                                                </label>
+                                            {% endif %}
+                                        {% endif %}
+                                        <a href="{% url 'download_case_document' doc.id %}" target="_blank" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                                            Preview <i class="ri-external-link-line"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" style="text-align: center; padding: 2rem; color: var(--text-muted);">No documents uploaded for this case.</td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                            <script>
+                            document.addEventListener("DOMContentLoaded", function() {
+                                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '{{ csrf_token }}';
+                                
+                                document.querySelectorAll('.correction-upload-input').forEach(input => {
+                                    input.addEventListener('change', function(e) {
+                                        if (!this.files.length) return;
+                                        const file = this.files[0];
+                                        const docId = this.dataset.docId;
+                                        const trackingId = this.dataset.trackingId;
+                                        const row = document.getElementById('receiver_doc_row_' + docId);
+                                        
+                                        const formData = new FormData();
+                                        formData.append('file', file);
+                                        
+                                        // UI Feedback
+                                        const btnLabel = this.parentElement;
+                                        const originalText = btnLabel.innerHTML;
+                                        btnLabel.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Uploading...';
+                                        btnLabel.style.pointerEvents = 'none';
+                                        
+                                        fetch(`/case/${trackingId}/upload-correction/${docId}/`, {
+                                            method: 'POST',
+                                            headers: {
+                                                'X-CSRFToken': csrfToken
+                                            },
+                                            body: formData
+                                        })
+                                        .then(response => response.json())
+                                        .then(data => {
+                                            if (data.success) {
+                                                row.style.backgroundColor = '#eff6ff'; // blue background
+                                                row.style.borderLeft = '4px solid #3b82f6'; // blue border
+                                                
+                                                const badge = row.querySelector('.flagged-badge');
+                                                if (badge) {
+                                                    badge.innerHTML = `<i class="ri-check-double-line"></i> New File Uploaded (${data.uploaded_at})`;
+                                                    badge.style.color = '#2563eb';
+                                                }
+                                                btnLabel.innerHTML = '<i class="ri-check-line"></i> Uploaded';
+                                            } else {
+                                                alert(data.error || 'Failed to upload.');
+                                                btnLabel.innerHTML = originalText;
+                                                btnLabel.style.pointerEvents = 'auto';
+                                            }
+                                        })
+                                        .catch(err => {
+                                            console.error(err);
+                                            alert('An error occurred during upload.');
+                                            btnLabel.innerHTML = originalText;
+                                            btnLabel.style.pointerEvents = 'auto';
+                                        });
+                                    });
+                                });
+                            });
+                            </script>
+                        </div>
+                    {% elif show_internal and is_approver %}
+                        <form method="post" action="{% url 'review_case_documents' case.tracking_id %}">
+                            {% csrf_token %}
+                            <table class="doc-table">
+                                {% for doc in documents %}
+                                <tr id="approver_doc_row_{{ doc.id }}" class="approver-doc-row" style="transition: all 0.2s; border-left: 4px solid transparent;">
+                                    <td class="doc-icon"><i class="ri-file-pdf-2-line"></i></td>
+                                    <td>
+                                        <div class="doc-name" style="font-weight: 600;">{{ doc.doc_type }}</div>
+                                        <div class="doc-meta">Uploaded {{ doc.uploaded_at|date:"M d, Y" }}</div>
+                                        <div class="doc-meta" style="margin-top: 0.5rem;">
+                                            <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+                                                <input type="checkbox" name="reviewed_ok_{{ doc.id }}" value="1" class="doc-reviewed-ok" data-doc-id="{{ doc.id }}" {% if doc.reviewed_ok %}checked{% endif %}>
+                                                <span style="font-weight: 500;">Reviewed OK</span>
+                                            </label>
+                                        </div>
+                                        <div class="doc-meta" style="margin-top: 0.5rem;">
+                                            <input
+                                                type="text"
+                                                name="review_remark_{{ doc.id }}"
+                                                class="doc-review-remark"
+                                                data-doc-id="{{ doc.id }}"
+                                                data-doc-name="{{ doc.doc_type|escapejs }}"
+                                                value="{{ doc.review_remark|default:'' }}"
+                                                placeholder="Remark (optional)"
+                                                style="width:100%; padding:0.5rem 0.75rem; border:1px solid var(--border); border-radius:8px;"
+                                            >
+                                        </div>
+                                        <input type="hidden" name="doc_id" value="{{ doc.id }}">
+                                    </td>
+                                    <td style="text-align: right; vertical-align: top;">
+                                        <a href="{% url 'download_case_document' doc.id %}" target="_blank" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                                            Preview <i class="ri-external-link-line"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" style="text-align: center; padding: 2rem; color: var(--text-muted);">No documents uploaded for this case.</td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                            
+                            <script>
+                            document.addEventListener("DOMContentLoaded", function() {
+                                function updateApproverRowStyle(docId) {
+                                    const row = document.getElementById('approver_doc_row_' + docId);
+                                    if (!row) return;
+                                    const checkbox = row.querySelector('.doc-reviewed-ok');
+                                    const remark = row.querySelector('.doc-review-remark');
+                                    
+                                    if (remark.value.trim() !== "") {
+                                        row.style.backgroundColor = '#fef2f2';
+                                        row.style.borderLeft = '4px solid #dc2626';
+                                    } else if (checkbox.checked) {
+                                        row.style.backgroundColor = '#f0fdf4';
+                                        row.style.borderLeft = '4px solid #16a34a';
+                                    } else {
+                                        row.style.backgroundColor = '';
+                                        row.style.borderLeft = '4px solid transparent';
+                                    }
+                                }
+                                
+                                document.querySelectorAll('.approver-doc-row .doc-reviewed-ok').forEach(cb => {
+                                    cb.addEventListener('change', function() {
+                                        const docId = this.dataset.docId;
+                                        const row = document.getElementById('approver_doc_row_' + docId);
+                                        const remark = row.querySelector('.doc-review-remark');
+                                        if (this.checked) {
+                                            remark.value = '';
+                                        }
+                                        updateApproverRowStyle(docId);
+                                    });
+                                    updateApproverRowStyle(cb.dataset.docId);
+                                });
+                                
+                                document.querySelectorAll('.approver-doc-row .doc-review-remark').forEach(input => {
+                                    input.addEventListener('input', function() {
+                                        const docId = this.dataset.docId;
+                                        const row = document.getElementById('approver_doc_row_' + docId);
+                                        const checkbox = row.querySelector('.doc-reviewed-ok');
+                                        if (this.value.trim() !== "") {
+                                            checkbox.checked = false;
+                                        }
+                                        updateApproverRowStyle(docId);
+                                    });
+                                });
+                            });
+                            </script>
+
+                            {% if documents %}
+                            <div style="margin-top: 1rem; text-align: right;">
+                                <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1rem;">
+                                    <i class="ri-save-line"></i> Save Remarks
+                                </button>
+                            </div>
+                            {% endif %}
+                        </form>
+                    {% else %}
+                        <table class="doc-table">
+                            {% for doc in documents %}
                             <tr>
-                                <td>{{ doc.doc_type }}</td>
-                                <td class="muted">{{ doc.file.name|cut:"cases/" }}</td>
-                                <td><a class="btn btn-secondary btn-sm" href="{% url 'download_case_document' doc.id %}" target="_blank" rel="noopener">View</a></td>
-                                <td class="muted">{{ doc.uploaded_at|date:"M d, Y H:i" }}</td>
+                                <td class="doc-icon"><i class="ri-file-pdf-2-line"></i></td>
+                                <td>
+                                    <div class="doc-name">{{ doc.doc_type }}</div>
+                                    <div class="doc-meta">Uploaded {{ doc.uploaded_at|date:"M d, Y" }}</div>
+                                </td>
+                                <td style="text-align: right;">
+                                    <a href="{% url 'download_case_document' doc.id %}" target="_blank" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                                        Preview <i class="ri-external-link-line"></i>
+                                    </a>
+                                </td>
                             </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" style="text-align: center; padding: 2rem; color: var(--text-muted);">No documents uploaded for this case.</td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if archived_documents %}
+            <div class="panel">
+                <div class="panel-header"><h2 class="panel-title">Document History</h2></div>
+                <div class="panel-body" style="padding-top: 0; padding-bottom: 0;">
+                    <table class="doc-table">
+                        {% for a in archived_documents %}
+                        <tr>
+                            <td class="doc-icon"><i class="ri-history-line"></i></td>
+                            <td>
+                                <div class="doc-name">{{ a.doc_type }}</div>
+                                <div class="doc-meta">Archived {{ a.archived_at|date:"M d, Y g:i A" }}</div>
+                                <div class="doc-meta">Auto-delete {{ a.keep_until|date:"M d, Y g:i A" }}</div>
+                                {% if a.original_filename %}
+                                    <div class="doc-meta">{{ a.original_filename }}</div>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: right;">
+                                <a href="{% url 'download_archived_case_document' a.id %}" target="_blank" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                                    Preview <i class="ri-external-link-line"></i>
+                                </a>
+                            </td>
+                        </tr>
                         {% endfor %}
-                    </tbody>
-                </table>
+                    </table>
+                </div>
+            </div>
             {% endif %}
         </div>
-    </div>
-{% endif %}
 
-{% if not can_edit and user.role == 'lgu_admin' %}
-    <p class="muted" style="margin:0 0 16px 0;"><em>This case can no longer be edited.</em></p>
-{% endif %}
+        <!-- RIGHT COLUMN: COMMAND CENTER & HISTORY -->
+        <div class="sidebar-column">
+            <div class="sticky-sidebar">
+                
+                <div class="panel">
+                    <div class="panel-header"><h2 class="panel-title">Workflow Actions</h2></div>
+                    <div class="panel-body">
+                        <div style="padding: 0.9rem; background: var(--inactive-bg); border-radius: 8px; color: var(--text-muted); text-align: center; margin-bottom: 1rem;">
+                            <p style="margin: 0; font-weight: 600; color: var(--text-main);">{{ workflow_status_text }}</p>
+                            {% if current_holder_detail %}
+                                <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem;">{{ current_holder_detail }}</p>
+                            {% endif %}
+                        </div>
 
-{% if can_receive %}
-    <form method="post" action="{% url 'receive_case' case.tracking_id %}" class="card" data-confirm-unsaved-doc-review="1">
-        {% csrf_token %}
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
-            <div>
-                <strong>Capitol Receiving</strong>
-                <div class="muted">Mark this request as physically received.</div>
-            </div>
-            <button class="btn btn-success" type="submit">Mark as Received</button>
-        </div>
-    </form>
-{% endif %}
+                        {% if can_reassign_examiner %}
+                            <button class="btn btn-outline btn-block" type="button" onclick="openReassignModal()">
+                                <i class="ri-user-shared-line"></i> Reassign Examiner
+                            </button>
+                        {% endif %}
 
-{% if can_return %}
-    <form method="post" action="{% url 'return_case' case.tracking_id %}" class="card" data-confirm-unsaved-doc-review="1">
-        {% csrf_token %}
-        <label for="id_reason">Return Reason</label>
-        <textarea id="id_reason" name="reason" rows="3" placeholder="State what needs correction..."></textarea>
-        <div style="display:flex; justify-content:flex-end; margin-top:12px;">
-            <button class="btn btn-danger" type="submit">Return to Owner (30 days)</button>
-        </div>
-    </form>
-{% endif %}
+                        {% if is_receiver %}
+                            {% if case.status == 'client_correction' %}
+                                <button class="btn btn-primary btn-block" type="button" onclick="openTransactionCorrectedModal()">
+                                    <i class="ri-checkbox-circle-line"></i> Transaction Corrected
+                                </button>
+                            {% else %}
+                                {% if can_receive %}
+                                    <button class="btn btn-primary btn-block" type="button" onclick="openReceiveModal()">
+                                        <i class="ri-inbox-receive-line"></i> Receive transaction
+                                    </button>
+                                {% endif %}
 
-{% if can_assign %}
-    <form method="post" action="{% url 'assign_case' case.tracking_id %}" class="card" data-confirm-unsaved-doc-review="1">
-        {% csrf_token %}
+                                {% if can_assign %}
+                                    <button class="btn btn-primary btn-block" type="button" onclick="openAssignModal('{{ case.tracking_id }}', '{{ case.client_name|escapejs }}')">
+                                        <i class="ri-user-add-line"></i> Assign to Examiner
+                                    </button>
+                                {% endif %}
+                                
+                                {% if can_return %}
+                                    <button class="btn btn-danger btn-block" type="button" onclick="openReturnModal()">
+                                        <i class="ri-arrow-go-back-line"></i> Return to Client for Correction
+                                    </button>
+                                {% endif %}
+                            {% endif %}
+                        {% endif %}
 
-        <label for="id_examiner">Assign to Examiner</label>
-        <div class="row" style="align-items:end;">
-            <div style="flex:1; min-width:260px;">
-                <select id="id_examiner" name="examiner_id">
-                    {% for examiner in examiners %}
-                        <option value="{{ examiner.id }}">{{ examiner.full_name }} — {{ examiner.active_load }} active</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div>
-                <button class="btn btn-primary" type="submit">Assign</button>
-            </div>
-        </div>
-    </form>
-{% endif %}
+                        {% if is_examiner or request.user.id == case.assigned_to_id %}
+                            <form id="examinerForwardForm" method="post" action="{% url 'submit_for_approval' case.tracking_id %}" class="btn-block">
+                                {% csrf_token %}
+                                <button
+                                    class="btn btn-primary"
+                                    type="button"
+                                    onclick="openExaminerForwardModal()"
+                                    {% if not can_submit_for_approval or examiner_docs_blocked %}disabled{% endif %}
+                                    style="{% if not can_submit_for_approval or examiner_docs_blocked %}opacity:0.6; cursor:not-allowed;{% endif %} width:100%;"
+                                >
+                                    <i class="ri-send-plane-2-line"></i> Forward to Approver
+                                </button>
+                            </form>
 
-{% if show_internal %}
-    {% if can_remark %}
-        <form method="post" action="{% url 'add_case_remark' case.tracking_id %}" class="card">
-            {% csrf_token %}
-            <strong>Internal Remarks</strong>
-            <div class="muted" style="margin:6px 0 10px 0;">Visible to the current responsible actor.</div>
-            {{ remark_form.text.label_tag }}
-            {{ remark_form.text }}
-            <div style="display:flex; justify-content:flex-end; margin-top:12px;">
-                <button class="btn btn-primary" type="submit">Add Remark</button>
-            </div>
-        </form>
-    {% endif %}
+                            {% if can_return_to_receiving %}
+                                <button class="btn btn-outline btn-block" type="button" onclick="openExaminerReturnModal()">
+                                    <i class="ri-arrow-go-back-line"></i> Return to Receiver
+                                </button>
+                            {% endif %}
 
-    {% if remarks %}
-        <div class="card card--flat">
-            <div class="card__header">
-                <strong>Remarks</strong>
-            </div>
-            <div class="card__body" style="padding:0;">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Remark</th>
-                            <th style="width:22%">By</th>
-                            <th style="width:22%">When</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for r in remarks %}
-                            <tr>
-                                <td>{{ r.text|linebreaksbr }}</td>
-                                <td class="muted">{{ r.created_by|default:"—" }}</td>
-                                <td class="muted">{{ r.created_at|date:"M d, Y H:i" }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    {% endif %}
-{% endif %}
+                            {% if examiner_forward_reason %}
+                                <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted); text-align: center;">
+                                    {{ examiner_forward_reason }}
+                                </div>
+                            {% endif %}
+                        {% endif %}
 
-{# Transaction history moved to the bottom so action controls appear above it #}
+                        {% if is_approver %}
+                            {% if can_assign_taxmapper %}
+                                <button class="btn btn-primary btn-block" type="button" onclick="openTaxmapperAssignModal()">
+                                    <i class="ri-user-add-line"></i> Assign to Tax Mapper
+                                </button>
+                            {% endif %}
 
-{% if can_submit_for_approval %}
-    <form method="post" action="{% url 'submit_for_approval' case.tracking_id %}" class="card" data-confirm-unsaved-doc-review="1">
-        {% csrf_token %}
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
-            <div>
-                <strong>Examiner</strong>
-                <div class="muted">Submit this transaction for approval.</div>
-            </div>
-            <button class="btn btn-primary" type="submit">Submit for Approval</button>
-        </div>
-    </form>
-{% endif %}
+                            {% if can_approve %}
+                                <button class="btn btn-primary btn-block" type="button" onclick="openApproveModal()">
+                                    <i class="ri-check-line"></i> Approve
+                                </button>
+                            {% endif %}
 
-{% if can_return_to_receiving %}
-    <form method="post" action="{% url 'return_to_receiving' case.tracking_id %}" class="card" data-confirm-unsaved-doc-review="1">
-        {% csrf_token %}
-        <label for="id_examiner_reason">Return Reason</label>
-        <textarea id="id_examiner_reason" name="reason" rows="3" placeholder="State what needs correction...">{{ case.return_reason|default:"" }}</textarea>
-        <div style="display:flex; justify-content:flex-end; margin-top:12px;">
-            <button class="btn btn-danger" type="submit">Return to Receiving</button>
-        </div>
-    </form>
-{% endif %}
+                            {% if can_return_for_correction %}
+                                <button class="btn btn-outline btn-block" type="button" onclick="openApproverReturnModal()">
+                                    <i class="ri-arrow-go-back-line"></i> Return to Examiner
+                                </button>
+                            {% endif %}
+                        {% endif %}
 
-{% if can_approve %}
-    {% if can_assign_taxmapper %}
-        <form method="post" action="{% url 'assign_taxmapper' case.tracking_id %}" class="card" data-confirm-unsaved-doc-review="1">
-            {% csrf_token %}
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
-                <div>
-                    <strong>Approver</strong>
-                    <div class="muted">This transaction is marked as Taxmapped. Assign a Tax Mapper.</div>
+                        {% if is_taxmapper and can_complete_taxmapping %}
+                            <form method="post" action="{% url 'complete_taxmapping' case.tracking_id %}" class="btn-block">
+                                {% csrf_token %}
+                                <button class="btn btn-primary" type="submit" style="width:100%;">
+                                    <i class="ri-check-line"></i> Mark Taxmapped
+                                </button>
+                            </form>
+                        {% endif %}
+
+                        {% if is_numberer and can_number %}
+                            <form id="numbererForm" method="post" action="{% url 'mark_numbered' case.tracking_id %}" class="btn-block">
+                                {% csrf_token %}
+                                <input
+                                    type="text"
+                                    id="numberer_transaction_input"
+                                    inputmode="numeric"
+                                    pattern="[0-9]*"
+                                    maxlength="6"
+                                    name="transaction_number"
+                                    placeholder="Enter 6-digit Transaction Number"
+                                    class="form-control"
+                                    style="margin-bottom: 0.5rem;"
+                                    required
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6)"
+                                >
+                                <button class="btn btn-primary" type="button" onclick="openNumbererModal()" style="width:100%;">
+                                    <i class="ri-hashtag"></i> Submit Transaction Number
+                                </button>
+                            </form>
+                        {% endif %}
+
+                        {% if request.user.role == "super_admin" %}
+                            <form method="post" action="{% url 'mark_numbered' case.tracking_id %}" class="btn-block">
+                                {% csrf_token %}
+                                <input
+                                    type="text"
+                                    inputmode="numeric"
+                                    pattern="[0-9]*"
+                                    maxlength="6"
+                                    name="transaction_number"
+                                    value="{{ case.td_number|default:'' }}"
+                                    placeholder="Override Transaction Number (6 digits)"
+                                    class="form-control"
+                                    style="margin-bottom: 0.5rem;"
+                                    required
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6)"
+                                >
+                                <button class="btn btn-outline" type="submit" style="width:100%;">
+                                    <i class="ri-edit-2-line"></i> Override Transaction Number
+                                </button>
+                            </form>
+
+                            <button class="btn btn-danger btn-block" type="button" onclick="openDeleteTransactionModal('{{ case.tracking_id }}')">
+                                <i class="ri-delete-bin-line"></i> Delete Transaction
+                            </button>
+                        {% endif %}
+
+                        {% if is_releaser and can_release %}
+                            <button class="btn btn-primary btn-block" type="button" onclick="openReleaserModal()" style="width:100%;">
+                                <i class="ri-send-plane-line"></i> Release
+                            </button>
+                        {% endif %}
+                    </div>
                 </div>
-                <div class="row" style="margin:0; align-items:end;">
-                    <div style="min-width:220px;">
-                        <label for="id_taxmapper">Tax Mapper</label>
-                        <select id="id_taxmapper" name="taxmapper_id">
-                            {% for u in taxmappers %}
-                                <option value="{{ u.id }}">{{ u.full_name|default:u.email }}</option>
+
+                <!-- UNIFIED REMARKS & TIMELINE -->
+                <div class="panel">
+                    <div class="panel-header"><h2 class="panel-title">Activity Timeline</h2></div>
+                    <div class="panel-body">
+                        
+                        <form method="post" action="{% url 'add_case_remark' case.tracking_id %}" style="margin-bottom: 1.5rem;">
+                            {% csrf_token %}
+
+                            <textarea name="text" class="remarks-input" placeholder="{% if can_remark %}Add an internal note...{% else %}You can only add notes when this case is currently with you.{% endif %}" id="noteBox" {% if not can_remark %}disabled style="opacity:0.6; cursor:not-allowed;"{% endif %}></textarea>
+                            
+                            <button class="btn-submit-note" type="submit" {% if not can_remark %}disabled style="opacity:0.6; cursor:not-allowed;"{% endif %}>Add Internal Note</button>
+                        </form>
+
+                        <script>
+                        const textarea = document.getElementById("noteBox");
+
+                        if (textarea && !textarea.disabled) {
+                            textarea.addEventListener("keydown", function (event) {
+                                if (event.key === "Enter" && !event.shiftKey) {
+                                    event.preventDefault();
+                                    this.form.submit();
+                                }
+                            });
+                        }
+                        </script>
+
+                        <ul class="timeline">
+                            {% for log in history %}
+                            <li class="timeline-item">
+                                <div class="timeline-icon"></div>
+                                <span class="timeline-time">{{ log.created_at|date:"M d, g:i A" }}</span>
+                                <div class="timeline-content">
+                                    <strong>{{ log.actor.get_role_display|default:"System" }}{% if log.actor and log.actor.username %} (Staff ID: {{ log.actor.username }}){% endif %}</strong>
+                                    <p style="margin: 0.25rem 0 0 0;">
+                                        {% if log.action == "case_remark" %}
+                                            Added a note
+                                        {% else %}
+                                            {{ log.get_action_display }}
+                                        {% endif %}
+                                    </p>
+                                    
+                                    <!-- This part pulls the actual text from the AuditLog details -->
+                                    {% if log.details.remark %}
+                                        <p style="margin-top: 0.5rem; font-style: italic; color: var(--text-main); border-left: 2px solid var(--border); padding-left: 0.75rem;">
+                                            "{{ log.details.remark }}"
+                                        </p>
+                                    {% endif %}
+
+                                    {% if log.details_display and log.details_display != "—" and not log.details.remark %}
+                                        <pre style="margin: 0.5rem 0 0 0; white-space: pre-wrap; font-size: 0.8rem; color: var(--text-muted); border-left: 2px solid var(--border); padding-left: 0.75rem;">{{ log.details_display }}</pre>
+                                    {% endif %}
+                                </div>
+                            </li>
+                            {% empty %}
+                            <div style="color: var(--text-muted); text-align: center; font-size: 0.85rem;">No activity recorded yet.</div>
                             {% endfor %}
-                        </select>
-                    </div>
-                    <div>
-                        <button class="btn btn-primary" type="submit">Assign</button>
+                        </ul>
+
                     </div>
                 </div>
             </div>
-        </form>
-    {% else %}
-        <form method="post" action="{% url 'approve_case' case.tracking_id %}" class="card" data-confirm-unsaved-doc-review="1">
-            {% csrf_token %}
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
-                <div>
-                    <strong>Approver</strong>
-                    <div class="muted">Approve and send to numbering.</div>
-                </div>
-                <button class="btn btn-primary" type="submit">Approve</button>
-            </div>
-        </form>
-    {% endif %}
-
-    <form method="post" action="{% url 'return_for_correction' case.tracking_id %}" class="card" data-confirm-unsaved-doc-review="1">
-        {% csrf_token %}
-        <label for="id_approver_reason">Return Reason</label>
-        <textarea id="id_approver_reason" name="reason" rows="3" placeholder="State what needs correction..."></textarea>
-        <div style="display:flex; justify-content:flex-end; margin-top:12px;">
-            <button class="btn btn-danger" type="submit">Return to Examiner</button>
-        </div>
-    </form>
-{% endif %}
-
-{% if can_complete_taxmapping %}
-    <form method="post" action="{% url 'complete_taxmapping' case.tracking_id %}" class="card" data-confirm-unsaved-doc-review="1">
-        {% csrf_token %}
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
-            <div>
-                <strong>Tax Mapper</strong>
-                <div class="muted">Mark this transaction as taxmapped and send to Numberer.</div>
-            </div>
-            <button class="btn btn-primary" type="submit">Complete Tax Mapping</button>
-        </div>
-    </form>
-{% endif %}
-
-{% if can_number %}
-    <form method="post" action="{% url 'mark_numbered' case.tracking_id %}" class="card" data-confirm-unsaved-doc-review="1">
-        {% csrf_token %}
-        <strong>Numbering</strong>
-        <div class="muted" style="margin:6px 0 10px 0;">
-            Last used: <strong>{{ last_used_number|default:"—" }}</strong>. Suggested next: <strong>{{ suggested_next_number }}</strong>.
-            Enter one or more numbers (comma/space separated).
-        </div>
-
-        {% if case_numbers %}
-            <div class="msg info" style="margin-bottom:12px;">
-                <strong>Existing numbers</strong>
-                <div class="muted mt-4 fs-92">Check to remove on submit.</div>
-                <div class="row" style="margin-top:8px; gap:10px;">
-                    {% for n in case_numbers %}
-                        <label style="display:flex; align-items:center; gap:8px; margin:0;">
-                            <input type="checkbox" name="remove_numbers" value="{{ n }}" style="width:auto;" />
-                            <span>{{ n }}</span>
-                        </label>
-                    {% endfor %}
-                </div>
-            </div>
-        {% endif %}
-
-        <label for="id_numbers">Add numbers</label>
-        <textarea id="id_numbers" name="numbers" rows="2" placeholder="e.g. {{ suggested_next_number }}">{{ suggested_next_number }}</textarea>
-        
-        <label style="display:flex; align-items:flex-start; gap:10px; margin-top:12px; margin-bottom:12px;">
-            <input type="checkbox" name="finalize_confirm" value="1" required style="width:auto; margin-top:3px;" />
-            <span class="muted">
-                I hereby confirm that I have thoroughly reviewed and verified the accuracy of the information provided above,
-                and I acknowledge that it is final and cannot be modified after submission.
-            </span>
-        </label>
-
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:12px;">
-            <div>
-                <div class="muted">Move this transaction to For Release.</div>
-            </div>
-            <button class="btn btn-primary" type="submit">Mark as Numbered</button>
-        </div>
-    </form>
-{% endif %}
-
-{% if can_release %}
-    <form method="post" action="{% url 'release_case' case.tracking_id %}" class="card" data-confirm-unsaved-doc-review="1">
-        {% csrf_token %}
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
-            <div>
-                <strong>Release</strong>
-                <div class="muted">Mark this transaction as Released.</div>
-            </div>
-            <button class="btn btn-primary" type="submit">Release</button>
-        </div>
-    </form>
-{% endif %}
-
-{% if show_internal and history %}
-    <div class="card card--flat" x-data="{ historyExpanded: false }">
-        <div class="card__header" style="display:flex; justify-content:space-between; align-items:center;">
-            <strong>Transaction History</strong>
-            <button @click="historyExpanded = !historyExpanded" class="btn btn-link" type="button">
-                <span x-show="!historyExpanded">Add more (Show all)</span>
-                <span x-show="historyExpanded">Add less (Collapse)</span>
-            </button>
-        </div>
-        <div class="card__body" style="padding:0;">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th style="width:22%">Time</th>
-                        <th style="width:22%">Action</th>
-                        <th style="width:22%">By</th>
-                        <th>Remarks</th>
-                    </tr>
-                </thead>
-                <tbody x-show="!historyExpanded">
-                    {% for h in history|slice:":5" %}
-                        <tr>
-                            <td class="muted">{{ h.created_at|date:"M d, Y H:i" }}</td>
-                            <td>{{ h.get_action_display }}</td>
-                            <td class="muted">
-                                {% if h.actor %}
-                                    {{ h.actor.full_name|default:h.actor.username }} — {{ h.actor.get_role_display }}
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </td>
-                            <td class="muted">{{ h.details_display|default:"—"|linebreaksbr }}</td>
-                        </tr>
-                    {% endfor %}
-                    {% if history|length > 5 %}
-                        <tr>
-                            <td colspan="4" class="text-center muted fs-92" style="padding:12px;">
-                                ... showing latest 5 events ...
-                            </td>
-                        </tr>
-                    {% endif %}
-                </tbody>
-                <tbody x-show="historyExpanded" x-cloak>
-                    {% for h in history %}
-                        <tr>
-                            <td class="muted">{{ h.created_at|date:"M d, Y H:i" }}</td>
-                            <td>{{ h.get_action_display }}</td>
-                            <td class="muted">
-                                {% if h.actor %}
-                                    {{ h.actor.full_name|default:h.actor.username }} — {{ h.actor.get_role_display }}
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </td>
-                            <td class="muted">{{ h.details_display|default:"—"|linebreaksbr }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
         </div>
     </div>
-{% endif %}
-{% endblock %}
+</div>
 
-{% block extra_js %}
+<!-- Assign Modal (Receiver) -->
+<div id="assignModal" class="drawer-backdrop" style="display:none; justify-content:center; align-items:center; opacity:1; visibility:visible;">
+    <div class="panel" style="width: 420px; padding: 2rem;">
+        <h3 class="panel-title" style="margin-bottom: 1rem;">Assign to Examiner</h3>
+        <form id="assignForm" method="post" action="">
+            {% csrf_token %}
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                Target: <strong id="modalClientName" style="color: var(--text-main);"></strong>
+                <span style="margin-left: 0.5rem; color: var(--text-light);" id="modalTrackingId"></span>
+            </div>
+            <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem; display:block;">Select Examiner</label>
+            <select name="assigned_to" required class="form-control">
+                <option value="" disabled selected>Select from active staff...</option>
+                {% for ex in examiners %}
+                    <option value="{{ ex.id }}">{{ ex.full_name|default:ex.email }} ({{ ex.active_load|default:0 }})</option>
+                {% endfor %}
+            </select>
+            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                <button type="button" class="btn btn-outline" style="flex:1" onclick="closeAssignModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="flex:1;">Confirm</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
-    (function () {
-        var form = document.getElementById('doc-review-form');
-        if (!form) return;
-
-        var dirty = false;
-        var saving = false;
-
-        function markDirty() {
-            if (!saving) dirty = true;
-        }
-
-        form.addEventListener('change', markDirty);
-        form.addEventListener('input', markDirty);
-        form.addEventListener('submit', function () {
-            saving = true;
-            dirty = false;
-        });
-
-        window.addEventListener('beforeunload', function (e) {
-            if (!dirty) return;
-            e.preventDefault();
-            e.returnValue = '';
-        });
-
-        var guarded = document.querySelectorAll('form[data-confirm-unsaved-doc-review="1"]');
-        guarded.forEach(function (f) {
-            f.addEventListener('submit', function (e) {
-                if (!dirty) return;
-                var ok = window.confirm('You have unsaved changes in Uploaded Documents. Continue without saving?');
-                if (!ok) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-            });
-        });
-    })();
+    function openAssignModal(tid, client) {
+        document.getElementById('modalTrackingId').innerText = tid;
+        document.getElementById('modalClientName').innerText = client || '—';
+        document.getElementById('assignForm').action = "{% url 'assign_case' 'TRACKING_ID' %}".replace("TRACKING_ID", tid);
+        document.getElementById('assignModal').style.display = 'flex';
+    }
+    function closeAssignModal() {
+        document.getElementById('assignModal').style.display = 'none';
+    }
 </script>
-{% endblock %}
+
+<div id="reassignModal" class="drawer-backdrop" style="display:none; justify-content:center; align-items:center; opacity:1; visibility:visible;">
+    <div class="panel" style="width: 420px; padding: 2rem;">
+        <h3 class="panel-title" style="margin-bottom: 1rem;">Reassign Examiner</h3>
+        <form method="post" action="{% url 'reassign_case_examiner' case.tracking_id %}">
+            {% csrf_token %}
+            <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem; display:block;">Select Examiner</label>
+            <select name="assigned_to" required class="form-control">
+                <option value="" disabled selected>Select from active staff...</option>
+                {% for ex in examiners %}
+                    <option value="{{ ex.id }}">{{ ex.full_name|default:ex.email }} ({{ ex.active_load|default:0 }})</option>
+                {% endfor %}
+            </select>
+            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                <button type="button" class="btn btn-outline" style="flex:1" onclick="closeReassignModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="flex:1;">Confirm</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openReassignModal() {
+        document.getElementById('reassignModal').style.display = 'flex';
+    }
+    function closeReassignModal() {
+        document.getElementById('reassignModal').style.display = 'none';
+    }
+</script>
+
+<!-- Return Modal (Receiver -> Client Correction) -->
+<div id="returnModal" class="drawer-backdrop" style="display:none; justify-content:center; align-items:center; opacity:1; visibility:visible;">
+    <div class="panel" style="width: 400px; padding: 2rem;">
+        <h3 class="panel-title" style="margin-bottom: 1rem;">Reason for Correction</h3>
+        <form method="post" action="{% url 'return_case' case.tracking_id %}">
+            {% csrf_token %}
+            <textarea name="reason" class="remarks-input" placeholder="Explain what needs to be fixed..." required></textarea>
+            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                <button type="button" class="btn btn-outline" style="flex:1" onclick="closeReturnModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="flex:1; background: #dc2626;">Confirm Return</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openReturnModal() {
+        document.getElementById('returnModal').style.display = 'flex';
+    }
+    function closeReturnModal() {
+        document.getElementById('returnModal').style.display = 'none';
+    }
+</script>
+
+<div id="deleteTransactionModal" class="drawer-backdrop" style="display:none; justify-content:center; align-items:center; opacity:1; visibility:visible;">
+    <div class="panel" style="width: 400px; padding: 2rem; border-radius: 12px;">
+        <h3 class="panel-title" style="margin-bottom: 1rem;">Delete Transaction</h3>
+        <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 2rem;">
+            Are you sure you want to <strong style="color: #dc2626;">permanently delete</strong> transaction <strong id="modalTransactionId" style="color: var(--text-main);"></strong>? This action cannot be undone.
+        </div>
+        
+        <form id="deleteTransactionForm" method="POST" action="">
+            {% csrf_token %}
+            <div style="display: flex; gap: 1rem;">
+                <button type="button" class="btn btn-text" style="flex:1; border: 1px solid var(--border);" onclick="closeDeleteTransactionModal()">Cancel</button>
+                <button type="submit" class="btn btn-danger" style="flex:1; background: #dc2626; color: white;">Delete Permanently</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openDeleteTransactionModal(tid) {
+        const modal = document.getElementById('deleteTransactionModal');
+        const form = document.getElementById('deleteTransactionForm');
+        const tidSpan = document.getElementById('modalTransactionId');
+        
+        tidSpan.textContent = tid;
+        form.action = `/case/${tid}/delete/`;
+        modal.style.display = 'flex';
+    }
+
+    function closeDeleteTransactionModal() {
+        document.getElementById('deleteTransactionModal').style.display = 'none';
+    }
+</script>
+
+<div id="receiveModal" class="drawer-backdrop" style="display:none; justify-content:center; align-items:center; opacity:1; visibility:visible;">
+    <div class="panel" style="width: 400px; padding: 2rem;">
+        <h3 class="panel-title" style="margin-bottom: 1rem;">Receive transaction</h3>
+        <div style="font-size: 0.9rem; color: var(--text-muted);">
+            Are you sure you want to mark this transaction as <strong style="color: var(--text-main);">Received</strong>?
+        </div>
+        <form method="post" action="{% url 'receive_case' case.tracking_id %}" style="margin-top: 1rem;">
+            {% csrf_token %}
+            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                <button type="button" class="btn btn-outline" style="flex:1" onclick="closeReceiveModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="flex:1;">Confirm</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openReceiveModal() {
+        document.getElementById('receiveModal').style.display = 'flex';
+    }
+    function closeReceiveModal() {
+        document.getElementById('receiveModal').style.display = 'none';
+    }
+</script>
+
+<div id="examinerReturnModal" class="drawer-backdrop" style="display:none; justify-content:center; align-items:center; opacity:1; visibility:visible;">
+    <div class="panel" style="width: 450px; padding: 2rem;">
+        <h3 class="panel-title" style="margin-bottom: 1rem;">Return to Receiver</h3>
+        <form method="post" action="{% url 'return_to_receiving' case.tracking_id %}">
+            {% csrf_token %}
+            <div id="examinerReturnFlaggedFiles"></div>
+            <input type="hidden" name="flagged" id="examinerReturnFlaggedInput" value="">
+            <textarea name="reason" class="remarks-input" placeholder="General feedback... (Explain what needs to be fixed)" required></textarea>
+            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                <button type="button" class="btn btn-outline" style="flex:1" onclick="closeExaminerReturnModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="flex:1;">Confirm</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openExaminerReturnModal() {
+        const modal = document.getElementById('examinerReturnModal');
+        const flaggedContainer = document.getElementById('examinerReturnFlaggedFiles');
+        const flaggedInput = document.getElementById('examinerReturnFlaggedInput');
+        
+        let flaggedHtml = '';
+        let flaggedText = 'Flagged Documents:\n';
+        let hasFlags = false;
+        
+        document.querySelectorAll('.examiner-doc-row').forEach(row => {
+            const checkbox = row.querySelector('.doc-reviewed-ok');
+            const remark = row.querySelector('.doc-review-remark');
+            if (!checkbox || !remark) return;
+            
+            const docName = remark.dataset.docName;
+            
+            if (!checkbox.checked || remark.value.trim() !== "") {
+                hasFlags = true;
+                const note = remark.value.trim() ? ` - ${remark.value.trim()}` : ' - Not reviewed OK';
+                flaggedHtml += `<li style="margin-bottom:0.25rem;"><strong>${docName}</strong>${note}</li>`;
+                flaggedText += `• ${docName}${note}\n`;
+            }
+        });
+        
+        if (hasFlags) {
+            flaggedContainer.innerHTML = `<div style="font-size: 0.85rem; color: #dc2626; margin-bottom: 0.5rem; font-weight: 600;">Flagged Documents:</div><ul style="font-size: 0.85rem; margin-bottom: 1rem; padding-left: 1.25rem; color: #991b1b;">${flaggedHtml}</ul>`;
+            flaggedInput.value = flaggedText.trim();
+        } else {
+            flaggedContainer.innerHTML = '';
+            flaggedInput.value = '';
+        }
+        
+        modal.style.display = 'flex';
+    }
+    function closeExaminerReturnModal() {
+        document.getElementById('examinerReturnModal').style.display = 'none';
+    }
+</script>
+
+<div id="approverReturnModal" class="drawer-backdrop" style="display:none; justify-content:center; align-items:center; opacity:1; visibility:visible;">
+    <div class="panel" style="width: 400px; padding: 2rem;">
+        <h3 class="panel-title" style="margin-bottom: 1rem;">Return to Examiner</h3>
+        <form method="post" action="{% url 'return_for_correction' case.tracking_id %}">
+            {% csrf_token %}
+            <div style="font-size: 0.85rem; color: #0284c7; margin-bottom: 1rem; padding: 0.75rem; background-color: #f0f9ff; border-left: 3px solid #0284c7;">
+                <strong><i class="ri-information-line"></i> Note:</strong> You can optionally flag files with a <strong>Remark</strong> to specify exactly what needs correction.
+            </div>
+            <textarea name="reason" class="remarks-input" placeholder="General instructions for the Examiner..." required></textarea>
+            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                <button type="button" class="btn btn-outline" style="flex:1" onclick="closeApproverReturnModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="flex:1;">Confirm</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openApproverReturnModal() {
+        document.getElementById('approverReturnModal').style.display = 'flex';
+    }
+    function closeApproverReturnModal() {
+        document.getElementById('approverReturnModal').style.display = 'none';
+    }
+</script>
+
+<div id="approveModal" class="drawer-backdrop" style="display:none; justify-content:center; align-items:center; opacity:1; visibility:visible;">
+    <div class="panel" style="width: 400px; padding: 2rem;">
+        <h3 class="panel-title" style="margin-bottom: 1rem;">Approve Transaction</h3>
+        <div style="font-size: 0.9rem; color: var(--text-muted);">
+            Confirm approval for <strong style="color: var(--text-main);">{{ case.tracking_id }}</strong>?
+        </div>
+        <form method="post" action="{% url 'approve_case' case.tracking_id %}" style="margin-top: 1rem;">
+            {% csrf_token %}
+            <input type="hidden" name="confirm_approve" value="1">
+            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                <button type="button" class="btn btn-outline" style="flex:1" onclick="closeApproveModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="flex:1;">Confirm</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openApproveModal() {
+        document.getElementById('approveModal').style.display = 'flex';
+    }
+    function closeApproveModal() {
+        document.getElementById('approveModal').style.display = 'none';
+    }
+</script>
+
+<div id="taxmapperAssignModal" class="drawer-backdrop" style="display:none; justify-content:center; align-items:center; opacity:1; visibility:visible;">
+    <div class="panel" style="width: 420px; padding: 2rem;">
+        <h3 class="panel-title" style="margin-bottom: 1rem;">Assign to Tax Mapper</h3>
+        <form method="post" action="{% url 'assign_taxmapper' case.tracking_id %}">
+            {% csrf_token %}
+            <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem; display:block;">Select Tax Mapper</label>
+            <select name="taxmapper_id" required class="form-control">
+                <option value="" disabled selected>Select from active staff...</option>
+                {% for tm in taxmappers %}
+                    <option value="{{ tm.id }}">{{ tm.full_name|default:tm.email }}</option>
+                {% endfor %}
+            </select>
+            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                <button type="button" class="btn btn-outline" style="flex:1" onclick="closeTaxmapperAssignModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="flex:1;">Confirm</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openTaxmapperAssignModal() {
+        document.getElementById('taxmapperAssignModal').style.display = 'flex';
+    }
+    function closeTaxmapperAssignModal() {
+        document.getElementById('taxmapperAssignModal').style.display = 'none';
+    }
+</script>
+
+<!-- Transaction Corrected Modal (Receiver) -->
+<div id="transactionCorrectedModal" class="drawer-backdrop" style="display:none; justify-content:center; align-items:center; opacity:1; visibility:visible;">
+    <div class="panel" style="width: 400px; padding: 2rem;">
+        <h3 class="panel-title" style="margin-bottom: 1.5rem; text-align: center;">Case already corrected?</h3>
+        <form method="post" action="{% url 'transaction_corrected' case.tracking_id %}">
+            {% csrf_token %}
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="button" class="btn btn-outline" style="flex:1" onclick="closeTransactionCorrectedModal()">NO</button>
+                <button type="submit" class="btn btn-primary" style="flex:1;">YES</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openTransactionCorrectedModal() {
+        document.getElementById('transactionCorrectedModal').style.display = 'flex';
+    }
+    function closeTransactionCorrectedModal() {
+        document.getElementById('transactionCorrectedModal').style.display = 'none';
+    }
+</script>
+
+<!-- Duplicate Transaction Number Error Modal -->
+<div id="duplicateErrorModal" class="drawer-backdrop" style="display:none; justify-content:center; align-items:center; opacity:1; visibility:visible;">
+    <div class="panel" style="width: 420px; padding: 2rem; border-top: 4px solid #dc2626;">
+        <h3 class="panel-title" style="margin-bottom: 0.75rem; color: #dc2626;"><i class="ri-error-warning-line"></i> Duplicate Number</h3>
+        <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+            This case number already exists. Please use another format or sequence of numbering.
+        </div>
+        <button type="button" class="btn btn-primary" style="width:100%;" onclick="closeDuplicateErrorModal()">OK, Got it</button>
+    </div>
+</div>
+
+<script>
+    function closeDuplicateErrorModal() {
+        document.getElementById('duplicateErrorModal').style.display = 'none';
+        // Clean the URL param so refreshing doesn't re-trigger
+        const url = new URL(window.location.href);
+        url.searchParams.delete('duplicate_error');
+        window.history.replaceState({}, '', url.toString());
+    }
+
+    // Auto-open if ?duplicate_error=1 is in the URL
+    document.addEventListener('DOMContentLoaded', function () {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('duplicate_error') === '1') {
+            document.getElementById('duplicateErrorModal').style.display = 'flex';
+        }
+    });
+</script>
+
+<!-- Examiner Forward Modal -->
+<div id="examinerForwardModal" class="drawer-backdrop" style="display:none; justify-content:center; align-items:center; opacity:1; visibility:visible;">
+    <div class="panel" style="width: 400px; padding: 2rem;">
+        <h3 class="panel-title" style="margin-bottom: 1rem; text-align: center;">Confirm Forwarding</h3>
+        <p style="text-align: center; color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">Are you sure you want to forward this case to the Approver?</p>
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="button" class="btn btn-outline" style="flex:1" onclick="closeExaminerForwardModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" style="flex:1;" onclick="document.getElementById('examinerForwardForm').submit()">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openExaminerForwardModal() {
+        document.getElementById('examinerForwardModal').style.display = 'flex';
+    }
+    function closeExaminerForwardModal() {
+        document.getElementById('examinerForwardModal').style.display = 'none';
+    }
+</script>
+
+<!-- Numberer Submit Modal -->
+<div id="numbererSubmitModal" class="drawer-backdrop" style="display:none; justify-content:center; align-items:center; opacity:1; visibility:visible;">
+    <div class="panel" style="width: 400px; padding: 2rem;">
+        <h3 class="panel-title" style="margin-bottom: 1rem; text-align: center;">Confirm TD Number</h3>
+        <p style="text-align: center; color: var(--text-muted); margin-bottom: 0.5rem; font-size: 0.9rem;">You are about to finalize the TD number for this case.</p>
+        <div style="text-align: center; font-size: 1.5rem; font-weight: 700; color: #1e293b; margin-bottom: 1.5rem;" id="numbererModalTDDisplay"></div>
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="button" class="btn btn-outline" style="flex:1" onclick="closeNumbererModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" style="flex:1;" onclick="document.getElementById('numbererForm').submit()">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openNumbererModal() {
+        const input = document.getElementById('numberer_transaction_input');
+        if (input && input.value.trim().length > 0) {
+            document.getElementById('numbererModalTDDisplay').innerText = input.value.trim();
+            document.getElementById('numbererSubmitModal').style.display = 'flex';
+        } else {
+            input.reportValidity();
+        }
+    }
+    function closeNumbererModal() {
+        document.getElementById('numbererSubmitModal').style.display = 'none';
+    }
+</script>
+
+<!-- Releaser Modal -->
+<div id="releaserSubmitModal" class="drawer-backdrop" style="display:none; justify-content:center; align-items:center; opacity:1; visibility:visible;">
+    <div class="panel" style="width: 450px; padding: 2rem;">
+        <h3 class="panel-title" style="margin-bottom: 1rem; text-align: center;">Confirm Release</h3>
+        <p style="text-align: center; color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">Please enter the details of the person claiming these documents.</p>
+        
+        <form method="post" action="{% url 'release_case' case.tracking_id %}">
+            {% csrf_token %}
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.5rem; color: var(--text);">Claimed By (Full Name) <span style="color:red;">*</span></label>
+                <input type="text" name="claimed_by_name" class="form-control" required placeholder="e.g. Juan Dela Cruz" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px;">
+            </div>
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.5rem; color: var(--text);">Contact Number <span style="color:red;">*</span></label>
+                <input type="text" name="claimed_by_contact" class="form-control" required placeholder="e.g. 09123456789" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px;">
+            </div>
+            
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="button" class="btn btn-outline" style="flex:1" onclick="closeReleaserModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="flex:1;">Confirm Release</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openReleaserModal() {
+        document.getElementById('releaserSubmitModal').style.display = 'flex';
+    }
+    function closeReleaserModal() {
+        document.getElementById('releaserSubmitModal').style.display = 'none';
+    }
+</script>
+
+{% endblock content %}

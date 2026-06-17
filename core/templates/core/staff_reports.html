@@ -1,37 +1,118 @@
-{% extends "base.html" %}
-{% block sidebar_class %}sidebar--wide{% endblock %}
-{% block title %}Reports{% endblock %}
+{% extends 'base_new.html' %}
+{% load static %}
 
-{% block header_title %}Reports{% endblock %}
-{% block header_subtitle %}{{ role_display }}{% endblock %}
+{% block title %}My Performance Report | LegalTrack{% endblock %}
+
+{% block extra_css %}
+    <style>
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .greeting h1 { font-size: 1.5rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.25rem; }
+        .greeting span { font-size: 0.875rem; color: var(--text-muted); }
+
+        .btn-outline {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.6rem 1.25rem; border: 1px solid var(--border); border-radius: var(--radius-md);
+            background: white; color: var(--text-main); font-size: 0.875rem; font-weight: 500;
+            cursor: pointer; transition: 0.2s; text-decoration: none;
+        }
+        .btn-outline:hover { background: var(--inactive-bg); border-color: var(--border-hover); }
+
+        .panel {
+            background: var(--bg-surface); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);
+            padding: 1.5rem; margin-bottom: 2rem;
+        }
+
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+        .panel-title { font-size: 1.125rem; font-weight: 600; color: var(--text-main); margin: 0;}
+        
+        /* Layout Grid */
+        .report-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; }
+
+        /* KPI Block */
+        .kpi-large { text-align: center; padding: 3rem 0; background: var(--primary-light); border-radius: var(--radius-md); border: 1px solid #bfdbfe;}
+        .kpi-large h2 { font-size: 5rem; font-weight: 800; color: var(--primary); margin: 0; line-height: 1; }
+        .kpi-large span { font-size: 0.85rem; color: var(--text-main); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-top: 1rem; }
+
+        /* Table */
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); padding: 1rem 0.5rem; border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.05em; }
+        td { padding: 1.25rem 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; color: var(--text-main); font-weight: 500;}
+        tr:last-child td { border-bottom: none; }
+        tbody tr:hover td { background-color: #fafbfc; }
+
+        /* Empty State */
+        .empty-state { text-align: center; padding: 4rem 0; color: var(--text-muted); }
+        .empty-state i { font-size: 3.5rem; color: var(--border-hover); margin-bottom: 1rem; display: block; }
+        .empty-state h3 { font-size: 1.125rem; color: var(--text-main); margin-bottom: 0.5rem; }
+        .empty-state p { font-size: 0.875rem; margin: 0;}
+    </style>
+{% endblock %}
 
 {% block content %}
-<div class="card card--flat card-elevated">
-    <div class="card__header">
-        <strong>My Report</strong>
-        <span class="muted">Total actions: <strong>{{ activity_total }}</strong></span>
+    <div class="header">
+        <div class="greeting">
+            <h1>My Performance Report</h1>
+            <span>Account: <strong>{{ request.user.email }}</strong> | Role: <strong>{{ role_display }}</strong></span>
+        </div>
+        <button onclick="window.print();" class="btn-outline">
+            <i class="ri-printer-line"></i> Print Report
+        </button>
     </div>
-    <div class="card__body card__body--flush">
-        {% if activity_counts %}
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Action</th>
-                        <th style="width:18%">Count</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for r in activity_counts %}
-                        <tr>
-                            <td>{{ r.action }}</td>
-                            <td class="muted">{{ r.count }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <div class="card__body"><p class="muted" style="margin:0;">No activity yet.</p></div>
-        {% endif %}
+
+    <div class="report-grid">
+        
+        <!-- Left Column: Total Actions KPI -->
+        <div class="panel">
+            <div class="panel-header">
+                <h3 class="panel-title">Lifetime Summary</h3>
+            </div>
+            <div class="kpi-large">
+                <h2>{{ activity_total|default:"0" }}</h2>
+                <span>Total Actions Processed</span>
+            </div>
+            <p style="text-align: center; font-size: 0.8rem; color: var(--text-muted); margin-top: 1.5rem; line-height: 1.5;">
+                This represents every documented action you have taken on the platform, ensuring full accountability and trackability of your work.
+            </p>
+        </div>
+
+        <!-- Right Column: Breakdown Table -->
+        <div class="panel">
+            <div class="panel-header">
+                <h3 class="panel-title">Action Breakdown</h3>
+            </div>
+            
+            <div style="overflow-x: auto;">
+                {% if activity_counts %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Action Performed</th>
+                                <th style="text-align: right; width: 30%;">Volume</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in activity_counts %}
+                                <tr>
+                                    <td>{{ item.action }}</td>
+                                    <td style="text-align: right;">
+                                        <span style="background: var(--bg-surface); border: 1px solid var(--border); color: var(--text-main); padding: 0.3rem 1rem; border-radius: 999px; font-weight: 700;">
+                                            {{ item.count }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="ri-bar-chart-box-line"></i>
+                        <h3>No activity data yet</h3>
+                        <p>Your performance metrics will appear here once you begin processing transactions.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
     </div>
-</div>
 {% endblock %}

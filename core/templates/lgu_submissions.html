@@ -1,0 +1,243 @@
+{% extends 'base_new.html' %}
+{% load static %}
+{% load core_extras %}
+
+{% block title %}My Submissions | LegalTrack{% endblock %}
+
+{% block extra_css %}
+    <style>
+        /* ===== HEADER ===== */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .greeting h1 { font-size: 1.5rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.25rem; }
+        .greeting span { font-size: 0.875rem; color: var(--text-muted); }
+        
+        .btn-primary {
+            background-color: var(--primary); color: white; border: none;
+            padding: 0.6rem 1.25rem; border-radius: var(--radius-md);
+            font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: 0.2s;
+            display: flex; align-items: center; gap: 0.5rem; box-shadow: var(--shadow-sm); text-decoration: none;
+        }
+        .btn-primary:hover { background-color: var(--primary-hover); box-shadow: var(--shadow-md); transform: translateY(-1px); color: white; }
+
+        /* ===== MAIN PANEL ===== */
+        .panel {
+            background: var(--bg-surface); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);
+            margin-bottom: 2rem; padding: 1.5rem;
+        }
+        
+        /* Tabs */
+        .tabs { display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        .tab {
+            font-size: 0.875rem; font-weight: 500; color: var(--text-muted); text-decoration: none;
+            padding: 0.5rem 1rem; border-radius: var(--radius-md);
+            display: flex; align-items: center; gap: 0.5rem; transition: 0.2s;
+        }
+        .tab:hover { color: var(--text-main); background: var(--inactive-bg); }
+        .tab.active { background-color: var(--primary-light); color: var(--primary); }
+        .tab-badge {
+            background: var(--border); color: var(--text-muted);
+            font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 10px; font-weight: 600; transition: 0.2s;
+        }
+        .tab.active .tab-badge { background: white; color: var(--primary); }
+        
+        /* Advanced Toolbar */
+        .table-toolbar { display: flex; gap: 1rem; margin-bottom: 1.5rem; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+        .search-form { display: flex; gap: 1rem; flex: 1; max-width: 500px; }
+        .search-bar { flex: 1; position: relative; }
+        .search-bar input {
+            width: 100%; padding: 0.6rem 1rem 0.6rem 2.5rem;
+            border: 1px solid var(--border); border-radius: var(--radius-md);
+            font-size: 0.875rem; color: var(--text-main); transition: 0.2s; outline: none;
+        }
+        .search-bar input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+        .search-bar i { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-light); }
+        
+        .btn-outline {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.6rem 1rem; border: 1px solid var(--border); border-radius: var(--radius-md);
+            background: white; color: var(--text-main); font-size: 0.875rem; font-weight: 500;
+            cursor: pointer; transition: 0.2s; text-decoration: none;
+        }
+        .btn-outline:hover { background: var(--inactive-bg); border-color: var(--border-hover); }
+
+        /* Table */
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { font-size: 0.75rem; font-weight: 600; color: var(--text-main); padding: 1rem 0.5rem; border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.05em; }
+        td { padding: 1rem 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.875rem; vertical-align: middle; transition: 0.2s; }
+        tbody tr:hover td { background-color: #fafbfc; }
+
+        .tracking-link { color: var(--text-main); font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
+        .tracking-link:hover { color: var(--primary); }
+
+        .owner-info strong { display: block; font-size: 0.875rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.1rem; }
+        .owner-info span { font-size: 0.75rem; color: var(--text-muted); }
+
+        /* Status Pills */
+        .status-pill {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            padding: 0.25rem 0.75rem; border-radius: 999px;
+            font-size: 0.75rem; font-weight: 600; text-transform: capitalize;
+            border: 1px solid transparent;
+        }
+        .status-pill::before { content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; }
+        
+        .status-pending, .status-not_received { background: #fef3c7; color: #b45309; border-color: #fde68a; }
+        .status-pending::before, .status-not_received::before { background-color: #b45309; }
+
+        .status-returned, .status-client_correction { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+        .status-returned::before, .status-client_correction::before { background-color: #991b1b; }
+        
+        .status-received { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+        .status-received::before { background-color: #0369a1; }
+
+        .status-to_examine, .status-in_review { background: #e0e7ff; color: #4338ca; border-color: #c7d2fe; }
+        .status-to_examine::before, .status-in_review::before { background-color: #4338ca; }
+
+        .status-for_taxmapping { background: #ffedd5; color: #c2410c; border-color: #fed7aa; }
+        .status-for_taxmapping::before { background-color: #c2410c; }
+
+        .status-for_approval { background: #f3e8ff; color: #7e22ce; border-color: #e9d5ff; }
+        .status-for_approval::before { background-color: #7e22ce; }
+
+        .status-for_numbering, .status-for_release { background: #fce7f3; color: #be185d; border-color: #fbcfe8; }
+        .status-for_numbering::before, .status-for_release::before { background-color: #be185d; }
+
+        .status-released { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+        .status-released::before { background-color: #166534; }
+
+        .action-btn { border: none; background: transparent; cursor: pointer; color: var(--text-light); padding: 0.4rem; border-radius: var(--radius-md); transition: 0.2s; font-size: 1.1rem; text-decoration: none;}
+        .action-btn:hover { background: var(--inactive-bg); color: var(--primary); }
+
+        /* Pagination */
+        .pagination-container { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; font-size: 0.875rem; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 1rem;}
+        .pagination-controls { display: flex; gap: 0.25rem; align-items: center; }
+        .page-btn { border: 1px solid transparent; background: transparent; color: var(--text-muted); padding: 0.4rem 0.75rem; border-radius: var(--radius-md); cursor: pointer; font-size: 0.875rem; font-weight: 500; transition: 0.2s; text-decoration: none; }
+        .page-btn.active { background: var(--primary); color: white; box-shadow: var(--shadow-sm); border-color: var(--primary); }
+        .page-btn:hover:not(.active) { background: var(--border); color: var(--text-main); }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="header">
+        <div class="greeting">
+            <h1>My Submissions</h1>
+            <span>Comprehensive list of all your submitted transactions</span>
+        </div>
+        <a href="{% url 'submit_case' %}" class="btn-primary"><i class="ri-file-add-line"></i> Create New Transaction</a>
+    </div>
+
+    <div class="panel">
+        <!-- Status Tabs -->
+        <div class="tabs">
+            {% for key, label in tabs %}
+                <a href="?tab={{ key }}{% if query %}&q={{ query }}{% endif %}" class="tab {% if tab == key %}active{% endif %}">
+                    {{ label }} <span class="tab-badge">{{ counts|get_item:key|default:"0" }}</span>
+                </a>
+            {% endfor %}
+        </div>
+
+        <!-- Advanced Toolbar -->
+        <div class="table-toolbar">
+            <form method="GET" class="search-form">
+                <input type="hidden" name="tab" value="{{ tab }}">
+                <div class="search-bar">
+                    <i class="ri-search-line"></i>
+                    <input type="text" name="q" value="{{ query }}" placeholder="Search Tracking No. or Owner Name...">
+                </div>
+                <button type="submit" class="btn-outline" style="background: var(--bg-surface);">Search</button>
+                {% if query %}
+                    <a href="?tab={{ tab }}" class="btn-outline" title="Clear Search" style="padding: 0.6rem;"><i class="ri-close-line"></i></a>
+                {% endif %}
+            </form>
+        </div>
+
+        <!-- Data Table -->
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tracking No.</th>
+                        <th>Transaction Details</th>
+                        <th>Status</th>
+                        <th>Submission Date</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for case in page_obj %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'case_detail' case.tracking_id %}" class="tracking-link">
+                                    <i class="ri-file-text-line" style="color: var(--text-light);"></i> {{ case.tracking_id }}
+                                </a>
+                            </td>
+                            <td>
+                                <div class="owner-info">
+                                    <strong>{{ case.client_display_name }}</strong>
+                                    <span>{{ case.get_case_type_display }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <!-- Status locked strictly to pending or received -->
+                                <span class="status-pill status-{{ case.status }}">
+                                    {{ case.get_status_display|default:case.status }}
+                                </span>
+                            </td>
+                            <td style="color: var(--text-muted); font-size: 0.8rem;">
+                                {% if case.lgu_submitted_at %}
+                                    {{ case.lgu_submitted_at|date:"M d, Y" }} <br>
+                                    <span style="font-size: 0.7rem;">{{ case.lgu_submitted_at|time:"h:i A" }}</span>
+                                {% else %}
+                                    {{ case.created_at|date:"M d, Y" }} <br>
+                                    <span style="font-size: 0.7rem;">{{ case.created_at|time:"h:i A" }}</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: right;">
+                                <a href="{% url 'case_detail' case.tracking_id %}" class="action-btn" title="View Details"><i class="ri-eye-line"></i></a>
+                                {% if case.status == 'draft' and not case.lgu_submitted_at %}
+                                    <a href="{% url 'case_wizard' case.tracking_id 1 %}" class="action-btn" title="Edit Data" style="color: var(--primary);"><i class="ri-pencil-line"></i></a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                                <i class="ri-inbox-line" style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem; opacity: 0.5;"></i>
+                                {% if query %}
+                                    No records found matching "<strong>{{ query }}</strong>" in this category.
+                                {% else %}
+                                    No submissions found. Create a new transaction to get started.
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+            <div class="pagination-container">
+                <span>Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                <div class="pagination-controls">
+                    {% if page_obj.has_previous %}
+                        <a href="?tab={{ tab }}{% if query %}&q={{ query }}{% endif %}&page={{ page_obj.previous_page_number }}" class="page-btn"><i class="ri-arrow-left-s-line" style="vertical-align: middle;"></i> Prev</a>
+                    {% endif %}
+                    
+                    {% for n in page_obj.paginator.page_range %}
+                        {% if n == page_obj.number %}
+                            <span class="page-btn active">{{ n }}</span>
+                        {% elif n > page_obj.number|add:'-3' and n < page_obj.number|add:'3' %}
+                            <a href="?tab={{ tab }}{% if query %}&q={{ query }}{% endif %}&page={{ n }}" class="page-btn">{{ n }}</a>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <a href="?tab={{ tab }}{% if query %}&q={{ query }}{% endif %}&page={{ page_obj.next_page_number }}" class="page-btn">Next <i class="ri-arrow-right-s-line" style="vertical-align: middle;"></i></a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

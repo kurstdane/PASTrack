@@ -1,0 +1,43 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PAStrack Request{% endblock %}</title>
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <style>
+        /* Global CSS Reset for the Wizard */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        /* STRICT FULL-SCREEN LOCK */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* Global background from prototype */
+            color: #0f172a;
+            -webkit-font-smoothing: antialiased;
+            height: 100vh;      /* Exactly 100% of viewport height */
+            width: 100vw;       /* Exactly 100% of viewport width */
+            overflow: hidden;   /* Kills the main browser scrollbar */
+        }
+        
+        /* Utility Classes */
+        .muted { color: #64748b; }
+        .text-danger { color: #dc2626; }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% block content %}
+    {% endblock %}
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,1130 @@
+{% extends 'base_new.html' %}
+{% load static %}
+{% block title %}Receiver Dashboard | PAStrack{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== GRADIENT BACKGROUND ===== */
+    .dashboard-bg {
+        padding: 2.5rem;
+        min-height: 100%;
+        position: relative;
+        background-color: var(--bg-base, #f8fafc);
+        background-image:
+            linear-gradient(90deg, rgba(148, 163, 184, 0.064) 1px, transparent 1px),
+            linear-gradient(0deg, rgba(112, 93, 93, 0.062) 1px, transparent 1px),
+            linear-gradient(90deg, #ffffff 0%, rgba(248, 250, 252, 0.7) 40%, transparent 85%),
+            radial-gradient(circle at 50% -30%, rgba(170, 201, 252, 0.604) 0%, rgba(214, 230, 255, 0.095) 50%, transparent 85%),
+            linear-gradient(180deg, #e4eefc 0%, #f1f6fd 25%, #f8fafc 100%);
+        background-size: 64px 64px, 64px 64px, 100% 100%, 100% 100%, 100% 100%;
+        background-position: 0 0, 0 0, top left, top left, top left;
+        background-repeat: repeat, repeat, no-repeat, no-repeat, no-repeat;
+    }
+
+    /* ===== BENTO GRID SYSTEM ===== */
+    .bento-layout {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 1.25rem;
+        max-width: 1600px;
+        margin: 0 auto;
+    }
+
+    .bento-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        border-radius: 10px;
+        box-shadow: 0 4px 12px -4px rgba(15, 23, 42, 0.05);
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .span-3 {
+        grid-column: span 3;
+    }
+
+    .span-4 {
+        grid-column: span 4;
+    }
+
+    .span-8 {
+        grid-column: span 8;
+    }
+
+    .span-12 {
+        grid-column: span 12;
+    }
+
+    /* ===== HERO BANNER ===== */
+    .hero-banner {
+        grid-column: span 12;
+        padding: 0.25rem 0 0.75rem 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .hero-text h1 {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: var(--text-main, #0f172a);
+        margin-bottom: 0.25rem;
+        letter-spacing: -0.02em;
+    }
+
+    .hero-text p {
+        font-size: 0.9rem;
+        color: var(--text-muted, #64748b);
+        font-weight: 500;
+    }
+
+    .hero-actions {
+        display: flex;
+        gap: 1rem;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn-primary {
+        background: var(--primary, #3b82f6);
+        color: white;
+        border: none;
+        padding: 0.6rem 1.25rem;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: 0.2s;
+        box-shadow: 0 4px 10px rgba(59, 130, 246, 0.25);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+
+    .btn-primary:hover {
+        opacity: 0.88;
+        transform: translateY(-1px);
+        color: white;
+    }
+
+    /* ===== KPI CARDS ===== */
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.25rem;
+    }
+
+    .card-title {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--text-muted, #64748b);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+
+    .kpi-value {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: var(--text-main, #0f172a);
+        line-height: 1;
+        margin: 0.25rem 0 0.75rem 0;
+        letter-spacing: -0.03em;
+    }
+
+    .kpi-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-bottom: 1.25rem;
+        color: var(--text-muted, #64748b);
+    }
+
+    .kpi-meta span {
+        color: var(--text-muted, #64748b);
+        font-weight: 500;
+    }
+
+    .kpi-icon-box {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+    }
+
+    .kpi-cta {
+        margin-top: auto;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(226, 232, 240, 0.8);
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--primary, #3b82f6);
+        text-decoration: none;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: color 0.2s;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+    }
+
+    .kpi-cta:hover {
+        color: var(--primary-hover, #2563eb);
+    }
+
+    /* Blue accent / focus card */
+    .focus-card {
+        background: linear-gradient(145deg, var(--primary, #3b82f6), #1d4ed8);
+        color: white;
+        border: none;
+        box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.35);
+    }
+
+    .focus-card .card-title {
+        color: rgba(255, 255, 255, 0.75);
+    }
+
+    .focus-card .kpi-value {
+        color: white;
+    }
+
+    .focus-card .kpi-meta {
+        color: rgba(255, 255, 255, 0.85);
+    }
+
+    .focus-card .kpi-meta span {
+        color: rgba(255, 255, 255, 0.65);
+    }
+
+    .focus-card .kpi-icon-box {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+    .focus-card .kpi-cta {
+        border-top-color: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+    .focus-card .kpi-cta:hover {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    /* ===== CHART AREAS ===== */
+    .chart-box {
+        position: relative;
+        width: 100%;
+        height: 230px;
+        flex: 1;
+        margin-top: 0.5rem;
+    }
+
+    .pipeline-wrapper {
+        position: relative;
+        height: 185px;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+
+    .pipeline-center-text {
+        position: absolute;
+        text-align: center;
+        pointer-events: none;
+    }
+
+    .pipeline-center-text .pct-total {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: var(--text-main, #0f172a);
+        line-height: 1;
+        margin-bottom: 0.2rem;
+    }
+
+    .pipeline-center-text .pct-label {
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: var(--text-muted, #64748b);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .pipeline-legend {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(226, 232, 240, 0.8);
+    }
+
+    .pl-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-main, #0f172a);
+    }
+
+    .pl-left {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .pl-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .pl-count {
+        color: var(--text-muted, #64748b);
+    }
+
+    /* ===== QUEUE TABLE ===== */
+    .table-wrapper {
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .table-wrapper::-webkit-scrollbar {
+        display: none;
+    }
+
+    .clean-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        text-align: left;
+    }
+
+    .clean-table th {
+        padding: 0.5rem 1rem 0.9rem 1rem;
+        font-size: 0.7rem;
+        color: var(--text-muted, #64748b);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+    }
+
+    .clean-table td {
+        padding: 1.1rem 1rem;
+        vertical-align: middle;
+        border-bottom: 1px solid transparent;
+        font-size: 0.875rem;
+        transition: background 0.15s;
+    }
+
+    .clean-table tbody tr:nth-child(even) td {
+        background-color: rgba(248, 250, 252, 0.55);
+    }
+
+    .clean-table tbody tr:hover td {
+        background-color: rgba(241, 245, 249, 0.85);
+    }
+
+    .t-main {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--text-main, #0f172a);
+        display: block;
+    }
+
+    .t-sub {
+        font-size: 0.75rem;
+        color: var(--text-muted, #64748b);
+        font-weight: 500;
+        margin-top: 0.2rem;
+        display: block;
+    }
+
+    .tracking-mono {
+        font-family: 'Inter', monospace;
+        font-weight: 700;
+        color: var(--text-main, #0f172a);
+        letter-spacing: -0.02em;
+    }
+
+    /* Status badges */
+    .badge {
+        padding: 0.28rem 0.65rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        display: inline-block;
+        text-transform: capitalize;
+        letter-spacing: 0.01em;
+    }
+
+    .badge-pending {
+        background: #fef3c7;
+        color: #b45309;
+        border: 1px solid rgba(217, 119, 6, 0.2);
+    }
+
+    .badge-received {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+    }
+
+    .badge-active {
+        background: #f3e8ff;
+        color: #581c87;
+        border: 1px solid #e9d5ff;
+    }
+
+    .badge-returned {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    /* Table action buttons */
+    .action-group {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.6rem;
+        align-items: center;
+    }
+
+    .action-btn {
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-decoration: none;
+        transition: 0.18s;
+        padding: 0.35rem 0.85rem;
+        border-radius: 5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        border: 1px solid transparent;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .action-btn.secondary {
+        color: var(--primary, #3b82f6);
+        background: transparent;
+    }
+
+    .action-btn.secondary:hover {
+        background: rgba(59, 130, 246, 0.07);
+        border-color: rgba(59, 130, 246, 0.2);
+    }
+
+    .action-btn.receive {
+        background: var(--primary, #3b82f6);
+        color: white;
+        box-shadow: 0 2px 6px rgba(59, 130, 246, 0.25);
+    }
+
+    .action-btn.receive:hover {
+        opacity: 0.88;
+    }
+
+    .action-btn.assign {
+        background: #f3e8ff;
+        color: #6b21a8;
+        border-color: #e9d5ff;
+    }
+
+    .action-btn.assign:hover {
+        background: #6b21a8;
+        color: white;
+        border-color: #6b21a8;
+    }
+
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 3.5rem 2rem;
+        color: var(--text-muted, #64748b);
+    }
+
+    .empty-state i {
+        font-size: 2.5rem;
+        color: #e2e8f0;
+        display: block;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state h3 {
+        color: var(--text-main, #0f172a);
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        font-size: 1rem;
+    }
+
+    .empty-state p {
+        font-size: 0.875rem;
+    }
+
+    /* ===== BOTTOM ACTIVITY PANELS ===== */
+    .activity-list {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .activity-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid rgba(241, 245, 249, 0.9);
+    }
+
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+
+    .activity-left {
+        display: flex;
+        gap: 0.85rem;
+        align-items: center;
+        min-width: 0;
+        flex: 1;
+    }
+
+    .activity-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+
+    .icon-green {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .icon-blue {
+        background: #dbeafe;
+        color: #1d4ed8;
+    }
+
+    .icon-yellow {
+        background: #fef3c7;
+        color: #b45309;
+    }
+
+    .icon-purple {
+        background: #f3e8ff;
+        color: #6b21a8;
+    }
+
+    .activity-text {
+        min-width: 0;
+    }
+
+    .activity-text .a-main {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--text-main, #0f172a);
+        display: block;
+        margin-bottom: 0.1rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .activity-text .a-sub {
+        font-size: 0.72rem;
+        color: var(--text-muted, #64748b);
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .activity-time {
+        font-size: 0.7rem;
+        color: var(--text-muted, #64748b);
+        white-space: nowrap;
+        font-weight: 500;
+        flex-shrink: 0;
+        padding-left: 0.75rem;
+    }
+
+    .panel-view-link {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--primary, #3b82f6);
+        text-decoration: none;
+    }
+
+    .panel-view-link:hover {
+        text-decoration: underline;
+    }
+
+    /* ===== ASSIGN MODAL ===== */
+    .assign-modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(4px);
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: 0.2s;
+    }
+
+    .assign-modal-backdrop.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .assign-modal-panel {
+        background: white;
+        width: 100%;
+        max-width: 400px;
+        border-radius: 12px;
+        box-shadow: 0 20px 30px -8px rgba(0, 0, 0, 0.18);
+        transform: translateY(20px);
+        transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+    }
+
+    .assign-modal-backdrop.active .assign-modal-panel {
+        transform: translateY(0);
+    }
+
+    .assign-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f8fafc;
+    }
+
+    .assign-header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        color: #0f172a;
+        font-weight: 700;
+    }
+
+    .close-modal-btn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: #64748b;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0;
+    }
+
+    .close-modal-btn:hover {
+        color: #dc2626;
+    }
+
+    .assign-body {
+        padding: 1.5rem;
+    }
+
+    .assign-select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+        margin-bottom: 1.5rem;
+        outline: none;
+    }
+
+    .assign-select:focus {
+        border-color: var(--primary, #3b82f6);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-bg">
+    <div class="bento-layout">
+
+        <!-- ===== HERO BANNER ===== -->
+        <div class="hero-banner">
+            <div class="hero-text">
+                <h1>Hi, {{ request.user.first_name|default:"Receiver" }}!</h1>
+                <p>
+                    <span style="color: var(--primary, #3b82f6); font-weight: 700;">{{ request.user.username|default:"REC-001" }}</span>
+                    <span style="margin: 0 8px; color: #cbd5e1;">|</span>
+                    Capitol Receiver
+                </p>
+            </div>
+            <div class="hero-actions">
+                <a href="{% url 'submit_case' %}" class="btn-primary">
+                    <i class="ri-add-fill"></i> New Transaction
+                </a>
+            </div>
+        </div>
+
+        <!-- ===== KPI CARDS ===== -->
+        <div class="bento-card focus-card span-3">
+            <div class="card-header">
+                <span class="card-title">Pending Intake</span>
+                <div class="kpi-icon-box"><i class="ri-inbox-unarchive-line"></i></div>
+            </div>
+            <div class="kpi-value">{{ stats_pending_intake|default:"0" }}</div>
+            <div class="kpi-meta"><i class="ri-time-line"></i>&nbsp;<span>Awaiting receipt</span></div>
+            <a href="/submissions/?scope=me&tab=pending" class="kpi-cta">
+                Process Queue <i class="ri-arrow-right-line"></i>
+            </a>
+        </div>
+
+        <div class="bento-card span-3">
+            <div class="card-header">
+                <span class="card-title">Received Today</span>
+                <div class="kpi-icon-box" style="background:#dcfce7; color:#166534;"><i
+                        class="ri-checkbox-circle-line"></i></div>
+            </div>
+            <div class="kpi-value">{{ stats_received_today|default:"0" }}</div>
+            <div class="kpi-meta" style="color:#059669;"><i class="ri-arrow-up-line"></i>&nbsp;<span>Today's
+                    intake</span></div>
+            <a href="/submissions/?scope=me&tab=received" class="kpi-cta">View Submissions <i
+                    class="ri-arrow-right-line"></i></a>
+        </div>
+
+        <div class="bento-card span-3">
+            <div class="card-header">
+                <span class="card-title">Ready to Assign</span>
+                <div class="kpi-icon-box" style="background:#f3e8ff; color:#6b21a8;"><i
+                        class="ri-user-shared-2-line"></i></div>
+            </div>
+            <div class="kpi-value">{{ stats_ready_assign|default:"0" }}</div>
+            <div class="kpi-meta" style="color:#6b21a8;"><i class="ri-arrow-up-line"></i>&nbsp;<span>Needs
+                    assignment</span></div>
+            <a href="/submissions/?scope=me&tab=received" class="kpi-cta">Assign Cases <i
+                    class="ri-arrow-right-line"></i></a>
+        </div>
+
+        <div class="bento-card span-3">
+            <div class="card-header">
+                <span class="card-title">Returned from Examiner</span>
+                <div class="kpi-icon-box" style="background:#fee2e2; color:#dc2626;"><i
+                        class="ri-arrow-go-back-line"></i></div>
+            </div>
+            <div class="kpi-value">{{ stats_returned_from_examiner|default:"0" }}</div>
+            <div class="kpi-meta" style="color:#dc2626;"><i class="ri-arrow-up-line"></i>&nbsp;<span>Returned
+                    cases</span></div>
+            <a href="/submissions/?scope=me&tab=received" class="kpi-cta">View Returned <i
+                    class="ri-arrow-right-line"></i></a>
+        </div>
+
+        <!-- ===== INTAKE VOLUME CHART ===== -->
+        <div class="bento-card span-8">
+            <div class="card-header">
+                <span class="card-title">Intake Volume</span>
+                <select id="volumeFilter"
+                    style="background:transparent; border:1px solid rgba(226,232,240,0.8); border-radius:4px; padding:0.25rem 0.6rem; font-size:0.75rem; font-weight:600; color:#64748b; cursor:pointer; outline:none;">
+                    <option value="weekly">This Week</option>
+                    <option value="monthly">This Month</option>
+                </select>
+            </div>
+            <div class="chart-box">
+                <canvas id="volumeChart"></canvas>
+            </div>
+        </div>
+
+        <!-- ===== PIPELINE WORKLOAD ===== -->
+        <div class="bento-card span-4">
+            <div class="card-header">
+                <span class="card-title">Pipeline Workload</span>
+                <select id="pipelineFilter"
+                    style="background:transparent; border:1px solid rgba(226,232,240,0.8); border-radius:4px; padding:0.25rem 0.6rem; font-size:0.75rem; font-weight:600; color:#64748b; cursor:pointer; outline:none;">
+                    <option value="all">All Active</option>
+                    <option value="received">Received</option>
+                    <option value="to_examine">To Examine</option>
+                    <option value="to_approve">To Approve</option>
+                    <option value="for_numbering">For Numbering</option>
+                    <option value="to_release">To Release</option>
+                </select>
+            </div>
+            <div class="pipeline-wrapper">
+                <canvas id="pipelineChart"></canvas>
+                <div class="pipeline-center-text">
+                    <div class="pct-total" id="pipelineTotal">—</div>
+                    <div class="pct-label" id="pipelineLabel">Total Active</div>
+                </div>
+            </div>
+            <div class="pipeline-legend" id="pipelineLegend"></div>
+        </div>
+
+        <!-- ===== ACTIVE FRONT DESK QUEUE TABLE ===== -->
+        <div class="bento-card span-12">
+            <div class="card-header" style="margin-bottom:0.75rem;">
+                <span class="card-title">Active Front Desk Queue</span>
+                <a href="{% url 'submissions' %}?scope=me" class="panel-view-link"
+                    style="text-transform:uppercase; letter-spacing:0.02em; display:flex; align-items:center; gap:0.3rem;">
+                    Manage Workspace <i class="ri-arrow-right-line"></i>
+                </a>
+            </div>
+            <div class="table-wrapper">
+                <table class="clean-table">
+                    <thead>
+                        <tr>
+                            <th>Case Number</th>
+                            <th>Client / Request</th>
+                            <th>LGU Origin</th>
+                            <th>Status</th>
+                            <th>Date Submitted</th>
+                            <th style="text-align:right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for case in page_obj %}
+                        <tr>
+                            <td><span class="tracking-mono">{{ case.tracking_id }}</span></td>
+                            <td>
+                                <span class="t-main">{{ case.client_name }}</span>
+                                <span class="t-sub">{{ case.get_case_type_display }}</span>
+                            </td>
+                            <td style="color:#64748b; font-size:0.875rem;">{% if case.submitted_by.lgu_municipality %}{{ case.submitted_by.lgu_municipality }}{% else %}—{% endif %}</td>
+                            <td>
+                                <span class="badge
+                                {% if case.status == 'not_received' %}badge-pending
+                                {% elif case.status == 'received' %}badge-received
+                                {% else %}badge-active{% endif %}">
+                                    {{ case.get_status_display }}
+                                </span>
+                            </td>
+                            <td style="color:#64748b; font-size:0.875rem;">{{ case.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                <div class="action-group">
+                                    <a href="#" onclick="openQuickView('{{ case.tracking_id }}'); return false;"
+                                        class="action-btn secondary">Preview</a>
+                                    {% if case.status == 'not_received' %}
+                                    <a href="{% url 'case_detail' case.tracking_id %}"
+                                        class="action-btn receive">Receive</a>
+                                    {% elif case.status == 'received' and not case.assigned_to %}
+                                    <a href="#"
+                                        onclick="openAssignModal('{{ case.tracking_id }}', '{{ case.client_name|escapejs }}'); return false;"
+                                        class="action-btn assign">
+                                        <i class="ri-user-add-line"></i> Assign
+                                    </a>
+                                    {% else %}
+                                    <a href="{% url 'case_detail' case.tracking_id %}"
+                                        class="action-btn secondary">Open</a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <i class="ri-inbox-archive-line"></i>
+                                    <h3>Queue is empty!</h3>
+                                    <p>No new documents to receive or assign right now.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ===== BOTTOM ROW: Pending Assignment | Returned | Recent Activity ===== -->
+
+        <!-- Pending Assignment
+    <div class="bento-card span-4" style="border-top: 3px solid var(--primary, #3b82f6);">
+        <div class="card-header">
+            <span class="card-title">Pending Assignment</span>
+            <a href="{% url 'submissions' %}?scope=me&tab=unassigned" class="panel-view-link">View All</a>
+        </div>
+        <div class="activity-list">
+            {% for c in cases_to_assign|slice:":4" %}
+            <div class="activity-item">
+                <div class="activity-left">
+                    <div class="activity-icon icon-purple"><i class="ri-user-shared-2-line"></i></div>
+                    <div class="activity-text">
+                        <span class="a-main" style="font-family:monospace; color:var(--primary, #3b82f6);">{{ c.tracking_id }}</span>
+                        <span class="a-sub">{{ c.client_name|slice:":24" }}…</span>
+                    </div>
+                </div>
+                <a href="#" onclick="openAssignModal('{{ c.tracking_id }}', '{{ c.client_name|escapejs }}'); return false;"
+                   class="action-btn assign" style="padding:0.3rem 0.75rem; font-size:0.75rem; margin-left:0.75rem;">Assign</a>
+            </div>
+            {% empty %}
+            <div style="text-align:center; padding:2.5rem 1rem; color:#64748b; font-size:0.82rem;">
+                <i class="ri-checkbox-circle-line" style="font-size:1.5rem; display:block; margin-bottom:0.5rem; color:#a7f3d0;"></i>
+                No cases pending assignment.
+            </div>
+            {% endfor %}
+        </div>
+    </div> -->
+
+        <!-- Returned by Examiners -->
+        <!-- <div class="bento-card span-4" style="border-top: 3px solid #f59e0b;">
+        <div class="card-header">
+            <span class="card-title">Returned by Examiners</span>
+            <a href="{% url 'submissions' %}?scope=me" class="panel-view-link">View All</a>
+        </div>
+        <div class="activity-list">
+            {% for c in returned_cases|slice:":4" %}
+            <div class="activity-item">
+                <div class="activity-left">
+                    <div class="activity-icon icon-yellow"><i class="ri-error-warning-line"></i></div>
+                    <div class="activity-text">
+                        <span class="a-main" style="font-family:monospace; color:#b45309;">{{ c.tracking_id }}</span>
+                        <span class="a-sub">From {{ c.returned_by.full_name|default:c.returned_by.email|slice:":20" }}…</span>
+                    </div>
+                </div>
+                <a href="{% url 'case_detail' c.tracking_id %}" class="action-btn secondary" style="font-size:0.75rem; margin-left:0.75rem;">Review</a>
+            </div>
+            {% empty %}
+            <div style="text-align:center; padding:2.5rem 1rem; color:#64748b; font-size:0.82rem;">
+                <i class="ri-shield-check-line" style="font-size:1.5rem; display:block; margin-bottom:0.5rem; color:#fde68a;"></i>
+                No returned cases.
+            </div>
+            {% endfor %}
+        </div>
+    </div> -->
+
+        <!-- My Recent Activity -->
+        <!-- <div class="bento-card span-4">
+        <div class="card-header">
+            <span class="card-title">My Recent Activity</span>
+            <a href="{% url 'audit_logs' %}" class="panel-view-link">View Full History</a>
+        </div>
+        <div class="activity-list">
+            {% for log in recent_logs|slice:":5" %}
+            <div class="activity-item">
+                <div class="activity-left">
+                    <div class="activity-icon
+                        {% if log.action == 'case_receipt' %}icon-green
+                        {% elif log.action == 'case_assignment' %}icon-blue
+                        {% elif log.action == 'case_status_change' %}icon-yellow
+                        {% else %}icon-blue{% endif %}">
+                        <i class="
+                            {% if log.action == 'case_receipt' %}ri-inbox-archive-line
+                            {% elif log.action == 'case_assignment' %}ri-user-shared-2-line
+                            {% elif log.action == 'case_status_change' %}ri-exchange-line
+                            {% elif log.action == 'login' %}ri-login-box-line
+                            {% elif log.action == 'logout' %}ri-logout-box-r-line
+                            {% else %}ri-history-line{% endif %}"></i>
+                    </div>
+                    <div class="activity-text">
+                        <span class="a-main">{{ log.get_action_display|default:"System Event" }}</span>
+                        <span class="a-sub">
+                            {% if log.action in 'login,logout' %}
+                                Session activity recorded
+                            {% else %}
+                                <span style="color:var(--primary, #3b82f6); font-family:monospace;">{{ log.target_object|slice:"6:"|default:log.target_object }}</span>
+                                {% if log.action == 'case_assignment' %} → assigned to {{ log.details.assigned_to|default:"Examiner" }}
+                                {% elif log.action == 'case_receipt' %} · docs verified
+                                {% elif log.action == 'case_status_change' and log.details.new_status == 'client_correction' %} → returned to LGU
+                                {% endif %}
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                <div class="activity-time">{{ log.created_at|timesince }} ago</div>
+            </div>
+            {% empty %}
+            <div style="text-align:center; padding:2.5rem 1rem; color:#64748b; font-size:0.82rem;">
+                No recent activity found.
+            </div>
+            {% endfor %}
+        </div>
+    </div> -->
+
+    </div><!-- /.bento-layout -->
+</div><!-- /.dashboard-bg -->
+
+<!-- ===== ASSIGN MODAL (from version 1, untouched) ===== -->
+<div id="assignModal" class="assign-modal-backdrop" onclick="if(event.target === this) closeAssignModal()">
+    <div class="assign-modal-panel">
+        <div class="assign-header">
+            <h3>Assign Case <span id="modalTrackingId" style="color:var(--primary, #3b82f6);"></span></h3>
+            <button type="button" class="close-modal-btn" onclick="closeAssignModal()">&times;</button>
+        </div>
+        <form id="assignForm" method="POST" action="">
+            {% csrf_token %}
+            <div class="assign-body">
+                <p style="font-size:0.85rem; color:#64748b; margin-bottom:1rem;">
+                    Target: <strong id="modalClientName" style="color:#0f172a;"></strong>
+                </p>
+                <label style="font-size:0.85rem; font-weight:600;">Select Examiner</label>
+                <select name="assigned_to" required class="assign-select">
+                    <option value="" disabled selected>Select from active staff...</option>
+                    {% for ex in examiners %}
+                    <option value="{{ ex.id }}">{{ ex.full_name|default:ex.email }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn-primary" style="width:100%; justify-content:center;">
+                    Confirm Assignment
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    /* ===== Modal Logic (from v1, preserved exactly) ===== */
+    function openAssignModal(tid, client) {
+        document.getElementById('modalTrackingId').innerText = tid;
+        document.getElementById('modalClientName').innerText = client;
+        document.getElementById('assignForm').action = `/case/${tid}/assign/`;
+        document.getElementById('assignModal').classList.add('active');
+    }
+    function closeAssignModal() {
+        document.getElementById('assignModal').classList.remove('active');
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        // ==========================================
+        // 1. INTAKE VOLUME CHART (DYNAMIC)
+        // ==========================================
+        const ctxVol = document.getElementById('volumeChart').getContext('2d');
+        let volGrad = ctxVol.createLinearGradient(0, 0, 0, 230);
+        volGrad.addColorStop(0, 'rgba(59, 130, 246, 0.22)');
+        volGrad.addColorStop(1, 'rgba(59, 130, 246, 0)');
+
+        const volumeData = JSON.parse('{{ volume_chart_data_json|escapejs }}');
+
+        const volChart = new Chart(ctxVol, {
+            type: 'line',
+            data: {
+                labels: volumeData.weekly.labels,
+                datasets: [{
+                    label: 'Intake Volume',
+                    data: volumeData.weekly.data,
+                    borderColor: '#3b82f6',
+                    borderWidth: 2.5,
+                    backgroundColor: volGrad,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#3b82f6',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0f172a', padding: 12, cornerRadius: 6,
+                        displayColors: false,
+                        titleFont: { family: "'Inter', sans-serif", size: 11 },
+                        bodyFont: { family: "'Inter', sans-serif", size: 13, weight: '600' }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true, suggestedMax: volumeData.weekly.max,
+                        ticks: { color: '#64748b', font: { family: "'Inter', sans-serif", size: 11 } },
+                        border: { display: false },
+                        grid: { color: 'rgba(226,232,240,0.5)' }
+                    },
+                    x: {
+                        ticks: { color: '#64748b', font: { family: "'Inter', sans-serif", size: 11 } },
+                        grid: { display: false }, border: { display: false }
+                    }
+                },
+                interaction: { intersect: false, mode: 'index' }
+            }
+        });
+
+        document.getElementById('volumeFilter').addEventListener('change', function (e) {
+            const tf = e.target.value;
+            volChart.data.labels = volumeData[tf].labels;
+            volChart.data.datasets[0].data = volumeData[tf].data;
+            volChart.options.scales.y.suggestedMax = volumeData[tf].max;
+            volChart.update();
+        });
+
+        // ==========================================
+        // 2. PIPELINE WORKLOAD DOUGHNUT (DYNAMIC)
+        // ==========================================
+        const pipelineData = JSON.parse('{{ pipeline_chart_data_json|escapejs }}');
+
+        const ctxPipe = document.getElementById('pipelineChart').getContext('2d');
+        const pipeChart = new Chart(ctxPipe, {
+            type: 'doughnut',
+            data: {
+                labels: pipelineData.all.labels,
+                datasets: [{ data: pipelineData.all.data, backgroundColor: pipelineData.all.colors, borderWidth: 0, hoverOffset: 6 }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, cutout: '80%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0f172a', padding: 10, cornerRadius: 6, displayColors: true,
+                        bodyFont: { family: "'Inter', sans-serif", size: 12, weight: '600' },
+                        callbacks: {
+                            label: function (ctx) {
+                                const total = ctx.chart._metasets[ctx.datasetIndex].total;
+                                const pct = Math.round((ctx.raw / total) * 100) + '%';
+                                return ` ${ctx.label}: ${ctx.raw} (${pct})`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Initialize center text
+        document.getElementById('pipelineTotal').innerText = pipelineData.all.total;
+
+        function buildLegend(key) {
+            const d = pipelineData[key];
+            document.getElementById('pipelineLegend').innerHTML = d.labels.map((lbl, i) =>
+                `<div class="pl-item">
+                <div class="pl-left"><div class="pl-dot" style="background:${d.colors[i]};"></div>${lbl}</div>
+                <div class="pl-count">${d.data[i]}</div>
+             </div>`
+            ).join('');
+        }
+        buildLegend('all');
+
+        document.getElementById('pipelineFilter').addEventListener('change', function (e) {
+            const fv = e.target.value;
+            const nd = pipelineData[fv];
+            pipeChart.data.labels = nd.labels;
+            pipeChart.data.datasets[0].data = nd.data;
+            pipeChart.data.datasets[0].backgroundColor = nd.colors;
+            pipeChart.update();
+            document.getElementById('pipelineTotal').innerText = nd.total;
+            document.getElementById('pipelineLabel').innerText = nd.center_label;
+            buildLegend(fv);
+        });
+    });
+</script>
+{% endblock %}

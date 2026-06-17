@@ -65,10 +65,27 @@ class CustomUser(AbstractUser):
     ]
 
     email = models.EmailField(unique=True, blank=False, null=False)
+    middle_initial = models.CharField(max_length=10, blank=True)
+    suffix = models.CharField(max_length=20, blank=True)
     full_name = models.CharField(max_length=255, blank=True)
     designation = models.CharField(max_length=120, blank=True)
     position = models.CharField(max_length=120, blank=True)
     role = models.CharField(max_length=50, choices=ROLE_CHOICES, null=False)
+
+    photo = models.ImageField(upload_to="profile_photos/", blank=True, null=True)
+
+    THEME_CHOICES: ClassVar[list[tuple[str, str]]] = [
+        ("light", "Light"),
+        ("dark", "Dark"),
+        ("system", "System"),
+    ]
+    theme_preference = models.CharField(max_length=16, choices=THEME_CHOICES, default="light")
+    timezone_preference = models.CharField(max_length=64, default="Asia/Manila")
+    date_format_preference = models.CharField(max_length=32, default="YYYY-MM-DD")
+
+    notify_new_account_activations = models.BooleanField(default=True)
+    notify_weekly_activity_report = models.BooleanField(default=False)
+    notify_critical_system_alerts = models.BooleanField(default=True)
 
     # Module 1.2: force password change on first login for admin-created accounts
     must_change_password = models.BooleanField(default=False)
@@ -214,17 +231,31 @@ class CustomUser(AbstractUser):
         if send_email is None:
             send_email = bool(getattr(settings, "LEGALTRACK_SEND_EMAILS", True))
 
-        subject = "Activate Your PAStrack Account"
+        subject = "Welcome to PAStrack — Activate Your Account"
         message = (
-            f"Hello {self.full_name or self.email},\n\n"
-            "Your PAStrack account has been created.\n\n"
+            f"Welcome to PAStrack, {self.full_name or self.email}!\n\n"
+            "We're pleased to have you on board.\n\n"
+            "Your account has been created and is ready for activation. "
+            "PAStrack is the Provincial Assessor's Office Tracking System, designed to "
+            "streamline document processing and provide secure, transparent tracking "
+            "from submission to final release.\n\n"
+            "Your Account Details\n"
             f"Staff ID: {self.username}\n"
-            f"Email: {self.email}\n"
+            f"Email Address: {self.email}\n"
             f"Temporary Password: {temp_password}\n\n"
-            "Activate your account using this link (expires in 1 hour):\n"
+            "Activate Your Account\n"
+            "Use the secure link below to activate your account and set your personal password:\n\n"
             f"{activation_link}\n\n"
-            "You will be required to set a new strong password during activation.\n\n"
-            "If your temporary password expires (7 days), contact the Super Admin for a manual resend.\n"
+            "Security Notes\n"
+            "- This activation link will expire in 1 hour.\n"
+            "- You will be required to create a new strong password during activation.\n"
+            "- Your temporary password remains valid for up to 7 days.\n"
+            "- If the link expires or you encounter any issues, please contact the "
+            "Super Administrator to request a new activation email.\n\n"
+            "We look forward to having you use PAStrack to support more efficient and "
+            "transparent document processing.\n\n"
+            "Warm regards,\n"
+            "The PAStrack Team\n"
         )
 
         if send_email:
@@ -251,11 +282,15 @@ class CustomUser(AbstractUser):
 
         temp_password: str | None = None
 
-        # Keep legacy `full_name` populated when first/last are used.
-        if not (self.full_name or "").strip():
-            computed = f"{(self.first_name or '').strip()} {(self.last_name or '').strip()}".strip()
-            if computed:
-                self.full_name = computed
+        last_name = (self.last_name or "").strip()
+        first_name = (self.first_name or "").strip()
+        middle_initial = (self.middle_initial or "").strip()
+        suffix = (self.suffix or "").strip()
+
+        if last_name or first_name or middle_initial or suffix:
+            main = ", ".join([p for p in [last_name, first_name] if p])
+            rest = " ".join([p for p in [middle_initial, suffix] if p])
+            self.full_name = (main + (" " + rest if rest else "")).strip().strip(",")
 
         if is_new:
             # Generate Staff ID
@@ -296,7 +331,7 @@ class CustomUser(AbstractUser):
                 print(f"Email: {self.email}")
                 print(f"Staff ID: {self.username}")
                 print(f"Password: {temp_password}")
-                print("Login: http://127.0.0.1:8000/accounts/login/")
+                print("Login: http://127.0.0.1:8000/login/")
                 print("========================\n")
 
             # Audit log
@@ -350,6 +385,7 @@ class AuditLog(TimestampedModel):
         ("case_assignment", "Transaction Assigned"),
         ("case_approval", "Transaction Approved"),
         ("case_rejection", "Transaction Rejected"),
+        ("case_numbered", "Transaction Number Assigned"),
         ("case_release", "Transaction Released"),
         ("support_feedback", "Support Feedback Submitted"),
     ]
@@ -399,6 +435,32 @@ class PasswordResetRequest(models.Model):
         ]
 
 
+class LGUTaxDeclarationSequence(models.Model):
+    """Tracks the current TD sequence for each LGU to ensure strict sequential numbering."""
+    lgu_name = models.CharField(max_length=100, unique=True, choices=CustomUser.LGU_MUNICIPALITY_CHOICES)
+    prefix = models.CharField(max_length=10, help_text="e.g., '120-' for Alcoy")
+    current_count = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.lgu_name} ({self.prefix}) - Next: {self.current_count + 1:03d}"
+
+    @classmethod
+    def get_next_number(cls, lgu_name):
+        """Safely generates the next sequential number using a database lock."""
+        with transaction.atomic():
+            # select_for_update() locks this specific row until the transaction finishes.
+            # This completely prevents two cases from getting the same number.
+            sequence, created = cls.objects.select_for_update().get_or_create(
+                lgu_name=lgu_name,
+                defaults={'prefix': '000-'} # You can update prefixes in the Django Admin
+            )
+            
+            sequence.current_count += 1
+            sequence.save()
+            
+            # Formats as 120-001, 120-002, etc. (padding with 3 zeros)
+            return f"{sequence.prefix}{sequence.current_count:03d}"
+
 class Case(TimestampedModel):
     # ---------- Tracking ID ----------
     tracking_id = models.CharField(max_length=30, unique=True, editable=False, blank=True, null=True)
@@ -407,12 +469,14 @@ class Case(TimestampedModel):
     draft_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
 
     # ---------- Status ----------
+    # ---------- Status ----------
     STATUS_CHOICES: ClassVar[list[tuple[str, str]]] = [
         ("draft", "Draft"),
-        ("not_received", "Not Received"),          # LGU created, still editable
-        ("received", "Received"),                  # Capitol marked receipt
-        ("in_review", "In Review"),
-        ("for_taxmapping", "For Taxmapping"),      # Added for TaxMapper flow
+        ("not_received", "Not Received"),
+        ("received", "Received"),
+        ("to_examine", "To Examine"),       # Status after Receiver assigns it
+        ("in_review", "Under Examination"), # Status once Examiner starts working
+        ("for_taxmapping", "For Taxmapping"),
         ("for_approval", "For Approval"),
         ("approved", "Approved"),
         ("for_numbering", "For Numbering"),
@@ -424,6 +488,42 @@ class Case(TimestampedModel):
     ]
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="not_received")
 
+    OWNERSHIP_TYPE_CHOICES: ClassVar[list[tuple[str, str]]] = [
+        ('single',      'Single Owner'),
+        ('married',     'Married / Spouses'),
+        ('corporation', 'Corporation'),
+        ('others',      'Co-ownership'),
+    ]
+
+    ownership_type = models.CharField(
+        max_length=20,
+        choices=OWNERSHIP_TYPE_CHOICES,
+        default='single',
+        help_text="Ownership classification of the property owner"
+    )
+
+    # For Married / Spouses
+    spouse_name = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="Full name of spouse (if Married/Spouses)"
+    )
+
+    # For Corporation
+    corporation_name = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="Company or corporation name"
+    )
+
+    # For Others
+    co_owners = models.TextField(
+        blank=True,
+        null=True,
+        help_text="List of co-owners (one per line)"
+    )
     # ---------- Client info ----------
     client_name = models.CharField(max_length=255, blank=True, default="")
     client_contact = models.CharField(max_length=100, blank=True, default="")   # phone / email
@@ -456,6 +556,43 @@ class Case(TimestampedModel):
         default="",
         choices=PROPERTY_TITLE_TYPE_CHOICES,
         help_text="Required only for Land First Time and Transfer of Ownership cases.",
+    )
+
+    CLASSIFICATION_CHOICES: ClassVar[list[tuple[str, str]]] = [
+        ('residential',  'Residential'),
+        ('agricultural', 'Agricultural'),
+        ('commercial',   'Commercial'),
+        ('industrial',   'Industrial'),
+        ('mineral',      'Mineral'),
+        ('timberland',   'Timberland'),
+        ('special',      'Special'),
+    ]
+    classification = models.CharField(
+        max_length=20,
+        choices=CLASSIFICATION_CHOICES,
+        blank=True,
+        null=True,
+    )
+
+    area_value = models.DecimalField(
+        max_digits=10,
+        decimal_places=4,
+        help_text="Numerical area of the property (e.g. 250.0000)",
+        blank=True,
+        null=True,
+    )
+
+    AREA_UNIT_CHOICES: ClassVar[list[tuple[str, str]]] = [
+        ('sqm', 'Square Meters (sq.m.)'),
+        ('ha',  'Hectares (ha.)'),
+    ]
+    area_unit = models.CharField(
+        max_length=10,
+        choices=AREA_UNIT_CHOICES,
+        default='sqm',
+        help_text="Unit of measurement for the property area",
+        blank=True,
+        null=True,
     )
 
     # ---------- LGU who submitted ----------
@@ -525,10 +662,14 @@ class Case(TimestampedModel):
 
     released_at = models.DateTimeField(null=True, blank=True)
     lgu_submitted_at = models.DateTimeField(null=True, blank=True)
+    
+    # ---------- Release Info ----------
+    claimed_by_name = models.CharField(max_length=120, blank=True, default="")
+    claimed_by_contact = models.CharField(max_length=120, blank=True, default="")
 
     class Meta:
-        ordering: ClassVar[list[str]] = ["-created_at"]
-        indexes: ClassVar[list] = [
+        ordering = ["-created_at"]
+        indexes = [
             models.Index(fields=["status"]),
             models.Index(fields=["created_at"]),
             models.Index(fields=["updated_at"]),
@@ -540,6 +681,11 @@ class Case(TimestampedModel):
         if self.tracking_id:
             return f"{self.tracking_id} - {self.client_name}"
         return f"Draft {self.draft_id} - {self.client_name}"
+    @property
+    def co_owners_list(self) -> list[str]:
+        if self.co_owners:
+            return [name.strip() for name in self.co_owners.split(',') if name.strip()]
+        return []
 
     @property
     def client_display_name(self) -> str:
@@ -577,17 +723,30 @@ class Case(TimestampedModel):
         now = timezone.localtime(timezone.now())
         yy = now.strftime("%y")
         
+        prefix = "PAS"
+        if self.submitted_by and self.submitted_by.role == "lgu_admin" and self.area:
+            lgu_code = self.area[:3].upper()
+            prefix = f"LGU{lgu_code}-PAS"
+            
         # PAS + YY + 6 random alphanumeric characters
         chars = string.ascii_uppercase + string.digits
         
         for _ in range(10):
             random_part = "".join(secrets.choice(chars) for _ in range(6))
-            tid = f"PAS{yy}{random_part}"
+            tid = f"{prefix}{yy}{random_part}"
             if not Case.objects.filter(tracking_id=tid).exists():
                 return tid
         
         raise ValueError("Unable to generate unique tracking_id")
 
+
+    td_number = models.CharField(
+        max_length=50, 
+        blank=True, 
+        null=True, 
+        unique=True, 
+        help_text="Official Tax Declaration Number assigned by Numberer"
+    )
     # ------------------------------------------------------------------
     #  Save override
     # ------------------------------------------------------------------
@@ -605,7 +764,7 @@ class Case(TimestampedModel):
                 self.client_contact = contact
 
         if self.tracking_id:
-            if self.tracking_id.startswith("PAS"):
+            if self.tracking_id.startswith("PAS") or self.tracking_id.startswith("LGU"):
                 return super().save(*args, **kwargs)
             else:
                 # Force regeneration if the prefix is wrong
@@ -682,6 +841,39 @@ def case_document_upload_to(instance, filename: str) -> str:
     return f"cases/{key}/{doc_type}/{safe_name}"
 
 
+def archived_case_document_upload_to(instance, filename: str) -> str:
+    from pathlib import PurePosixPath
+    from django.utils.text import slugify
+
+    def _safe_filename(name: str, *, max_len: int = 120) -> str:
+        raw = (name or "").replace("\\", "/")
+        base = PurePosixPath(raw).name
+        if not base:
+            return "upload"
+
+        if "." in base:
+            stem, _, ext = base.rpartition(".")
+            ext = ext.lower()
+            ext_part = f".{ext}" if ext else ""
+            stem = stem or "file"
+        else:
+            stem, ext_part = base, ""
+
+        stem = " ".join(stem.split()).strip() or "file"
+        allowed = max(1, max_len - len(ext_part))
+        if len(stem) > allowed:
+            stem = stem[:allowed]
+        return f"{stem}{ext_part}"
+
+    case = getattr(instance, "case", None)
+    tracking = getattr(case, "tracking_id", None)
+    draft_id = getattr(case, "draft_id", None)
+    key = tracking or (str(draft_id) if draft_id else "unknown")
+    doc_type = (slugify(getattr(instance, "doc_type", "") or "document") or "document")[:60]
+    safe_name = _safe_filename(str(filename))
+    return f"cases/{key}/{doc_type}/archive/{safe_name}"
+
+
 class CaseDocument(TimestampedModel):
     case = models.ForeignKey("Case", on_delete=models.CASCADE, related_name="documents")
     doc_type = models.CharField(max_length=120)
@@ -714,6 +906,54 @@ class CaseDocument(TimestampedModel):
     def __str__(self):
         key = self.case.tracking_id or str(getattr(self.case, "draft_id", ""))
         return f"{key} - {self.doc_type}"
+
+
+class DocumentVersion(TimestampedModel):
+    case = models.ForeignKey("Case", on_delete=models.CASCADE, related_name="document_versions")
+    doc_type = models.CharField(max_length=120)
+    file = models.FileField(upload_to=case_document_upload_to, max_length=1024)
+    uploaded_by = models.ForeignKey(
+        "CustomUser",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="uploaded_document_versions",
+    )
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering: ClassVar[list[str]] = ["-uploaded_at"]
+
+    def __str__(self):
+        key = self.case.tracking_id or str(getattr(self.case, "draft_id", ""))
+        return f"{key} - {self.doc_type} (Version)"
+
+
+class ArchivedCaseDocument(models.Model):
+    case = models.ForeignKey("Case", on_delete=models.CASCADE, related_name="archived_documents")
+    doc_type = models.CharField(max_length=120)
+    file = models.FileField(upload_to=archived_case_document_upload_to, max_length=1024)
+    original_filename = models.CharField(max_length=255, blank=True, default="")
+    archived_by = models.ForeignKey(
+        "CustomUser",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="archived_case_documents",
+    )
+    archived_at = models.DateTimeField(auto_now_add=True)
+    keep_until = models.DateTimeField()
+
+    class Meta:
+        ordering: ClassVar[list[str]] = ["-archived_at"]
+        indexes: ClassVar[list] = [
+            models.Index(fields=["case"]),
+            models.Index(fields=["keep_until"]),
+        ]
+
+    def __str__(self):
+        key = self.case.tracking_id or str(getattr(self.case, "draft_id", ""))
+        return f"{key} - {self.doc_type} (archived)"
 
 
 class CaseNumber(TimestampedModel):

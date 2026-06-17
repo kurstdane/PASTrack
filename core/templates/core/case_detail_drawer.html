@@ -1,117 +1,150 @@
 {% load static %}
 
-<div data-drawer-fragment="preview">
-    <div class="text-center" style="padding-top:6px;">
-        <div style="font-weight:900; font-size:1.1rem; margin:0;">{{ case.tracking_id }}</div>
-        <div class="muted" style="font-weight:800; margin-top:4px;">{{ case.get_case_type_display|default:"—" }}</div>
+<style>
+    /* Embedded Drawer Styles for bulletproof rendering */
+    .cd-layout { font-family: 'Inter', sans-serif; background: white; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+    
+    /* Header Section */
+    .cd-top { padding: 2rem 2rem 1.5rem 2rem; }
+    .cd-back-btn { background: none; border: none; color: #0f172a; font-weight: 600; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; padding: 0; text-decoration: none; }
+    .cd-back-btn:hover { color: #1d4ed8; }
+    .cd-title-box { text-align: center; margin-top: 1.5rem; margin-bottom: 1.5rem; }
+    .cd-title-box h2 { color: #1d4ed8; font-size: 1.35rem; font-weight: 700; margin: 0 0 0.25rem 0; }
+    .cd-title-box p { color: #0f172a; font-size: 0.85rem; margin: 0; font-weight: 500; }
+    
+    /* Scrollable Body */
+    .cd-body { flex: 1; overflow-y: auto; padding: 0 2rem 2rem 2rem; }
+    
+    /* Info Table */
+    .cd-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 2.5rem; border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9;}
+    .cd-table td { padding: 1rem 0; border-bottom: 1px solid #f8fafc; }
+    .cd-table tr:last-child td { border-bottom: none; }
+    .cd-table td:first-child { color: #0f172a; font-weight: 600; width: 35%; }
+    .cd-table td:last-child { color: #475569; }
+    
+    /* Section Headers */
+    .cd-section-header { display: flex; justify-content: space-between; align-items: flex-end; font-size: 0.9rem; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.75rem;}
+    .cd-section-header span { font-size: 0.75rem; color: #94a3b8; font-weight: 500; }
+    
+    /* Documents & Remarks Lists */
+    .cd-list { list-style: none; padding: 0; margin: 0 0 2.5rem 0; }
+    .cd-list-item { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 0.75rem 0; border-bottom: 1px solid #f8fafc; }
+    .cd-doc-name { color: #0f172a; font-weight: 500; }
+    .cd-doc-file { color: #94a3b8; }
+    
+    .cd-rem-item { display: flex; gap: 1rem; font-size: 0.75rem; padding: 0.75rem 0; border-bottom: 1px solid #f8fafc; align-items: center; }
+    .cd-rem-time { color: #0f172a; font-weight: 600; width: 130px; flex-shrink: 0; }
+    .cd-rem-actor { color: #0f172a; font-weight: 700; width: 60px; flex-shrink: 0;}
+    .cd-rem-text { color: #94a3b8; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Fixed Footer */
+    .cd-footer { padding: 1.5rem 2rem; border-top: 1px solid #e2e8f0; background: white; }
+    .cd-btn-primary { display: block; width: 100%; text-align: center; background: #1e40af; color: white; padding: 0.85rem; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 0.9rem; transition: 0.2s; border: none; cursor: pointer;}
+    .cd-btn-primary:hover { background: #1e3a8a; }
+</style>
+
+<div class="cd-layout">
+    <div class="cd-top">
+        <button class="cd-back-btn" onclick="closeQuickView()">
+            <i class="ri-arrow-left-s-line" style="font-size: 1.2rem;"></i> Case Preview
+        </button>
+        <div class="cd-title-box">
+            <h2>{{ case.tracking_id }}</h2>
+            <p>{{ case.get_case_type_display }}</p>
+        </div>
     </div>
 
-    <div class="card" style="margin-top:14px;">
-        <table class="table">
-            <tbody>
-                <tr><td style="width:40%" class="muted"><strong>Full Name</strong></td><td>{{ case.client_display_name }}</td></tr>
-                <tr><td class="muted"><strong>Phone Number</strong></td><td>{{ case.client_number|default:"—" }}</td></tr>
-                <tr><td class="muted"><strong>Email</strong></td><td>{{ case.client_email|default:"—" }}</td></tr>
-                <tr><td class="muted"><strong>Date Submitted</strong></td><td>{{ case.created_at|date:"F d, Y" }}</td></tr>
-                <tr><td class="muted"><strong>LGU Origin</strong></td><td>{{ case.submitted_by.lgu_municipality|default:"—" }}</td></tr>
-            </tbody>
-        </table>
-    </div>
-
-    <div class="card card--flat" style="margin-top:14px;">
-        <div class="card__header">
-            <strong>Checklist and Attachments</strong>
-        </div>
-        <div class="card__body card__body--flush">
-            <table class="table">
-                <tbody>
-                    {% for item in case.checklist %}
-                        <tr>
-                            <td>{{ item.doc_type }}</td>
-                            <td class="muted" style="text-align:right;">
-                                {% if item.uploaded %}
-                                    {% for doc in documents %}
-                                        {% if doc.doc_type == item.doc_type %}
-                                            <a class="btn btn-link btn-sm link-primary" href="{% url 'download_case_document' doc.id %}" target="_blank" rel="noopener">{{ doc.file.name|cut:"cases/" }}</a>
-                                        {% endif %}
-                                    {% endfor %}
-                                {% else %}
-                                    <span class="muted">—</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% empty %}
-                        <tr><td colspan="2" class="muted"><em>No checklist items.</em></td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    {% if show_internal and remarks %}
-        <div class="card card--flat" style="margin-top:14px;">
-            <div class="card__header">
-                <strong>Internal Remarks</strong>
-            </div>
-            <div class="card__body card__body--flush">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Remark</th>
-                            <th style="width:28%">By</th>
-                            <th style="width:28%">When</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for r in remarks|slice:":5" %}
-                            <tr>
-                                <td>{{ r.text|linebreaksbr }}</td>
-                                <td class="muted">{{ r.created_by|default:"—" }}</td>
-                                <td class="muted">{{ r.created_at|date:"m/d/y  g:i A" }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    {% endif %}
-</div>
-
-<div data-drawer-fragment="documents">
-    <div class="text-center" style="padding-top:6px;">
-        <div style="font-weight:900; font-size:1.1rem; margin:0;">{{ case.tracking_id }}</div>
-        <div class="muted" style="font-weight:800; margin-top:4px;">{{ case.get_case_type_display|default:"—" }}</div>
-    </div>
-
-    <div class="card card--flat" style="margin-top:14px;">
-        <div class="card__header" style="display:flex; align-items:center; justify-content:space-between;">
-            <strong>Checklist and Attachments</strong>
-            <span class="muted" style="font-weight:800;">Preview Docs</span>
-        </div>
-        <div class="card__body card__body--flush">
-            {% if documents %}
-                <table class="table">
-                    <tbody>
-                        {% for doc in documents %}
-                            <tr>
-                                <td>{{ doc.doc_type }}</td>
-                                <td class="muted" style="text-align:right;">
-                                    <a class="btn btn-link btn-sm link-primary" href="{% url 'download_case_document' doc.id %}" target="_blank" rel="noopener">{{ doc.file.name|cut:"cases/" }}</a>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% else %}
-                <div class="card__body"><p class="muted" style="margin:0;">No documents uploaded.</p></div>
+    <div class="cd-body">
+        
+        <table class="cd-table">
+            <tr>
+                <td>Full Name</td>
+                <td>{{ case.client_display_name|default:case.client_name }}</td>
+            </tr>
+            {% if case.ownership_type and case.ownership_type != 'single' %}
+            <tr>
+                <td>Ownership Type</td>
+                <td>{{ case.get_ownership_type_display }}</td>
+            </tr>
+            {% if case.ownership_type == 'married' and case.spouse_name %}
+            <tr>
+                <td>Spouse Name</td>
+                <td>{{ case.spouse_name }}</td>
+            </tr>
+            {% elif case.ownership_type == 'corporation' and case.corporation_name %}
+            <tr>
+                <td>Corporation Name</td>
+                <td>{{ case.corporation_name }}</td>
+            </tr>
+            {% elif case.ownership_type == 'others' and case.co_owners %}
+            <tr>
+                <td>Co-owners</td>
+                <td style="white-space: pre-wrap;">{{ case.co_owners }}</td>
+            </tr>
             {% endif %}
+            {% endif %}
+            <tr>
+                <td>Phone Number</td>
+                <td>{{ case.client_number|default:"—" }}</td>
+            </tr>
+            <tr>
+                <td>Email</td>
+                <td>{{ case.client_email|default:"—" }}</td>
+            </tr>
+            <tr>
+                <td>Date Submitted</td>
+                <td>{{ case.created_at|date:"F d, Y" }}</td>
+            </tr>
+            <tr>
+                <td>LGU Origin</td>
+                <td>{{ case.submitted_by.lgu_municipality|default:case.area|default:"—" }}</td>
+            </tr>
+            <tr>
+                <td>Transaction Number</td>
+                <td>{{ case.td_number|default:"—" }}</td>
+            </tr>
+        </table>
+
+        <div class="cd-section-header">
+            Checklist and Attachments
+            <span>Preview Docs</span>
         </div>
+        <ul class="cd-list">
+            {% for doc in case.documents.all %}
+            <li class="cd-list-item">
+                <span class="cd-doc-name">{{ doc.doc_type }}</span>
+                <span class="cd-doc-file">{{ doc.file.name|slice:"15:"|default:"File attached" }}</span>
+            </li>
+            {% empty %}
+            <li class="cd-list-item" style="color: #94a3b8; justify-content: center;">No documents uploaded.</li>
+            {% endfor %}
+        </ul>
+
+        <div class="cd-section-header">
+            Internal Remarks
+        </div>
+        <ul class="cd-list">
+            {% for remark in remarks %}
+            <li class="cd-rem-item">
+                <span class="cd-rem-time">{{ remark.created_at|date:"m/d/Y h:i A" }}</span>
+                <span class="cd-rem-actor">{{ remark.actor.get_role_display|slice:":3"|upper }}-{{ remark.actor.id|stringformat:"03d" }}</span>
+                <span class="cd-rem-text" title="{{ remark.details.remark|default:remark.get_action_display }}">
+                    {{ remark.details.remark|default:remark.get_action_display }}
+                </span>
+            </li>
+            {% empty %}
+            <li class="cd-list-item" style="color: #94a3b8; justify-content: center;">No remarks recorded.</li>
+            {% endfor %}
+        </ul>
     </div>
 
-    {% if documents %}
-        <div class="card" style="margin-top:14px;">
-            <strong class="muted" style="display:block; margin-bottom:10px;">Preview</strong>
-            <div class="muted">Open a document link to preview in a new tab.</div>
-        </div>
-    {% endif %}
+    <div class="cd-footer">
+        {% if is_owner or request.user.role == 'super_admin' %}
+            <a href="{% url 'case_detail' case.tracking_id %}" class="cd-btn-primary">See Full Details</a>
+        {% else %}
+            <button class="cd-btn-primary" style="background: #f1f5f9; color: #64748b; cursor: not-allowed;">
+                <i class="ri-eye-line"></i> Read-Only View
+            </button>
+        {% endif %}
+    </div>
 </div>

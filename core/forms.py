@@ -63,6 +63,10 @@ class CaseDetailsForm(forms.ModelForm):
     class Meta:
         model = Case
         fields: ClassVar[list[str]] = [
+            "ownership_type",
+            "spouse_name",
+            "corporation_name",
+            "co_owners",
             "client_first_name",
             "client_last_name",
             "client_middle_name",
@@ -70,11 +74,18 @@ class CaseDetailsForm(forms.ModelForm):
             "client_number",
             "client_email",
             "area",
+            "classification",
+            "area_value",
+            "area_unit",
             "case_type",
             "property_title_type",
             "needs_taxmapping",
         ]
         widgets: ClassVar[dict] = {
+            "ownership_type": forms.Select(attrs={"id": "id_ownership_type"}),
+            "spouse_name": forms.TextInput(attrs={"placeholder": "Full name of spouse", "id": "id_spouse_name"}),
+            "corporation_name": forms.TextInput(attrs={"placeholder": "Company / Corporation Name", "id": "id_corporation_name"}),
+            "co_owners": forms.TextInput(attrs={"placeholder": "Enter co-owner name(s)", "id": "id_co_owners"}),
             "client_first_name": forms.TextInput(attrs={"placeholder": "First name"}),
             "client_last_name": forms.TextInput(attrs={"placeholder": "Last name"}),
             "client_middle_name": forms.TextInput(attrs={"placeholder": "Middle name"}),
@@ -88,21 +99,65 @@ class CaseDetailsForm(forms.ModelForm):
             }),
             "client_email": forms.EmailInput(attrs={"placeholder": "Owner email"}),
             "area": forms.Select(),
+            "classification": forms.Select(),
+            "area_value": forms.NumberInput(attrs={"step": "0.0001", "placeholder": "e.g. 250.0000"}),
+            "area_unit": forms.Select(),
             "case_type": forms.Select(),
             "property_title_type": forms.Select(),
         }
 
+    def __init__(self, *args, user: CustomUser | None = None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if user and getattr(user, "role", None) == "lgu_admin":
+            mun = (getattr(user, "lgu_municipality", "") or "").strip()
+            if mun:
+                self.fields["area"].choices = [(mun, mun)]
+                self.initial.setdefault("area", mun)
+                self.fields["area"].disabled = True
+
     def clean(self):
         cleaned = super().clean() or {}
-        # Enforce required fields for the new request form.
-        if not (cleaned.get("client_first_name") or "").strip():
-            self.add_error("client_first_name", "First name is required.")
-        if not (cleaned.get("client_last_name") or "").strip():
-            self.add_error("client_last_name", "Last name is required.")
+        
+        ownership_type = cleaned.get('ownership_type')
+
+        if ownership_type != 'corporation':
+            if not (cleaned.get("client_first_name") or "").strip():
+                self.add_error("client_first_name", "First name is required.")
+            if not (cleaned.get("client_last_name") or "").strip():
+                self.add_error("client_last_name", "Last name is required.")
+
+        if ownership_type == 'corporation':
+            if not cleaned.get('corporation_name'):
+                self.add_error('corporation_name', 'Corporation name is required.')
+        elif ownership_type == 'married':
+            if not cleaned.get('spouse_name'):
+                self.add_error('spouse_name', 'Spouse name is required.')
+        elif ownership_type == 'others':
+            if not cleaned.get('co_owners'):
+                self.add_error('co_owners', 'At least one co-owner must be added.')
+
         if not (cleaned.get("case_type") or "").strip():
             self.add_error("case_type", "Type of transaction is required.")
+        
+        classification = cleaned.get("classification")
+        if not classification:
+            self.add_error("classification", "Classification is required.")
+            
+        area_value = cleaned.get("area_value")
+        area_unit = cleaned.get("area_unit")
+        if area_value is None and not area_unit:
+            self.add_error("area_value", "Property area is required.")
+        elif area_value is not None and not area_unit:
+            self.add_error("area_unit", "Area unit is required.")
+        elif area_value is None and area_unit:
+            self.add_error("area_value", "Area value is required.")
 
         raw_num = (cleaned.get("client_number") or "").strip()
+        raw_email = (cleaned.get("client_email") or "").strip()
+        
+        if not raw_num and not raw_email:
+            self.add_error("client_number", "Input atleast one contact (Phone Number or Email)")
+
         if raw_num:
             # Step 1: Extract all digits
             digits = "".join([c for c in raw_num if c.isdigit()])
@@ -134,6 +189,7 @@ class ChecklistItemForm(forms.Form):
     doc_type = forms.ChoiceField(required=False, choices=[("", "— Select —")])
     custom_doc_type = forms.CharField(max_length=120, required=False)
     file = forms.FileField(required=False)
+    is_deleted = forms.BooleanField(required=False, initial=False, widget=forms.HiddenInput())
 
     def __init__(self, *args, doc_type_choices=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -146,6 +202,9 @@ class ChecklistItemForm(forms.Form):
         choices.append(("__custom__", "Other (type manually)"))
         self.fields["doc_type"].choices = choices
         self.fields["custom_doc_type"].widget.attrs.setdefault("placeholder", "Type document name")
+        self.fields["file"].widget.attrs.update({
+            "accept": ".pdf,.png,.jpg,.jpeg,.doc,.docx"
+        })
 
     def clean(self):
         cleaned = super().clean() or {}
@@ -176,7 +235,7 @@ class ChecklistItemForm(forms.Form):
         allowed = getattr(
             settings,
             "ALLOWED_UPLOAD_EXTENSIONS",
-            {".pdf", ".png", ".jpg", ".jpeg", ".doc", ".docx", ".xls", ".xlsx", ".txt"},
+            {".pdf", ".png", ".jpg", ".jpeg", ".doc", ".docx"},
         )
         name = getattr(f, "name", "") or ""
         ext = os.path.splitext(name)[1].lower()
@@ -294,11 +353,17 @@ class ProfileUpdateForm(forms.ModelForm):
 
     class Meta:
         model = CustomUser
-        fields: ClassVar[list[str]] = ["username", "position"]
+        fields: ClassVar[list[str]] = ["photo", "username", "position"]
 
     def __init__(self, *args, user: CustomUser, **kwargs):
         super().__init__(*args, **kwargs)
         self._user = user
+        for name, field in self.fields.items():
+            attrs = dict(getattr(field.widget, "attrs", {}) or {})
+            if name == "photo":
+                attrs.setdefault("accept", "image/*")
+            attrs.setdefault("class", "form-control")
+            field.widget.attrs = attrs
 
     def clean_email_verify(self):
         cleaned = self.cleaned_data or {}
@@ -316,6 +381,82 @@ class ProfileUpdateForm(forms.ModelForm):
         if qs.exists():
             raise ValidationError("This Staff ID is already in use.")
         return username
+
+    def clean_photo(self):
+        f = self.cleaned_data.get("photo")
+        if not f:
+            return f
+        max_size = 2 * 1024 * 1024
+        if getattr(f, "size", 0) > max_size:
+            raise ValidationError("Photo must be 2MB or smaller.")
+        return f
+
+
+class SettingsProfileForm(forms.ModelForm):
+    class Meta:
+        model = CustomUser
+        fields: ClassVar[list[str]] = ["photo", "first_name", "last_name"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            attrs = dict(getattr(field.widget, "attrs", {}) or {})
+            if name == "photo":
+                attrs.setdefault("accept", "image/*")
+            attrs.setdefault("class", "form-control")
+            field.widget.attrs = attrs
+
+    def clean_photo(self):
+        f = self.cleaned_data.get("photo")
+        if not f:
+            return f
+        max_size = 2 * 1024 * 1024
+        if getattr(f, "size", 0) > max_size:
+            raise ValidationError("Photo must be 2MB or smaller.")
+        return f
+
+
+class SettingsNotificationsForm(forms.ModelForm):
+    class Meta:
+        model = CustomUser
+        fields: ClassVar[list[str]] = [
+            "notify_new_account_activations",
+            "notify_weekly_activity_report",
+            "notify_critical_system_alerts",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            attrs = dict(getattr(field.widget, "attrs", {}) or {})
+            attrs.setdefault("class", "form-control")
+            field.widget.attrs = attrs
+
+
+class SettingsPreferencesForm(forms.ModelForm):
+    class Meta:
+        model = CustomUser
+        fields: ClassVar[list[str]] = [
+            "timezone_preference",
+            "date_format_preference",
+            "theme_preference",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["timezone_preference"].widget = forms.Select(choices=[
+            ("Asia/Manila", "(GMT+08:00) Asia/Manila (Philippines)"),
+            ("UTC", "UTC / GMT"),
+        ])
+        self.fields["date_format_preference"].widget = forms.Select(choices=[
+            ("YYYY-MM-DD", "YYYY-MM-DD (2026-12-31)"),
+            ("MM/DD/YYYY", "MM/DD/YYYY (12/31/2026)"),
+            ("DD/MM/YYYY", "DD/MM/YYYY (31/12/2026)"),
+        ])
+        for field in self.fields.values():
+            attrs = dict(getattr(field.widget, "attrs", {}) or {})
+            attrs.setdefault("class", "form-control")
+            field.widget.attrs = attrs
 
 
 class StaffSearchForm(forms.Form):
@@ -392,33 +533,72 @@ class StaffAccountUpdateForm(forms.ModelForm):
         required=False,
         choices=CustomUser.LGU_MUNICIPALITY_CHOICES,
         widget=forms.Select(),
-        help_text="Assigned LGU municipality (used for dashboard visibility).",
+        label="LGU Assigned Location",
+    )
+    capitol_role = forms.ChoiceField(
+        required=False,
+        choices=[
+            ("capitol_receiving", "Receiver"),
+            ("capitol_examiner", "Examiner"),
+            ("capitol_approver", "Approver"),
+            ("capitol_numberer", "Numberer"),
+            ("capitol_releaser", "Releaser"),
+        ],
+        widget=forms.Select(),
+        label="Capitol Assigned Role",
+    )
+
+    account_status = forms.ChoiceField(
+        required=True,
+        choices=[c for c in CustomUser.ACCOUNT_STATUS_CHOICES if c[0] != "pending"],
+        widget=forms.Select(),
+        label="Account Status",
+    )
+
+    username = forms.CharField(
+        required=False,
+        max_length=150,
+        label="Username / Staff ID",
+        help_text="Can only be edited when the account is active."
     )
 
     class Meta:
         model = CustomUser
-        fields: ClassVar[list[str]] = ["full_name", "designation", "position"]
+        fields: ClassVar[list[str]] = ["username", "first_name", "middle_initial", "last_name", "suffix", "lgu_municipality", "account_status"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        user: CustomUser = self.instance
-        self.initial["lgu_municipality"] = (getattr(user, "lgu_municipality", "") or "").strip()
-        if user.role != "lgu_admin":
-            # Remove the field for non-LGU roles
-            del self.fields["lgu_municipality"]
+        self.fields['first_name'].required = True
+        self.fields['last_name'].required = True
+        if self.instance and self.instance.pk:
+            self.fields["username"].initial = self.instance.username
+            if self.instance.account_status == "active":
+                self.fields["username"].disabled = False
+                self.fields["username"].required = True
+            else:
+                self.fields["username"].disabled = True
 
-    def clean_full_name(self):
-        cleaned = self.cleaned_data or {}
-        return (cleaned.get("full_name") or "").strip()
+            if self.instance.role == "lgu_admin":
+                self.fields["capitol_role"].widget = forms.HiddenInput()
+                self.fields["lgu_municipality"].initial = self.instance.lgu_municipality
+                self.fields["lgu_municipality"].disabled = True
+            else:
+                self.fields["lgu_municipality"].widget = forms.HiddenInput()
+                self.fields["capitol_role"].initial = self.instance.role
 
     def save(self, commit=True):
         user: CustomUser = super().save(commit=False)
-        if "lgu_municipality" in self.cleaned_data:
-            user.lgu_municipality = str(self.cleaned_data.get("lgu_municipality") or "")
+        if self.cleaned_data.get("username"):
+            user.username = self.cleaned_data["username"]
+        
+        if user.role == "lgu_admin":
+            # Disabled fields don't send cleaned_data, preserve instance value
+            pass
         else:
-            # If not in form, it might be a capitol user, so ensure it's empty
-            if user.role != "lgu_admin":
-                user.lgu_municipality = ""
+            user.lgu_municipality = ""
+            new_role = self.cleaned_data.get("capitol_role")
+            if new_role:
+                user.role = new_role
         if commit:
             user.save()
         return user

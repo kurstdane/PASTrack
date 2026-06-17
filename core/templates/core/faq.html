@@ -1,28 +1,372 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}FAQ{% endblock %}
-{% block container_class %}container--narrow{% endblock %}
+{% block container_class %}landing-full-width{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* TODO: To minimize content size, extract the shared root variables, typography, and .site-header styles below into a separate CSS file (e.g. 'landing_shared.css') and link it in base.html */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Serif:opsz,wght@8..144,400;8..144,600;8..144,700&display=swap');
+
+    :root {
+        /* Trustworthy Government Color Palette */
+        --color-primary: #0f3d7a;
+        --color-primary-dark: #0a2952;
+        --color-primary-light: #eef2f6;
+        --color-accent: #c48b29;
+        --color-accent-hover: #a3721e;
+
+        --color-text-dark: #1e293b;
+        --color-text-body: #475569;
+        --color-bg-white: #ffffff;
+        --color-bg-offwhite: #f8fafc;
+        --color-border: #cbd5e1;
+
+        --font-heading: 'Roboto Serif', Georgia, serif;
+        --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+
+        --radius-sm: 6px;
+        --radius-md: 10px;
+        --radius-lg: 16px;
+
+        --shadow-sm: 0 1px 3px rgba(15, 61, 122, 0.1);
+        --shadow-md: 0 4px 6px -1px rgba(15, 61, 122, 0.1);
+        --transition: all 100ms ease;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    .landing-full-width {
+        max-width: 100% !important;
+        padding: 0 !important;
+        font-family: var(--font-body);
+        color: var(--color-text-body);
+        background-color: var(--color-bg-offwhite);
+        min-height: 100vh;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+        font-family: var(--font-heading);
+        color: var(--color-text-dark);
+        margin-top: 0;
+    }
+
+    /* Header Styling */
+    .site-header {
+        background-color: var(--color-bg-white);
+        border-bottom: 1px solid var(--color-border);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .header-inner {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 24px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .brand-logo {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        text-decoration: none;
+    }
+
+    .brand-logo img {
+        height: 50px;
+        width: auto;
+    }
+
+    .brand-text h1 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--color-primary);
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    .brand-text p {
+        font-family: var(--font-body);
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--color-text-body);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin: 0;
+    }
+
+    .main-nav {
+        display: flex;
+        gap: 32px;
+        align-items: center;
+    }
+
+    .nav-link {
+        text-decoration: none;
+        color: var(--color-text-dark);
+        font-family: var(--font-body);
+        font-weight: 500;
+        font-size: 0.95rem;
+        transition: var(--transition);
+    }
+
+    .nav-link:hover {
+        color: var(--color-primary);
+        text-decoration: none !important;
+    }
+
+    /* Page Content */
+    .section-container {
+        padding: 60px 24px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .page-header h1 {
+        font-size: 2.25rem;
+        font-weight: 800;
+        color: var(--color-primary-dark);
+        margin-bottom: 12px;
+    }
+
+    .page-header p {
+        font-size: 1.1rem;
+        color: var(--color-text-body);
+        margin: 0;
+    }
+
+    /* FAQ Accordion */
+    .faq-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin-bottom: 40px;
+    }
+
+    .faq-item {
+        background: var(--color-bg-white);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+
+    .faq-item summary {
+        padding: 20px 24px;
+        font-weight: 600;
+        font-size: 1.05rem;
+        color: var(--color-text-dark);
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        list-style: none;
+        transition: background 0.2s;
+    }
+
+    .faq-item summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .faq-item summary:hover {
+        background: var(--color-primary-light);
+    }
+
+    .faq-item summary::after {
+        content: "";
+        width: 24px;
+        height: 24px;
+        background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%230f3d7a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>');
+        background-size: contain;
+        transition: transform 0.2s ease;
+    }
+
+    .faq-item[open] summary {
+        background: var(--color-bg-white);
+        border-bottom: 1px solid var(--color-border);
+        color: var(--color-primary);
+    }
+
+    .faq-item[open] summary::after {
+        transform: rotate(180deg);
+    }
+
+    .faq-answer {
+        padding: 24px;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        color: var(--color-text-body);
+        white-space: pre-wrap;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        background: var(--color-bg-white);
+        border: 1px dashed var(--color-border);
+        border-radius: var(--radius-md);
+        color: var(--color-text-body);
+        font-weight: 500;
+    }
+
+    /* Buttons */
+    .actions-row {
+        display: flex;
+        justify-content: center;
+        gap: 16px;
+        margin-top: 48px;
+    }
+
+    .btn-secondary {
+        display: inline-flex;
+        align-items: center;
+        background: transparent;
+        color: var(--color-primary);
+        border: 2px solid var(--color-primary);
+        padding: 10px 34px;
+        border-radius: var(--radius-sm);
+        font-family: var(--font-body);
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        transition: var(--transition);
+    }
+
+    .btn-secondary:hover {
+        background: var(--color-primary);
+        color: var(--color-bg-white);
+        text-decoration: none !important;
+    }
+
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        background: var(--color-accent);
+        color: var(--color-bg-white);
+        border: none;
+        padding: 10px 24px;
+        border-radius: var(--radius-sm);
+        font-family: var(--font-body);
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        transition: var(--transition);
+        cursor: pointer;
+    }
+
+    .btn-primary:hover {
+        background: var(--color-accent-hover);
+        text-decoration: none !important;
+    }
+
+    @media (max-width: 768px) {
+        .header-inner {
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .main-nav {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .section-container {
+            padding: 40px 16px;
+        }
+
+        .page-header h1 {
+            font-size: 1.75rem;
+        }
+    }
+</style>
+<script src="https://www.tuqlas.com/chatbot.js" data-key="tq_live_b381aee221feb02b917a255fed1c8c921f071b66"
+    data-api="https://www.tuqlas.com" defer></script>
+{% endblock %}
 
 {% block content %}
-<div class="card">
-    <h1 class="page-title">Frequently Asked Questions (FAQ)</h1>
-    <p class="page-subtitle">Common questions about tracking and submissions.</p>
+<header class="site-header">
+    <div class="header-inner">
+        <a href="{% url 'landing' %}" class="brand-logo">
+            <img src="{% static 'core/logo.png' %}" alt="Provincial Seal" />
+            <div class="brand-text">
+                <h1>PASTrack System</h1>
+                <p>Provincial Assessor's Office of Cebu</p>
+            </div>
+        </a>
+        <nav class="main-nav">
+            <a href="{% url 'landing' %}" class="nav-link">Home</a>
+            <a href="{% url 'support' %}" class="nav-link" style="color: var(--color-accent);">Need Help?</a>
+        </nav>
+    </div>
+</header>
 
-    {% if items %}
-        <div style="display:flex; flex-direction:column; gap:10px;">
-            {% for item in items %}
-                <details class="card" style="margin:0;">
-                    <summary style="cursor:pointer; font-weight:700;">{{ item.question }}</summary>
-                    <div class="muted" style="margin-top:10px; white-space:pre-wrap;">{{ item.answer }}</div>
-                </details>
-            {% endfor %}
-        </div>
-    {% else %}
-        <p class="muted" style="margin:0;">No FAQ items published yet.</p>
-    {% endif %}
+<div class="section-container">
+    <div class="page-header">
+        <h1>Frequently Asked Questions</h1>
+        <p>Common questions about tracking and submissions.</p>
+    </div>
 
-    <div style="margin-top:14px;">
-        <a class="btn btn-secondary btn-sm" href="{% url 'support' %}">Back</a>
-        <a class="btn btn-secondary btn-sm" href="{% url 'submit_feedback' %}">Contact Support</a>
+    <div class="faq-list">
+        <details class="faq-item">
+            <summary>How do I track my property tax declaration?</summary>
+            <div class="faq-answer">Enter your Tracking ID in the search bar at the top of the tracking page. The system will retrieve the current status and location of your documents instantly.</div>
+        </details>
+        <details class="faq-item">
+            <summary>Where can I find my Tracking ID?</summary>
+            <div class="faq-answer">Your Tracking ID is printed on the Acknowledgment Receipt provided by the Municipal Assessor's Office when you submitted your documents.</div>
+        </details>
+        <details class="faq-item">
+            <summary>What should I do if my Tracking ID shows "Not Found"?</summary>
+            <div class="faq-answer">Please ensure you typed the ID exactly as printed. If it still does not appear, the Municipal Assessor may not have logged it into the PASTrack system yet. Please contact your local assessor's office for clarification.</div>
+        </details>
+        <details class="faq-item">
+            <summary>How long does it take for a tax declaration to be approved?</summary>
+            <div class="faq-answer">Processing typically takes 5 to 10 working days upon receipt of complete documents by the Provincial Assessor's Office, depending on the complexity of the transaction.</div>
+        </details>
+        <details class="faq-item">
+            <summary>What are the common reasons for a returned or rejected application?</summary>
+            <div class="faq-answer">Applications are often returned due to lacking documentary requirements (such as the eCAR from BIR or updated tax receipts), missing signatures, or discrepancies in the technical description of the property.</div>
+        </details>
+        <details class="faq-item">
+            <summary>Can I submit my documents directly to the Provincial Capitol?</summary>
+            <div class="faq-answer">No, all submissions must originate from the Municipal or City Assessor's Office where the property is located. They will conduct the initial processing before forwarding the documents to the Province via PASTrack.</div>
+        </details>
+        <details class="faq-item">
+            <summary>How will I know if my tax declaration is ready for pickup?</summary>
+            <div class="faq-answer">Once the status on PASTrack shows "Approved and Released," your documents have been forwarded back to your local Municipal/City Assessor's Office, where you can claim your owner's copy.</div>
+        </details>
+        <details class="faq-item">
+            <summary>Do I need to pay any fees when tracking my documents online?</summary>
+            <div class="faq-answer">No, the PASTrack online portal is a completely free service provided by the Province of Cebu. Standard processing fees only apply at your local assessor's office during the actual submission.</div>
+        </details>
+        <details class="faq-item">
+            <summary>What is an eCAR and why is it required?</summary>
+            <div class="faq-answer">An Electronic Certificate Authorizing Registration (eCAR) from the Bureau of Internal Revenue proves that necessary taxes (like Capital Gains or Estate Tax) have been paid. It is a mandatory requirement for transferring property ownership.</div>
+        </details>
+        <details class="faq-item">
+            <summary>Who can I contact if I have further questions?</summary>
+            <div class="faq-answer">You can use the "Contact Support" button below to send us a direct message, or you can reach out to your Municipal Assessor. You may also email the Provincial Assessor at assessor@cebu.gov.ph.</div>
+        </details>
+    </div>
+
+    <div class="actions-row">
+        <a class="btn-secondary" href="{% url 'support' %}">Back to Support</a>
+        <a class="btn-primary" href="{% url 'submit_feedback' %}">Contact Support</a>
     </div>
 </div>
 {% endblock %}

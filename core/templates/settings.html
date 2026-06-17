@@ -1,0 +1,458 @@
+{% extends "base_new.html" %}
+
+{% block title %}System Settings | LegalTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Settings Layout Strategy */
+    .page-container {
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+
+    .page-header { margin-bottom: 2.5rem; }
+    .page-title { font-size: 1.5rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.35rem; }
+    .page-subtitle { font-size: 0.875rem; color: var(--text-muted); }
+
+    .settings-layout {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        gap: 2.5rem;
+        align-items: start;
+    }
+
+    /* ===== LEFT NAV (Settings Categories) ===== */
+    .settings-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        position: sticky;
+        top: 2rem;
+    }
+
+    .settings-tab {
+        display: flex; align-items: center; gap: 0.75rem;
+        padding: 0.75rem 1rem; border-radius: var(--radius-md);
+        font-size: 0.875rem; font-weight: 500; color: var(--text-muted);
+        cursor: pointer; transition: var(--transition); border: none; background: transparent;
+        text-align: left; width: 100%;
+    }
+    .settings-tab i { font-size: 1.25rem; color: var(--text-light); transition: var(--transition); }
+    
+    .settings-tab:hover { background: var(--inactive-bg); color: var(--text-main); }
+    .settings-tab.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+    .settings-tab.active i { color: var(--primary); }
+
+    /* ===== RIGHT CONTENT (Cards) ===== */
+    .settings-section { display: none; animation: fadeIn 0.3s ease-in-out; }
+    .settings-section.active { display: block; }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+        background: var(--bg-surface); border: 1px solid var(--border);
+        border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);
+        padding: 2rem; margin-bottom: 1.5rem;
+    }
+    
+    .card-header { margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+    .card-title { font-size: 1.125rem; font-weight: 600; color: var(--text-main); }
+    .card-desc { font-size: 0.875rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+    /* ===== PROFILE PHOTO UPLOAD ===== */
+    .avatar-upload { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem; }
+    .avatar-preview {
+        width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--border);
+        overflow: hidden; background: var(--inactive-bg); display: flex; align-items: center; justify-content: center;
+    }
+    .avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .avatar-fallback {
+        width: 100%; height: 100%;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 800; color: var(--primary);
+        background: var(--primary-light);
+        letter-spacing: 0.05em;
+    }
+    .avatar-actions { display: flex; flex-direction: column; gap: 0.5rem; }
+    .avatar-hint { font-size: 0.75rem; color: var(--text-muted); }
+
+    /* ===== FORM STYLING ===== */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+    .span-2 { grid-column: span 2; }
+    .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+    .form-group label { font-size: 0.875rem; font-weight: 600; color: var(--text-main); }
+    
+    .form-control {
+        width: 100%; padding: 0.6rem 1rem; border: 1px solid var(--border);
+        border-radius: var(--radius-md); font-size: 0.875rem; font-family: 'Inter', sans-serif;
+        color: var(--text-main); background-color: var(--bg-surface); transition: var(--transition);
+        outline: none;
+    }
+    select.form-control {
+        appearance: none; padding-right: 2.5rem;
+        background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2364748b%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+        background-repeat: no-repeat; background-position: right 1rem top 50%; background-size: 0.65rem auto;
+    }
+    .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+    .form-control:disabled { background: var(--inactive-bg); color: var(--text-muted); cursor: not-allowed; }
+
+    /* ===== BUTTONS ===== */
+    .form-actions { display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: flex-end; }
+    .btn {
+        padding: 0.5rem 1.25rem; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 500;
+        cursor: pointer; transition: var(--transition); display: inline-flex; align-items: center; gap: 0.5rem; border: none;
+    }
+    .btn-primary { background: var(--primary); color: white; box-shadow: var(--shadow-sm); }
+    .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+    .btn-secondary { background: var(--bg-surface); color: var(--text-main); border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
+    .btn-secondary:hover { background: var(--inactive-bg); border-color: var(--border-hover); }
+
+    /* ===== TOGGLE SWITCHES (For settings) ===== */
+    .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid var(--border); }
+    .setting-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .setting-info strong { display: block; font-size: 0.875rem; color: var(--text-main); margin-bottom: 0.2rem; }
+    .setting-info span { font-size: 0.75rem; color: var(--text-muted); }
+
+    .switch { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+        position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+        background-color: var(--border); transition: .3s; border-radius: 34px;
+    }
+    .slider:before {
+        position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px;
+        background-color: var(--bg-surface); transition: .3s; border-radius: 50%; box-shadow: var(--shadow-sm);
+    }
+    input:checked + .slider { background-color: var(--primary); }
+    input:focus + .slider { box-shadow: 0 0 0 3px var(--primary-light); }
+    input:checked + .slider:before { transform: translateX(18px); }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    
+    <div class="page-header">
+        <h1 class="page-title">System Settings</h1>
+        <p class="page-subtitle">Manage your personal profile, security preferences, and system configurations.</p>
+    </div>
+
+    <div class="settings-layout">
+        
+        <!-- Left Navigation -->
+        <nav class="settings-nav" aria-label="Settings navigation">
+            <button class="settings-tab active" onclick="openSection('profile', this)">
+                <i class="ri-user-settings-line"></i> My Profile
+            </button>
+            <button class="settings-tab" onclick="openSection('security', this)">
+                <i class="ri-shield-keyhole-line"></i> Security
+            </button>
+            <button class="settings-tab" onclick="openSection('notifications', this)">
+                <i class="ri-notification-3-line"></i> Notifications
+            </button>
+            <button class="settings-tab" onclick="openSection('system', this)">
+                <i class="ri-settings-5-line"></i> Preferences
+            </button>
+        </nav>
+
+        <!-- Right Content Area -->
+        <div class="settings-content">
+
+            <!-- 1. PROFILE SECTION -->
+            <section id="profile" class="settings-section active">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Profile Information</h2>
+                        <p class="card-desc">Update your photo and personal details.</p>
+                    </div>
+                    
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" name="section" value="profile">
+                        
+                        <div class="avatar-upload">
+                            <div class="avatar-preview">
+                                {% if request.user.photo %}
+                                    <img src="{{ request.user.photo.url }}" alt="Avatar">
+                                {% else %}
+                                    <div class="avatar-fallback">
+                                        {{ request.user.first_name|slice:":1"|upper|default:"U" }}{{ request.user.last_name|slice:":1"|upper|default:"" }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="avatar-actions">
+                                <button type="button" class="btn btn-secondary" id="change-photo-btn"><i class="ri-upload-cloud-2-line"></i> Change Photo</button>
+                                <div style="display:none;">{{ profile_form.photo }}</div>
+                                <span class="avatar-hint">JPG, GIF or PNG. Max size of 2MB.</span>
+                            </div>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>First Name</label>
+                                {{ profile_form.first_name }}
+                                {{ profile_form.first_name.errors }}
+                            </div>
+                            <div class="form-group">
+                                <label>Last Name</label>
+                                {{ profile_form.last_name }}
+                                {{ profile_form.last_name.errors }}
+                            </div>
+                            <div class="form-group">
+                                <label>Staff ID</label>
+                                <input type="text" class="form-control" value="{{ request.user.username }}" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label>System Role</label>
+                                <input type="text" class="form-control" value="{{ request.user.get_role_display }}" disabled title="Roles cannot be edited from profile">
+                            </div>
+                            <div class="form-group">
+                                <label>Email Address</label>
+                                <input type="email" class="form-control" value="{{ request.user.email }}" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label>Date of Account Activation</label>
+                                <input type="text" class="form-control" value="{{ request.user.date_joined|date:'F d, Y' }}" disabled>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary"><i class="ri-save-3-line"></i> Save Profile</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- 2. SECURITY SECTION -->
+            <section id="security" class="settings-section">
+                <!-- Change Password Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Change Password</h2>
+                        <p class="card-desc">Ensure your account is using a long, random password to stay secure.</p>
+                    </div>
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="section" value="security">
+                        <div class="form-grid">
+                            <div class="form-group span-2">
+                                <label>Current Password</label>
+                                <div style="position: relative;">
+                                    {{ password_form.old_password }}
+                                    <i class="ri-eye-line toggle-password" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #6c757d;"></i>
+                                </div>
+                                {{ password_form.old_password.errors }}
+                            </div>
+                            <div class="form-group">
+                                <label>New Password</label>
+                                <div style="position: relative;">
+                                    {{ password_form.new_password1 }}
+                                    <i class="ri-eye-line toggle-password" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #6c757d;"></i>
+                                </div>
+                                {{ password_form.new_password1.errors }}
+                            </div>
+                            <div class="form-group">
+                                <label>Confirm New Password</label>
+                                <div style="position: relative;">
+                                    {{ password_form.new_password2 }}
+                                    <i class="ri-eye-line toggle-password" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #6c757d;"></i>
+                                </div>
+                                {{ password_form.new_password2.errors }}
+                            </div>
+                        </div>
+                        {{ password_form.non_field_errors }}
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-secondary">Update Password</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Two-Factor Auth Card (Hidden for now) -->
+                <!-- 
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Two-Factor Authentication (2FA)</h2>
+                        <p class="card-desc">Add an extra layer of security to your account.</p>
+                    </div>
+                    <div class="setting-row" style="border: none; padding: 0;">
+                        <div class="setting-info">
+                            <strong>Require Authenticator App</strong>
+                            <span>Use an app like Google Authenticator to get verification codes when logging in.</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                -->
+            </section>
+
+            <!-- 3. NOTIFICATIONS SECTION -->
+            <section id="notifications" class="settings-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Email Notifications</h2>
+                        <p class="card-desc">Choose what system activities you want to be emailed about.</p>
+                    </div>
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="section" value="notifications">
+
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <strong>New Account Activations</strong>
+                                <span>Receive an email when a new staff member verifies their account.</span>
+                            </div>
+                            <label class="switch">
+                                {{ notifications_form.notify_new_account_activations }}
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <strong>Critical System Alerts</strong>
+                                <span>Alerts about server issues, database backups, or extreme security logs.</span>
+                            </div>
+                            <label class="switch" title="{% if request.user.role == 'super_admin' %}Required for Super Admins{% endif %}">
+                                {% if request.user.role == "super_admin" %}
+                                    <input type="checkbox" checked disabled>
+                                {% else %}
+                                    {{ notifications_form.notify_critical_system_alerts }}
+                                {% endif %}
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <strong>Weekly Activity Report</strong>
+                                <span>A summary of system usage and case metrics delivered every Monday.</span>
+                            </div>
+                            <label class="switch">
+                                {{ notifications_form.notify_weekly_activity_report }}
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary"><i class="ri-save-3-line"></i> Save Notifications</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- 4. SYSTEM PREFERENCES SECTION -->
+            <section id="system" class="settings-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">General Preferences</h2>
+                        <p class="card-desc">Manage regional and interface settings.</p>
+                    </div>
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="section" value="system">
+
+                        <div class="form-grid">
+                            <div class="form-group span-2">
+                                <label>Timezone</label>
+                                {{ preferences_form.timezone_preference }}
+                                {{ preferences_form.timezone_preference.errors }}
+                            </div>
+                            <div class="form-group">
+                                <label>Date Format</label>
+                                {{ preferences_form.date_format_preference }}
+                                {{ preferences_form.date_format_preference.errors }}
+                            </div>
+                            <div class="form-group">
+                                <label>Default Interface Theme</label>
+                                {{ preferences_form.theme_preference }}
+                                {{ preferences_form.theme_preference.errors }}
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary"><i class="ri-save-3-line"></i> Save Preferences</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Simple script to handle switching between settings sections
+    function openSection(sectionId, element) {
+        // Remove active class from all tabs
+        document.querySelectorAll('.settings-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Add active class to clicked tab
+        element.classList.add('active');
+
+        // Hide all sections
+        document.querySelectorAll('.settings-section').forEach(section => {
+            section.classList.remove('active');
+        });
+
+        // Show the targeted section
+        document.getElementById(sectionId).classList.add('active');
+    }
+
+    // Optional: If you want to link directly to a tab via URL hash (e.g. /settings#security)
+    document.addEventListener("DOMContentLoaded", function() {
+        if(window.location.hash) {
+            const hash = window.location.hash.substring(1);
+            const targetTab = document.querySelector(`button[onclick*="${hash}"]`);
+            if(targetTab) {
+                openSection(hash, targetTab);
+            }
+        }
+    });
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var btn = document.getElementById("change-photo-btn");
+        var input = document.getElementById("id_photo");
+        if (btn && input) {
+            btn.addEventListener("click", function () {
+                input.click();
+            });
+        }
+        if (input) {
+            input.addEventListener("change", function () {
+                if (input.files && input.files.length) {
+                    input.form.submit();
+                }
+            });
+        }
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".toggle-password").forEach(function(icon) {
+            icon.addEventListener("click", function() {
+                var input = this.previousElementSibling;
+                if (input.type === "password") {
+                    input.type = "text";
+                    this.classList.remove("ri-eye-line");
+                    this.classList.add("ri-eye-off-line");
+                } else {
+                    input.type = "password";
+                    this.classList.remove("ri-eye-off-line");
+                    this.classList.add("ri-eye-line");
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,344 +1,1360 @@
-{% extends "base.html" %}
+{% extends "base_wizard.html" %}
+{% load static %}
 {% load core_extras %}
+
 {% block title %}
-    {% if case and case.tracking_id %}Request {{ case.tracking_id }}
-    {% elif case %}Draft
-    {% else %}New Transaction
-    {% endif %}
+{% if case and case.tracking_id %}Request {{ case.tracking_id }}
+{% elif case %}Draft
+{% else %}New Transaction
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== WIZARD LAYOUT (No Scroll) ===== */
+    .wizard-page {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        width: 100vw;
+        overflow: hidden;
+        background-color: #f8fafc;
+    }
+
+    .wizard-inner {
+        display: flex;
+        align-items: flex-start;
+        gap: 2.5rem;
+        width: 100%;
+        max-width: 1350px;
+        padding: 0 2rem;
+    }
+
+    /* --- LEFT COLUMN: STEPPER --- */
+    .wizard-left {
+        width: 300px;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+    }
+
+    .back-link {
+        color: #94a3b8;
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-bottom: 1rem;
+        display: inline-block;
+        transition: 0.2s;
+        line-height: 1.5rem;
+    }
+
+    .back-link:hover {
+        color: #1e3a8a;
+    }
+
+    .wizard-left-card {
+        background-color: #f4f7fb;
+        border-radius: 16px;
+        padding: 2.5rem 2rem;
+    }
+
+    .brand-logo {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 2.5rem;
+    }
+
+    .stepper {
+        display: flex;
+        flex-direction: column;
+        position: relative;
+    }
+
+    .stepper::before {
+        content: '';
+        position: absolute;
+        top: 20px;
+        bottom: 40px;
+        left: 15px;
+        width: 2px;
+        background-color: #cbd5e1;
+        z-index: 0;
+    }
+
+    .step-item {
+        display: flex;
+        gap: 1rem;
+        position: relative;
+        z-index: 1;
+        padding-bottom: 2.5rem;
+    }
+
+    .step-item:last-child {
+        padding-bottom: 0;
+    }
+
+    .step-box {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 0.85rem;
+        font-weight: 700;
+        background-color: white;
+        border: 2px solid #cbd5e1;
+        color: #94a3b8;
+        transition: 0.3s;
+        flex-shrink: 0;
+    }
+
+    .step-text {
+        padding-top: 0.25rem;
+    }
+
+    .step-text h4 {
+        margin: 0 0 0.2rem 0;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .step-text p {
+        margin: 0;
+        font-size: 0.75rem;
+        color: #64748b;
+        line-height: 1.4;
+    }
+
+    .step-item.active .step-box {
+        background-color: #1e3a8a;
+        border-color: #1e3a8a;
+        color: white;
+    }
+
+    .step-item.active .step-text h4 {
+        color: #1e3a8a;
+    }
+
+    .step-item.completed .step-box {
+        background-color: white;
+        border-color: #1e3a8a;
+        color: #1e3a8a;
+    }
+
+    .step-item.pending .step-text h4 {
+        color: #64748b;
+    }
+
+    /* --- RIGHT COLUMN: MAIN CONTENT --- */
+    .wizard-right {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        margin-top: 2.5rem;
+        height: calc(100vh - 5rem);
+        overflow-y: auto;
+        scrollbar-width: none;
+        align-items: flex-start;
+    }
+
+    .wizard-right::-webkit-scrollbar {
+        display: none;
+    }
+
+    .wizard-right-card {
+        background-color: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02);
+        border: 1px solid #f1f5f9;
+        padding: 2.5rem 3rem;
+        width: 100%;
+        margin-bottom: 2rem;
+    }
+
+    /* Dynamic widths based on step */
+    .step-1-card {
+        max-width: 850px;
+    }
+
+    .step-2-card {
+        max-width: 950px;
+    }
+
+    .step-3-card {
+        max-width: 1000px;
+        padding: 3rem 4rem;
+    }
+
+    /* Wider for previewer */
+
+    .card-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-top: 0;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Shared Forms & Buttons */
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .btn {
+        padding: 0.65rem 1.5rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s;
+        border: none;
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background-color: #1e3a8a;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #1e40af;
+    }
+
+    .btn-text {
+        background: transparent;
+        color: #64748b;
+        padding: 0.65rem 1rem;
+        text-decoration: none !important;
+    }
+
+    .btn-text:hover {
+        color: #0f172a;
+    }
+
+    .error-msg {
+        font-size: 0.75rem;
+        color: #dc2626;
+        margin-top: 0.2rem;
+        display: block;
+    }
+
+    .alert-error {
+        background: #fee2e2;
+        color: #991b1b;
+        padding: 0.75rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        font-size: 0.85rem;
+    }
+
+    /* ===== STEP 1 CSS ===== */
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 1.25rem 1rem;
+    }
+
+    .col-4 {
+        grid-column: span 4;
+    }
+
+    .col-2 {
+        grid-column: span 2;
+    }
+
+    .col-6 {
+        grid-column: span 6;
+    }
+
+    .col-12 {
+        grid-column: span 12;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.35rem;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="email"],
+    .form-group input[type="number"],
+    .form-group select {
+        width: 100%;
+        padding: 0.6rem 1rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        color: #0f172a;
+        outline: none;
+        transition: 0.2s;
+        background-color: #ffffff;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        border-color: #1e3a8a;
+        box-shadow: 0 0 0 3px #eff6ff;
+    }
+
+    .form-group select {
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+        background-repeat: no-repeat;
+        background-position: right 1rem top 50%;
+        background-size: 0.65rem auto;
+    }
+
+    .input-prefix-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .prefix-text {
+        position: absolute;
+        left: 1rem;
+        color: #64748b;
+        font-size: 0.875rem;
+        pointer-events: none;
+    }
+
+    .input-prefix-wrapper input {
+        padding-left: 3rem !important;
+    }
+
+    /* ===== STEP 2 CSS ===== */
+    .doc-list {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .doc-row {
+        border-bottom: 1px solid #f1f5f9;
+        padding: 1.25rem 0;
+        transition: all 0.3s ease;
+    }
+
+    .doc-row:last-child {
+        border-bottom: none;
+    }
+
+    .view-pending,
+    .view-dropzone,
+    .view-completed {
+        display: none;
+    }
+
+    .state-pending .view-pending {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .state-dropzone .view-dropzone {
+        display: block;
+        animation: slideDown 0.3s ease;
+    }
+
+    .state-completed .view-completed {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .doc-label {
+        font-size: 0.9rem;
+        color: #0f172a;
+        font-weight: 500;
+        flex: 1;
+    }
+
+    .text-success {
+        color: #22c55e !important;
+    }
+
+    .btn-upload-trigger {
+        background-color: #1e3a8a;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 0.5rem 1.25rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .btn-upload-trigger:hover {
+        background-color: #1e40af;
+    }
+
+    .dropzone-area {
+        border: 2px dashed #cbd5e1;
+        border-radius: 12px;
+        padding: 2rem;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        transition: 0.2s;
+        background-color: white;
+        margin-top: 0.75rem;
+    }
+
+    .dropzone-area:hover {
+        border-color: #1e3a8a;
+        background-color: #f8fafc;
+    }
+
+    .dz-icon {
+        color: #1e3a8a;
+        font-size: 1.75rem;
+        margin-right: 1rem;
+    }
+
+    .dz-text {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .dz-text strong {
+        color: #0f172a;
+        font-size: 0.9rem;
+        margin-bottom: 0.2rem;
+    }
+
+    .dz-text span {
+        color: #94a3b8;
+        font-size: 0.75rem;
+    }
+
+    .dz-btn {
+        border: 1px solid #cbd5e1;
+        color: #1e3a8a;
+        background: white;
+        border-radius: 6px;
+        padding: 0.4rem 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        pointer-events: none;
+    }
+
+    .dropzone-area:hover .dz-btn {
+        border-color: #1e3a8a;
+    }
+
+    .doc-filename {
+        font-size: 0.85rem;
+        color: #0f172a;
+        font-weight: 500;
+        flex: 2;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding: 0 1rem;
+    }
+
+    .doc-meta {
+        font-size: 0.8rem;
+        color: #0f172a;
+        font-weight: 500;
+        text-align: right;
+        margin-right: 1.5rem;
+        flex: 1;
+    }
+
+    .doc-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .icon-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .edit-btn {
+        background-color: #eff6ff;
+        color: #3b82f6;
+    }
+
+    .edit-btn:hover {
+        background-color: #dbeafe;
+    }
+
+    .delete-btn {
+        background-color: #fee2e2;
+        color: #ef4444;
+    }
+
+    .delete-btn:hover {
+        background-color: #fecaca;
+    }
+
+    .btn-add-custom {
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        font-size: 0.9rem;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        cursor: pointer;
+        margin-top: 1rem;
+        padding: 0.5rem 0;
+    }
+
+    .btn-add-custom:hover {
+        color: #0f172a;
+    }
+
+    .custom-doc-input {
+        width: 100%;
+        max-width: 300px;
+        padding: 0.5rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+        outline: none;
+    }
+
+    .custom-doc-input:focus {
+        border-color: #1e3a8a;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ===== STEP 3 CSS (NEW REVIEW DESIGN) ===== */
+    .summary-header {
+        text-align: center;
+        border-bottom: 1px solid #e2e8f0;
+        padding-bottom: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .summary-id {
+        color: #1e3a8a;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0 0 0.25rem 0;
+        letter-spacing: 0.02em;
+    }
+
+    .summary-type {
+        color: #0f172a;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    .summary-list {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 3rem;
+    }
+
+    .summary-row {
+        display: flex;
+        padding: 1rem 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .summary-label {
+        width: 35%;
+        color: #64748b;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .summary-value {
+        flex: 1;
+        color: #0f172a;
+        font-size: 0.875rem;
+    }
+
+    /* Split Document Viewer */
+    .preview-container {
+        display: flex;
+        gap: 2rem;
+        align-items: stretch;
+        height: 500px;
+    }
+
+    .preview-sidebar {
+        width: 280px;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        border-right: 1px solid #e2e8f0;
+        padding-right: 1rem;
+    }
+
+    .preview-tab {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 0.5rem;
+        border-bottom: 1px solid #f1f5f9;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .preview-tab:hover {
+        background-color: #f8fafc;
+    }
+
+    .tab-name {
+        font-size: 0.85rem;
+        color: #0f172a;
+        font-weight: 500;
+    }
+
+    .tab-action {
+        font-size: 0.75rem;
+        color: #94a3b8;
+    }
+
+    /* Active Tab State */
+    .preview-tab.active .tab-name {
+        color: #3b82f6;
+    }
+
+    /* Highlight Blue */
+    .preview-tab.active .tab-action {
+        display: none;
+    }
+
+    /* Hide the word 'Preview' when active */
+
+    .preview-viewer {
+        flex: 1;
+        background-color: #737373;
+        border-radius: 8px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        position: relative;
+        border: 1px solid #475569;
+    }
+
+    .preview-iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: white;
+    }
+
+    .preview-empty {
+        color: #cbd5e1;
+        font-size: 0.9rem;
+        text-align: center;
+    }
+
+    /* ===== RESPONSIVE FIXES ===== */
+    @media (max-width: 1023px) {
+        .wizard-page {
+            display: block;
+            overflow-y: auto;
+            height: 100vh;
+        }
+
+        .wizard-inner {
+            flex-direction: column;
+            gap: 1rem;
+            padding: 1rem;
+            align-items: stretch;
+        }
+
+        .wizard-left {
+            width: 100%;
+            margin-bottom: 0;
+        }
+
+        .wizard-left-card {
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stepper {
+            flex-direction: row;
+            gap: 1rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+
+        .stepper::before {
+            display: none;
+        }
+
+        .step-item {
+            padding-bottom: 0;
+            white-space: nowrap;
+        }
+
+        .step-text {
+            display: none;
+        }
+
+        /* Hide text on mobile to save space */
+        .wizard-right {
+            margin-top: 0;
+            height: auto;
+            overflow: visible;
+            width: 100%;
+        }
+
+        .wizard-right-card {
+            padding: 1.5rem;
+            max-width: 100% !important;
+            margin-bottom: 1rem;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .col-2,
+        .col-4,
+        .col-6,
+        .col-12 {
+            grid-column: span 1;
+        }
+
+        .preview-container {
+            flex-direction: column;
+            height: auto;
+        }
+
+        .preview-sidebar {
+            width: 100%;
+            border-right: none;
+            border-bottom: 1px solid #e2e8f0;
+            padding-right: 0;
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+            max-height: 200px;
+        }
+
+        .preview-viewer {
+            height: 400px;
+            width: 100%;
+        }
+
+        .doc-actions {
+            flex-direction: column;
+        }
+
+        .view-completed {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .doc-filename {
+            text-align: left;
+            padding: 0;
+        }
+
+        .doc-meta {
+            text-align: left;
+            margin: 0;
+        }
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="card">
-    <h2 class="page-title">New Transaction Form</h2>
-    <p class="page-subtitle">Complete the steps to submit your transaction to the Capitol.</p>
+<div class="wizard-page">
+    <div class="wizard-inner">
 
-    {% if case and case.tracking_id %}
-        <p><strong>Tracking Number:</strong> {{ case.tracking_id }}</p>
-    {% else %}
-        <p class="muted">A tracking number will be generated only after you submit the request.</p>
-    {% endif %}
+        <!-- ===== LEFT SIDEBAR: STEPPER ===== -->
+        <div class="wizard-left">
+            <a href="{% url 'dashboard' %}" class="back-link">Back to Dashboard</a>
+            <div class="wizard-left-card">
+                <div class="brand-logo" style="display: flex; align-items: center; gap: 2px; padding: 0 ;">
+                    <img src="{% static 'core/logo.png' %}" alt="Logo"
+                        style="width: 54px; height: 54px; object-fit: contain;">
+                    PAStrack
+                </div>
 
-    <div class="subtabs" aria-label="Steps">
-        <span class="{% if step == 1 %}active{% endif %}">1. Details</span>
-        <span class="{% if step == 2 %}active{% endif %}">2. Checklist & Uploads</span>
-        <span class="{% if step == 3 %}active{% endif %}">3. Review & Submit</span>
+                <div class="stepper">
+                    <div
+                        class="step-item {% if step == 1 %}active{% elif step > 1 %}completed{% else %}pending{% endif %}">
+                        <div class="step-box">{% if step > 1 %}<i class="ri-check-line"></i>{% else %}1{% endif %}</div>
+                        <div class="step-text">
+                            <h4>Client Information</h4>
+                            <p>Complete client metadata and required fields.</p>
+                        </div>
+                    </div>
+
+                    <div
+                        class="step-item {% if step == 2 %}active{% elif step > 2 %}completed{% else %}pending{% endif %}">
+                        <div class="step-box">{% if step > 2 %}<i class="ri-check-line"></i>{% else %}2{% endif %}</div>
+                        <div class="step-text">
+                            <h4>Checklist and Attachments</h4>
+                            <p>Upload supporting documents.</p>
+                        </div>
+                    </div>
+
+                    <div class="step-item {% if step == 3 %}active{% else %}pending{% endif %}">
+                        <div class="step-box">3</div>
+                        <div class="step-text">
+                            <h4>Review</h4>
+                            <p>Review details before submission.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== RIGHT COLUMN: MAIN CONTENT ===== -->
+        <div class="wizard-right">
+
+            <!-- ==============================
+                 STEP 1: CLIENT INFORMATION
+                 ============================== -->
+            {% if step == 1 %}
+            <div class="wizard-right-card step-1-card">
+                <h2 class="card-title">Client Information</h2>
+
+                {% if form.non_field_errors %}
+                <div class="alert-error">{{ form.non_field_errors }}</div>
+                {% endif %}
+
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="form-grid">
+                        <!-- Ownership Type -->
+                        <div class="form-group col-12" id="ownership-type-group">
+                            <label for="id_ownership_type">Ownership Type<span class="text-danger">*</span></label>
+                            {{ form.ownership_type }}
+                            {% if form.ownership_type.errors %}<span class="error-msg">{{ form.ownership_type.errors.0 }}</span>{% endif %}
+                        </div>
+
+                        <!-- Standard Name Fields (visible by default) -->
+                        <div id="standard-name-fields" style="display: contents;">
+                            <div class="form-group col-4">
+                                <label for="{{ form.client_first_name.id_for_label }}">First Name<span
+                                        class="text-danger">*</span></label>
+                                {{ form.client_first_name }}
+                            {% if form.client_first_name.errors %}<span class="error-msg">{{ form.client_first_name.errors.0 }}</span>{% endif %}
+                        </div>
+                        <div class="form-group col-2">
+                            <label for="{{ form.client_middle_name.id_for_label }}">Middle Initial</label>
+                            {{ form.client_middle_name }}
+                            {% if form.client_middle_name.errors %}<span class="error-msg">{{ form.client_middle_name.errors.0 }}</span>{% endif %}
+                        </div>
+                        <div class="form-group col-4">
+                            <label for="{{ form.client_last_name.id_for_label }}">Last Name<span
+                                    class="text-danger">*</span></label>
+                            {{ form.client_last_name }}
+                            {% if form.client_last_name.errors %}<span class="error-msg">{{ form.client_last_name.errors.0 }}</span>{% endif %}
+                        </div>
+                        <div class="form-group col-2">
+                            <label for="{{ form.client_suffix.id_for_label }}">Suffix</label>
+                            {{ form.client_suffix }}
+                            {% if form.client_suffix.errors %}<span class="error-msg">{{ form.client_suffix.errors.0 }}</span>{% endif %}
+                        </div>
+                        </div> <!-- End Standard Name Fields -->
+
+                        <!-- Spouse Name (hidden by default) -->
+                        <div class="form-group col-12" id="spouse-name-group" style="display: none;">
+                            <label for="id_spouse_name">Name of Spouse<span class="text-danger">*</span></label>
+                            {{ form.spouse_name }}
+                            {% if form.spouse_name.errors %}<span class="error-msg">{{ form.spouse_name.errors.0 }}</span>{% endif %}
+                        </div>
+
+                        <!-- Corporation Name (hidden by default) -->
+                        <div class="form-group col-12" id="corporation-name-group" style="display: none;">
+                            <label for="id_corporation_name">Company / Corporation Name<span class="text-danger">*</span></label>
+                            {{ form.corporation_name }}
+                            {% if form.corporation_name.errors %}<span class="error-msg">{{ form.corporation_name.errors.0 }}</span>{% endif %}
+                        </div>
+
+                        <!-- Co-owners (hidden by default) -->
+                        <div class="form-group col-12" id="co-owners-group" style="display: none;">
+                            <div style="display: none;">
+                                {{ form.co_owners }}
+                            </div>
+                            
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem;">
+                                <label style="display: block; font-size: 0.9rem; font-weight: 600; color: #0f172a; margin-bottom: 0.75rem;">Co-Owners</label>
+                                
+                                <div id="co-owners-container" style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem;">
+                                    <!-- Dynamic rows will be inserted here -->
+                                </div>
+                                
+                                <button type="button" onclick="addCoOwnerRow()" style="background: transparent; color: #3b82f6; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; width: 100%; transition: all 0.2s;" onmouseover="this.style.borderColor='#3b82f6'; this.style.backgroundColor='#eff6ff'" onmouseout="this.style.borderColor='#cbd5e1'; this.style.backgroundColor='transparent'">
+                                    + Add Co-Owner
+                                </button>
+                            </div>
+                            {% if form.co_owners.errors %}<span class="error-msg" style="display:block; margin-top:0.5rem;">{{ form.co_owners.errors.0 }}</span>{% endif %}
+                        </div>
+
+                        <div class="form-group col-6">
+                            <label for="{{ form.client_number.id_for_label }}">Phone Number</label>
+                            <div class="input-prefix-wrapper">
+                                <span class="prefix-text">+63</span>
+                                {{ form.client_number }}
+                            </div>
+                            {% if form.client_number.errors %}<span class="error-msg">{{ form.client_number.errors.0 }}</span>{% endif %}
+                        </div>
+                        <div class="form-group col-6">
+                            <label for="{{ form.client_email.id_for_label }}">Email</label>
+                            {{ form.client_email }}
+                            {% if form.client_email.errors %}<span class="error-msg">{{ form.client_email.errors.0 }}</span>{% endif %}
+                        </div>
+
+                        <div class="form-group col-12">
+                            <label for="{{ form.area.id_for_label }}">LGU Origin<span
+                                    class="text-danger">*</span></label>
+                            {{ form.area }}
+                            {% if form.area.errors %}<span class="error-msg">{{ form.area.errors.0 }}</span>{% endif %}
+                        </div>
+
+                        <div class="form-group col-12">
+                            <label for="{{ form.case_type.id_for_label }}">Type of Case<span
+                                    class="text-danger">*</span></label>
+                            {{ form.case_type }}
+                            {% if form.case_type.errors %}<span class="error-msg">{{ form.case_type.errors.0 }}</span>{% endif %}
+                        </div>
+
+                        <div class="form-group col-12" data-title-type-wrap style="display:none;">
+                            <label for="{{ form.property_title_type.id_for_label }}">Property Title Type</label>
+                            {{ form.property_title_type }}
+                            {% if form.property_title_type.errors %}<span class="error-msg">{{ form.property_title_type.errors.0 }}</span>{% endif %}
+                        </div>
+
+                        <div class="form-group col-12">
+                            <label for="{{ form.classification.id_for_label }}">Classification<span
+                                    class="text-danger">*</span></label>
+                            {{ form.classification }}
+                            {% if form.classification.errors %}<span class="error-msg">{{ form.classification.errors.0 }}</span>{% endif %}
+                        </div>
+
+                        <div class="form-group col-12">
+                            <label>Property Area<span class="text-danger">*</span></label>
+                            <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
+                                <div style="flex: 2;">
+                                    {{ form.area_value }}
+                                </div>
+                                <div style="flex: 1;">
+                                    {{ form.area_unit }}
+                                </div>
+                            </div>
+                            {% if form.area_value.errors %}<span class="error-msg" style="display: block;">{{ form.area_value.errors.0 }}</span>{% endif %}
+                            {% if form.area_unit.errors %}<span class="error-msg" style="display: block;">{{ form.area_unit.errors.0 }}</span>{% endif %}
+                        </div>
+
+                        {% comment %} <div class="form-group col-12"
+                            style="margin-top: 0.25rem; display: flex; align-items: center; gap: 0.5rem;">
+                            {{ form.needs_taxmapping }}
+                            <label for="{{ form.needs_taxmapping.id_for_label }}"
+                                style="margin:0; cursor: pointer;">Transaction requires tax mapping?</label>
+                        </div> {% endcomment %}
+                    </div>
+
+                    <div class="form-actions" style="justify-content: space-between;">
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <a href="{% url 'dashboard' %}" class="btn-text">Cancel</a>
+                            <button type="submit" name="save_draft" value="1" class="btn btn-outline"
+                                style="border: 1px solid var(--border);">Save as Draft</button>
+                        </div>
+                        <button type="submit" name="save_continue" value="1" class="btn btn-primary">Continue</button>
+                    </div>
+                    <!-- Minimalistic Co-Owner Delete Modal -->
+                    <div id="removeCoOwnerModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:9999; justify-content:center; align-items:center;">
+                        <div style="background:white; border-radius:12px; padding:1.5rem; width:340px; box-shadow:0 10px 40px rgba(0,0,0,0.15); text-align: center; animation: slideDown 0.2s ease;">
+                            <i class="ri-user-unfollow-line" style="font-size: 2.5rem; color: #ef4444; margin-bottom: 0.25rem; display: block;"></i>
+                            <h3 style="margin:0 0 0.5rem 0; font-size:1.1rem; color:#0f172a;">Remove Co-Owner?</h3>
+                            <p style="margin:0 0 1.25rem 0; font-size:0.9rem; color:#64748b;">
+                                Are you sure you want to remove this co-owner?
+                            </p>
+                            <input type="hidden" id="remove_coowner_target_row">
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button type="button" onclick="document.getElementById('removeCoOwnerModal').style.display='none';"
+                                    style="flex: 1; padding:0.6rem; border-radius:6px; background:#f1f5f9; color:#0f172a; border:none; font-weight:600; cursor:pointer; font-size:0.9rem; transition: 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                                    Cancel
+                                </button>
+                                <button type="button" onclick="executeRemoveCoOwner()"
+                                    style="flex: 1; padding:0.6rem; border-radius:6px; background:#ef4444; color:white; border:none; font-weight:600; cursor:pointer; font-size:0.9rem; transition: 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- ==============================
+                 STEP 2: CHECKLIST & ATTACHMENTS
+                 ============================== -->
+            {% elif step == 2 %}
+            <div class="wizard-right-card step-2-card">
+                <h2 class="card-title" style="margin-bottom: 0.2rem;">Checklist and Attachments</h2>
+                <p style="color: #64748b; font-size: 0.9rem; margin-top: 0; margin-bottom: 2.5rem;">
+                    Upload the required documents for your <span style="color: #1e3a8a; font-weight: 600;">{{ case.get_case_type_display|default:"transaction" }}</span> request.
+                    <a href="{% url 'draft_wizard' case.draft_id 1 %}"
+                        style="color: #94a3b8; text-decoration: none; margin-left: 0.2rem;">Change</a>
+                </p>
+
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ formset.management_form }}
+
+                    {% if formset.non_form_errors %}
+                    <div class="alert-error">{{ formset.non_form_errors }}</div>
+                    {% endif %}
+
+                    <div class="doc-list">
+                        {% for row in rows %}
+                        <div class="doc-row {% if row.doc and row.doc.file %}state-completed{% else %}state-pending{% endif %}"
+                            id="row-{{ forloop.counter0 }}" data-is-custom="{{ row.is_custom|yesno:'true,false' }}">
+
+                            <div style="display: none;">
+                                {{ row.form.doc_type }}
+                                {{ row.form.custom_doc_type }}
+                                {{ row.form.file }}
+                                {{ row.form.is_deleted }}
+                            </div>
+
+                            <!-- STATE A: PENDING -->
+                            <div class="view-pending">
+                                <div class="doc-label">
+                                    <span class="custom-name-display" style="{% if not row.is_custom %}display: none;{% endif %}; color: #94a3b8; font-style: italic;">{{ row.form.custom_doc_type.value|default:row.doc_type|default:"Custom Document" }}</span>
+                                    <span class="standard-name-display" style="{% if row.is_custom %}display: none;{% endif %}">{{ row.doc_type }}</span>
+                                </div>
+                                <button type="button" class="btn-upload-trigger"
+                                    onclick="openDropzone('row-{{ forloop.counter0 }}')"><i class="ri-add-line"></i>
+                                    Upload</button>
+                            </div>
+
+                            <!-- STATE B: DROPZONE -->
+                            <div class="view-dropzone">
+                                <div class="doc-label">
+                                    <span class="custom-name-display" style="{% if not row.is_custom %}display: none;{% endif %}">{{ row.form.custom_doc_type.value|default:row.doc_type|default:"Custom Document" }}</span>
+                                    <span class="standard-name-display" style="{% if row.is_custom %}display: none;{% endif %}">{{ row.doc_type }}</span>
+                                </div>
+                                <label class="dropzone-area" for="{{ row.form.file.id_for_label }}">
+                                    <div class="dz-icon"><i class="ri-cloud-upload-line"></i></div>
+                                    <div class="dz-text">
+                                        <strong>Select a file or drag and drop here</strong>
+                                        <span>JPG, PNG, WORD or PDF, file size no more than 25MB</span>
+                                    </div>
+                                    <div class="dz-btn">SELECT FILE</div>
+                                </label>
+                            </div>
+
+                            <!-- STATE C: COMPLETED -->
+                            <div class="view-completed">
+                                <div class="doc-label text-success">
+                                    <span class="custom-name-display" style="{% if not row.is_custom %}display: none;{% endif %}">{{ row.form.custom_doc_type.value|default:row.doc_type|default:"Custom Document" }}</span>
+                                    <span class="standard-name-display" style="{% if row.is_custom %}display: none;{% endif %}">{{ row.doc_type }}</span>
+                                </div>
+                                <div class="doc-filename" id="filename-{{ forloop.counter0 }}" title="{% if row.doc and row.doc.file %}{{ row.filename|default:row.doc.file.name|cut:'cases/' }}{% endif %}">
+                                    {% if row.doc and row.doc.file %}{{ row.filename|default:row.doc.file.name|cut:"cases/" }}{% endif %}
+                                </div>
+                                <div class="doc-meta" id="filemeta-{{ forloop.counter0 }}">
+                                    {% if row.doc and row.doc.file %}{{ row.doc.uploaded_at|date:"Y-m-d g:i A" }}{% else %}Ready to save{% endif %}
+                                </div>
+                                <div class="doc-actions">
+                                    <button type="button" class="icon-btn rename-btn" style="{% if not row.is_custom %}display: none;{% endif %}" onclick="renameCustomDoc('row-{{ forloop.counter0 }}')" title="Rename Document"><i class="ri-edit-line"></i></button>
+                                    <button type="button" class="icon-btn edit-btn"
+                                        onclick="document.getElementById('{{ row.form.file.id_for_label }}').click();" title="Replace File"><i
+                                            class="ri-pencil-fill"></i></button>
+                                    <button type="button" class="icon-btn delete-btn"
+                                        onclick="confirmDeleteDoc('row-{{ forloop.counter0 }}', '{{ row.form.file.id_for_label }}')" title="Remove"><i
+                                            class="ri-delete-bin-fill"></i></button>
+                                </div>
+                            </div>
+                            {% if row.form.file.errors %}<span class="error-msg" style="margin-top: 0.5rem;">{{ row.form.file.errors.0 }}</span>{% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div id="custom-add-container" class="doc-row" style="border-bottom: none; padding-top: 1.5rem;">
+                        <div id="btn-show-custom-input" style="display: flex; justify-content: flex-start; align-items: center; width: 100%;">
+                            <button type="button" onclick="this.parentElement.style.display='none'; document.getElementById('custom-input-wrapper').style.display='flex'; document.getElementById('custom_attachment_name').focus();" style="background: transparent; color: #1e3a8a; border: none; font-weight: 600; padding: 0.5rem 0; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; font-size: 0.95rem;">
+                                <i class="ri-add-line"></i> Add Document
+                            </button>
+                        </div>
+                        
+                        <div id="custom-input-wrapper" style="display: none; justify-content: space-between; align-items: center; width: 100%;">
+                            <div class="doc-label" style="display: flex; align-items: center;">
+                                <input type="text" id="custom_attachment_name" placeholder="Name of the Attachment" style="padding: 0.6rem 0.8rem; border: 2px solid #cbd5e1; border-radius: 6px; font-family: inherit; font-size: 0.9rem; min-width: 320px; outline: none; transition: 0.2s;" onfocus="this.style.borderColor='#1e3a8a'" onblur="this.style.borderColor='#cbd5e1'" />
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <button type="button" class="btn-upload-trigger" onclick="triggerCustomUpload()">
+                                    <i class="ri-upload-cloud-2-line"></i> Upload
+                                </button>
+                                <button type="button" onclick="cancelCustomAdd()" title="Cancel" style="background: #f1f5f9; color: #0f172a; border: none; width: 36px; height: 36px; border-radius: 6px; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; transition: 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                                    <i class="ri-close-line"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions" style="margin-top: 3rem; justify-content: space-between;">
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <a href="{% url 'draft_wizard' case.draft_id 1 %}" class="btn-text"
+                                style="padding-left:0;">Back</a>
+                            <button type="submit" name="save_draft" value="1" class="btn btn-outline"
+                                style="border: 1px solid var(--border);">Save as Draft</button>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Continue</button>
+                    </div>
+
+                    <!-- Minimalistic Validation Modal -->
+                    <div id="nameRequiredModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:9999; justify-content:center; align-items:center;">
+                        <div style="background:white; border-radius:12px; padding:1.5rem; width:340px; box-shadow:0 10px 40px rgba(0,0,0,0.15); text-align: center; animation: slideDown 0.2s ease;">
+                            <i class="ri-information-line" style="font-size: 2.5rem; color: #3b82f6; margin-bottom: 0.25rem; display: block;"></i>
+                            <h3 style="margin:0 0 0.5rem 0; font-size:1.1rem; color:#0f172a;">Name Required</h3>
+                            <p style="margin:0 0 1.25rem 0; font-size:0.9rem; color:#64748b;">
+                                Please specify the name of the attachment before uploading.
+                            </p>
+                            <button type="button" onclick="document.getElementById('nameRequiredModal').style.display='none'; document.getElementById('custom_attachment_name').focus();"
+                                style="width:100%; padding:0.6rem; border-radius:6px; background:#3b82f6; color:white; border:none; font-weight:600; cursor:pointer; font-size:0.9rem; transition: 0.2s;" onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">
+                                Okay
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Minimalistic Rename Modal -->
+                    <div id="renameDocModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:9999; justify-content:center; align-items:center;">
+                        <div style="background:white; border-radius:12px; padding:1.5rem; width:340px; box-shadow:0 10px 40px rgba(0,0,0,0.15); text-align: center; animation: slideDown 0.2s ease;">
+                            <i class="ri-edit-line" style="font-size: 2.5rem; color: #3b82f6; margin-bottom: 0.25rem; display: block;"></i>
+                            <h3 style="margin:0 0 0.5rem 0; font-size:1.1rem; color:#0f172a;">Rename Document</h3>
+                            <p style="margin:0 0 1.25rem 0; font-size:0.9rem; color:#64748b;">
+                                Enter a new name for this document.
+                            </p>
+                            <input type="text" id="rename_attachment_name" class="form-input" style="width: 100%; margin-bottom: 1.25rem; text-align: center;" placeholder="Document Name" onkeypress="if(event.key === 'Enter'){ submitRename(); event.preventDefault(); }">
+                            <input type="hidden" id="rename_target_row">
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button type="button" onclick="document.getElementById('renameDocModal').style.display='none';"
+                                    style="flex: 1; padding:0.6rem; border-radius:6px; background:#f1f5f9; color:#0f172a; border:none; font-weight:600; cursor:pointer; font-size:0.9rem; transition: 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                                    Cancel
+                                </button>
+                                <button type="button" onclick="submitRename()"
+                                    style="flex: 1; padding:0.6rem; border-radius:6px; background:#3b82f6; color:white; border:none; font-weight:600; cursor:pointer; font-size:0.9rem; transition: 0.2s;" onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">
+                                    Save
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Minimalistic Delete Modal -->
+                    <div id="deleteDocModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:9999; justify-content:center; align-items:center;">
+                        <div style="background:white; border-radius:12px; padding:1.5rem; width:340px; box-shadow:0 10px 40px rgba(0,0,0,0.15); text-align: center; animation: slideDown 0.2s ease;">
+                            <i class="ri-alert-line" style="font-size: 2.5rem; color: #ef4444; margin-bottom: 0.25rem; display: block;"></i>
+                            <h3 style="margin:0 0 0.5rem 0; font-size:1.1rem; color:#0f172a;">Remove Document?</h3>
+                            <p style="margin:0 0 1.25rem 0; font-size:0.9rem; color:#64748b;">
+                                Are you sure you want to remove this document?
+                            </p>
+                            <input type="hidden" id="delete_target_row">
+                            <input type="hidden" id="delete_target_input">
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button type="button" onclick="document.getElementById('deleteDocModal').style.display='none';"
+                                    style="flex: 1; padding:0.6rem; border-radius:6px; background:#f1f5f9; color:#0f172a; border:none; font-weight:600; cursor:pointer; font-size:0.9rem; transition: 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                                    Cancel
+                                </button>
+                                <button type="button" onclick="executeDelete()"
+                                    style="flex: 1; padding:0.6rem; border-radius:6px; background:#ef4444; color:white; border:none; font-weight:600; cursor:pointer; font-size:0.9rem; transition: 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- ==============================
+                 STEP 3: REVIEW (NEW SPLIT DESIGN)
+                 ============================== -->
+            {% else %}
+            <div class="wizard-right-card step-3-card">
+                <h2 class="card-title">Review Submission</h2>
+
+                <!-- ID Header -->
+                <div class="summary-header">
+                    <h3 class="summary-id" style="font-style: normal; margin-bottom: 0;">
+                        {% if case.tracking_id %}
+                        {{ case.tracking_id }}
+                        {% else %}
+                        <!-- Stylized Placeholder for Drafts -->
+                        <span style="color: #1e3a8a; font-weight: 700;">PAS-{% now "Y" %}-</span><span
+                            style="color: #94a3b8; font-weight: 500;">XXXXXXX</span>
+                        {% endif %}
+                    </h3>
+                    <div class="summary-type" style="margin-top: 0.5rem;">{{ case.get_case_type_display|default:"Transaction Type" }}</div>
+                </div>
+
+                <!-- Client Info List -->
+                <div class="summary-list">
+                    <div class="summary-row">
+                        <span class="summary-label">Full Name</span>
+                        <span class="summary-value">{{ case.client_display_name }}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Phone Number</span>
+                        <span class="summary-value">{{ case.client_number|default:"—" }}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Email</span>
+                        <span class="summary-value">{{ case.client_email|default:"—" }}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">LGU Origin</span>
+                        <span class="summary-value">{{ case.area|default:"—" }}</span>
+                    </div>
+                    {% if case.needs_taxmapping %}
+                    <div class="summary-row" style="border-bottom: none;">
+                        <span class="summary-label">Tax Mapping</span>
+                        <span class="summary-value" style="color: #ea580c; font-weight: 600;">Required</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <h4 style="font-size: 1rem; color: #0f172a; margin: 0 0 1rem 0;">Checklist and Attachments</h4>
+
+                <!-- Interactive Split Document Viewer -->
+                <div class="preview-container">
+
+                    <!-- Left Tab List -->
+                    <div class="preview-sidebar" id="doc-tabs">
+                        {% for doc in documents %}
+                        <div class="preview-tab {% if forloop.first %}active{% endif %}"
+                            data-url="{% url 'download_case_document' doc.id %}"
+                            onclick="changePreview(this, this.getAttribute('data-url'))">
+                            <div class="tab-name">{{ doc.doc_type }}</div>
+                            <div class="tab-action">Preview</div>
+                        </div>
+                        {% empty %}
+                        <p style="color: #64748b; font-size: 0.85rem;">No documents attached.</p>
+                        {% endfor %}
+
+                        <!-- List missing required documents for context -->
+                        {% for item in checklist %}
+                        {% if not item.uploaded %}
+                        <div class="preview-tab" style="cursor: not-allowed; opacity: 0.6;">
+                            <div class="tab-name">{{ item.doc_type }}</div>
+                            <div class="tab-action" style="color: #ef4444;">Missing</div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    <!-- Right Viewer Frame -->
+                    <div class="preview-viewer">
+                        {% if documents %}
+                        <!-- Loads the URL of the first document initially -->
+                        <iframe id="doc-preview-frame" class="preview-iframe"
+                            src="{% url 'download_case_document' documents.0.id %}#toolbar=0"
+                            title="Document Preview"></iframe>
+                        <div id="doc-empty-state" class="preview-empty" style="display: none;">Select a document to
+                            preview</div>
+                        {% else %}
+                        <div class="preview-empty"><i class="ri-file-forbid-line"
+                                style="font-size: 2rem; display:block; margin-bottom: 0.5rem;"></i> No file available
+                            for preview</div>
+                        {% endif %}
+                    </div>
+
+                </div>
+
+                <form method="post" style="margin-top: 3rem;" id="step3SubmitForm">
+                    {% csrf_token %}
+                    <div class="form-actions" style="justify-content: space-between;">
+                        <a href="{% url 'draft_wizard' case.draft_id 2 %}" class="btn-text"
+                            style="padding-left:0;">Back</a>
+                        <button type="submit" class="btn btn-primary" style="background-color: #1e3a8a;">Submit</button>
+                    </div>
+                </form>
+
+                <!-- No Documents Warning Modal -->
+                <div id="noDocsModal"
+                    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:9999; justify-content:center; align-items:center;">
+                    <div
+                        style="background:white; border-radius:16px; padding:2rem; width:420px; box-shadow:0 20px 60px rgba(0,0,0,0.2); border-top: 4px solid #dc2626;">
+                        <h3 style="margin:0 0 0.75rem 0; font-size:1.1rem; color:#dc2626;"><i
+                                class="ri-error-warning-line"></i> Missing Documents</h3>
+                        <p style="margin:0 0 1.5rem 0; font-size:0.9rem; color:#64748b;">
+                            Please upload at least 1 document for this transaction.
+                        </p>
+                        <button onclick="document.getElementById('noDocsModal').style.display='none';"
+                            style="width:100%; padding:0.65rem; border-radius:8px; background:#1e3a8a; color:white; border:none; font-weight:600; cursor:pointer; font-size:0.9rem;">OK,
+                            Go Back</button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
     </div>
 </div>
-
-{% if step == 1 %}
-    <form class="card" method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-
-        {% if form.non_field_errors %}
-            <div class="msg error">{{ form.non_field_errors }}</div>
-        {% endif %}
-
-        <div class="form-grid">
-            <div>
-                <label for="{{ form.client_first_name.id_for_label }}">Owner First Name</label>
-                {{ form.client_first_name }}
-                {{ form.client_first_name.errors }}
-            </div>
-            <div>
-                <label for="{{ form.client_last_name.id_for_label }}">Owner Last Name</label>
-                {{ form.client_last_name }}
-                {{ form.client_last_name.errors }}
-            </div>
-            <div>
-                <label for="{{ form.client_middle_name.id_for_label }}">Owner Middle Name</label>
-                {{ form.client_middle_name }}
-                {{ form.client_middle_name.errors }}
-            </div>
-            <div>
-                <label for="{{ form.client_suffix.id_for_label }}">Owner Suffix</label>
-                {{ form.client_suffix }}
-                {{ form.client_suffix.errors }}
-            </div>
-            <div>
-                <label for="{{ form.client_number.id_for_label }}">Owner Number</label>
-                <div class="input-prefix">
-                    <span class="input-prefix__fixed">+63</span>
-                    {{ form.client_number }}
-                </div>
-                <div class="muted mt-4 fs-92">Enter the remaining 10 digits (example: 9XXXXXXXXX).</div>
-                {{ form.client_number.errors }}
-            </div>
-            <div>
-                <label for="{{ form.client_email.id_for_label }}">Owner Email</label>
-                {{ form.client_email }}
-                {{ form.client_email.errors }}
-            </div>
-            <div>
-                <label for="{{ form.area.id_for_label }}">Municipality</label>
-                {{ form.area }}
-                {{ form.area.errors }}
-            </div>
-            <div class="span-2">
-                <label for="{{ form.case_type.id_for_label }}">Type of Transaction</label>
-                {{ form.case_type }}
-                {{ form.case_type.errors }}
-            </div>
-            <div class="span-2">
-                <label for="{{ form.needs_taxmapping.id_for_label }}">Taxmapped?</label>
-                <div style="display:flex; align-items:center; gap:10px;">
-                    {{ form.needs_taxmapping }}
-                    <span class="muted fs-92">Yes if this transaction needs tax mapping.</span>
-                </div>
-                {{ form.needs_taxmapping.errors }}
-            </div>
-            <div class="span-2" data-title-type-wrap style="display:none;">
-                <label for="{{ form.property_title_type.id_for_label }}">Property Title Type</label>
-                {{ form.property_title_type }}
-                {{ form.property_title_type.errors }}
-                <div class="muted mt-4 fs-92">Shown only for Land First Time and Transfer of Ownership transactions.</div>
-            </div>
-        </div>
-
-        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px;">
-            <a class="btn btn-secondary" href="{% url 'dashboard' %}">Cancel</a>
-            <button class="btn btn-secondary" type="submit" name="save_draft" value="1">Save Draft</button>
-            <button class="btn btn-primary" type="submit" name="save_continue" value="1">Save & Continue</button>
-        </div>
-    </form>
-{% elif step == 2 %}
-    <form class="card" method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ formset.management_form }}
-
-        {% if formset.non_form_errors %}
-            <div class="msg error">{{ formset.non_form_errors }}</div>
-        {% endif %}
-
-        <div class="card card--flat">
-            <div class="card__header">
-                <strong>Document Checklist</strong>
-                <span class="muted">Transaction type: <strong>{{ case.get_case_type_display|default:"—" }}</strong></span>
-            </div>
-            <div class="card__body card__body--flush">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th style="width:34%">Document Type</th>
-                            <th>Upload File</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for row in rows %}
-                            <tr>
-                                <td>
-                                    {{ row.form.doc_type }}
-                                    <div class="mt-4 custom-doc" data-custom-doc style="display:none;">
-                                        {{ row.form.custom_doc_type }}
-                                    </div>
-                                    {% if row.form.doc_type.errors %}<div class="muted">{{ row.form.doc_type.errors }}</div>{% endif %}
-                                    {% if row.form.custom_doc_type.errors %}<div class="muted">{{ row.form.custom_doc_type.errors }}</div>{% endif %}
-                                </td>
-                                <td>
-                                    {{ row.form.file }}
-                                    {% if row.form.file.errors %}<div class="muted">{{ row.form.file.errors }}</div>{% endif %}
-
-                                    {% if row.doc and row.doc.file %}
-                                        <div class="muted mt-4 fs-92">
-                                            Uploaded: <strong>{{ row.filename|default:row.doc.file.name|cut:"cases/" }}</strong>
-                                            <a class="link-muted" href="{% url 'download_case_document' row.doc.id %}" target="_blank" rel="noopener">(View)</a>
-                                        </div>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% if row.form.non_field_errors %}
-                                <tr><td colspan="2"><div class="msg error">{{ row.form.non_field_errors }}</div></td></tr>
-                            {% endif %}
-                        {% endfor %}
-                    </tbody>
-                </table>
-
-                <div style="padding:10px; border-top:1px solid var(--border);">
-                    <button class="btn btn-secondary btn-sm" type="submit" name="add_row" value="1">+ Add Row</button>
-                </div>
-            </div>
-        </div>
-
-        <div style="display:flex; gap:10px; justify-content:space-between; margin-top:14px;">
-            <a class="btn btn-secondary" href="{% url 'draft_wizard' case.draft_id 1 %}">Back</a>
-            {% if not case.tracking_id %}
-                <button class="btn btn-secondary" type="submit" name="save_draft" value="1">Save Draft</button>
-            {% endif %}
-            <button class="btn btn-primary" type="submit">Save & Continue</button>
-        </div>
-    </form>
-
-    {% if documents %}
-        <div class="card">
-            <h3 style="margin:0 0 10px 0;">Uploaded Documents</h3>
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Document Type</th>
-                        <th>File</th>
-                        <th style="width:14%">View File</th>
-                        <th style="width:22%">Uploaded</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for doc in documents %}
-                        <tr>
-                            <td>{{ doc.doc_type }}</td>
-                            <td class="muted">{{ doc.file.name|cut:"cases/" }}</td>
-                            <td><a class="btn btn-secondary btn-sm" href="{% url 'download_case_document' doc.id %}" target="_blank" rel="noopener">View</a></td>
-                            <td class="muted">{{ doc.uploaded_at|date:"M d, Y H:i" }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% endif %}
-
-{% else %}
-    <div class="card">
-        <h3 style="margin:0 0 12px 0;">Review</h3>
-        <div class="form-grid">
-            <div>
-                <label>Owner</label>
-                <div><strong>{{ case.client_display_name }}</strong></div>
-            </div>
-            <div>
-                <label>Contact</label>
-                <div>{{ case.client_display_contact|default:"—" }}</div>
-            </div>
-            <div>
-                <label>Type of Transaction</label>
-                <div>{{ case.get_case_type_display|default:"—" }}</div>
-            </div>
-            <div>
-                <label>Taxmapped?</label>
-                <div>{{ case.needs_taxmapping|yesno:"Yes,No" }}</div>
-            </div>
-            {% if case.case_type == "land_first_time" or case.case_type == "transfer_ownership_tax_decl" %}
-                <div>
-                    <label>Property Title Type</label>
-                    <div>{{ case.get_property_title_type_display|default:"—" }}</div>
-                </div>
-            {% endif %}
-            <div class="span-2">
-                <label>Checklist</label>
-                {% if checklist %}
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Document</th>
-                                <th style="width:18%">Uploaded</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in checklist %}
-                                <tr>
-                                    <td>{{ item.doc_type }}</td>
-                                    <td>{{ item.uploaded|yesno:"Yes,No" }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                {% else %}
-                    <p class="muted" style="margin:0;">No checklist items yet.</p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    {% if documents %}
-        <div class="card">
-            <h3 style="margin:0 0 10px 0;">Uploaded Documents</h3>
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Document Type</th>
-                        <th>File</th>
-                        <th style="width:14%">View File</th>
-                        <th style="width:22%">Uploaded</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for doc in documents %}
-                        <tr>
-                            <td>{{ doc.doc_type }}</td>
-                            <td class="muted">{{ doc.file.name|cut:"cases/" }}</td>
-                            <td><a class="btn btn-secondary btn-sm" href="{% url 'download_case_document' doc.id %}" target="_blank" rel="noopener">View</a></td>
-                            <td class="muted">{{ doc.uploaded_at|date:"M d, Y H:i" }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% endif %}
-
-    <form class="card" method="post">
-        {% csrf_token %}
-        <div style="display:flex; gap:10px; justify-content:space-between;">
-            <a class="btn btn-secondary" href="{% url 'draft_wizard' case.draft_id 2 %}">Back</a>
-            {% if not case.tracking_id %}
-                <button class="btn btn-secondary" type="submit" name="save_draft" value="1">Save Draft</button>
-            {% endif %}
-            <button class="btn btn-primary" type="submit">Submit Request</button>
-        </div>
-    </form>
-{% endif %}
-
 {% endblock %}
 
 {% block extra_js %}
 <script>
+    // Define Step safely for JS
+    const currentStep = Number("{{ step|default:1 }}");
+
+    // ===== GENERAL FORM PROTECTION =====
     (function () {
         var dirty = false;
-
         function markDirty(e) {
             if (!e || !e.target) return;
             if (!e.target.closest || !e.target.closest('form')) return;
             dirty = true;
         }
-
         window.addEventListener('beforeunload', function (e) {
             if (!dirty) return;
-            e.preventDefault();
-            e.returnValue = '';
+            e.preventDefault(); e.returnValue = '';
         });
-
         document.addEventListener('input', markDirty, true);
         document.addEventListener('change', markDirty, true);
         document.addEventListener('submit', function (e) {
-            if (e && e.target && e.target.tagName === 'FORM') {
-                dirty = false;
-            }
+            if (e && e.target && e.target.tagName === 'FORM') dirty = false;
         }, true);
+    })();
 
-        function syncRow(row) {
-            if (!row) return;
-            var select = row.querySelector('select[name$="-doc_type"]');
-            var customWrap = row.querySelector('[data-custom-doc]');
-            if (!select || !customWrap) return;
-            var show = (select.value === '__custom__');
-            customWrap.style.display = show ? '' : 'none';
-            if (!show) {
-                var input = customWrap.querySelector('input');
-                if (input) input.value = '';
-            }
-        }
-
-        function syncAll() {
-            document.querySelectorAll('table.table tbody tr').forEach(function (row) {
-                syncRow(row);
-            });
-        }
-
-        document.addEventListener('change', function (e) {
-            var t = e.target;
-            if (t && t.tagName === 'SELECT' && (t.name || '').endsWith('-doc_type')) {
-                syncRow(t.closest('tr'));
-            }
-        });
-
-        document.addEventListener('DOMContentLoaded', syncAll);
-        syncAll();
-
+    // ===== STEP 1 LOGIC =====
+    if (currentStep === 1) {
         function syncTitleType() {
             var typeSelect = document.getElementById('{{ form.case_type.id_for_label }}');
             var wrap = document.querySelector('[data-title-type-wrap]');
@@ -346,20 +1362,506 @@
             var val = (typeSelect.value || '').trim();
             var show = (val === 'land_first_time' || val === 'transfer_ownership_tax_decl');
             wrap.style.display = show ? '' : 'none';
-            if (!show) {
-                var sel = wrap.querySelector('select');
-                if (sel) sel.value = '';
-            }
+            if (!show) { var sel = wrap.querySelector('select'); if (sel) sel.value = ''; }
         }
 
         document.addEventListener('change', function (e) {
-            var t = e.target;
-            if (t && t.id === '{{ form.case_type.id_for_label }}') {
-                syncTitleType();
+            if (e.target && e.target.id === '{{ form.case_type.id_for_label }}') syncTitleType();
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // 1. Run the existing title sync
+            syncTitleType();
+
+            // 2. AUTO-LOCK LGU ORIGIN FOR LGU ADMINS
+            const userRole = "{{ request.user.role }}";
+            const userLguName = "{{ request.user.lgu_municipality|default:''|escapejs }}";
+            const areaSelect = document.getElementById('{{ form.area.id_for_label }}');
+
+            if (userRole === "lgu_admin" && areaSelect) {
+                // Loop through options to find and select the admin's specific LGU
+                for (let i = 0; i < areaSelect.options.length; i++) {
+                    if (areaSelect.options[i].text.includes(userLguName) || areaSelect.options[i].value === userLguName) {
+                        areaSelect.selectedIndex = i;
+                        break;
+                    }
+                }
+
+                // Visually "Lock" the dropdown
+                areaSelect.style.pointerEvents = "none";
+                areaSelect.style.backgroundColor = "#f1f5f9";
+                areaSelect.style.color = "#64748b";
+                areaSelect.tabIndex = -1;
+
+                // Add a helper message so the user knows why it's locked
+                // const lockNote = document.createElement('div');
+                // lockNote.innerHTML = '<i class="ri-lock-fill"></i> Automatically locked to your designation.';
+                // lockNote.style.fontSize = '0.75rem';
+                // lockNote.style.color = '#64748b';
+                // lockNote.style.marginTop = '0.4rem';
+                // lockNote.style.fontWeight = '600';
+                // areaSelect.parentNode.appendChild(lockNote);
             }
         });
-        document.addEventListener('DOMContentLoaded', syncTitleType);
-        syncTitleType();
-    })();
+    }
+
+    // ===== STEP 2 LOGIC =====
+    if (currentStep === 2) {
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('input[name$="-custom_doc_type"]').forEach(function (input) {
+                input.classList.add('custom-doc-input');
+                input.placeholder = "Enter document name...";
+            });
+            
+            // Setup Add+ interactions
+            const btnShow = document.getElementById('btn-show-custom-input');
+            if (btnShow) {
+                btnShow.addEventListener('click', function() {
+                    this.style.display = 'none';
+                    document.getElementById('custom-input-wrapper').style.display = 'flex';
+                    document.getElementById('custom_attachment_name').focus();
+                });
+            }
+        });
+
+        window.cancelCustomAdd = function() {
+            document.getElementById('custom-input-wrapper').style.display = 'none';
+            document.getElementById('btn-show-custom-input').style.display = 'flex';
+            document.getElementById('custom_attachment_name').value = '';
+        };
+
+        window.triggerCustomUpload = function() {
+            const nameInput = document.getElementById('custom_attachment_name');
+            const customName = nameInput.value.trim();
+            if (!customName) {
+                document.getElementById('nameRequiredModal').style.display = 'flex';
+                return;
+            }
+
+            const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
+            let totalForms = parseInt(totalFormsInput.value);
+            
+            const rows = document.querySelectorAll('.doc-list .doc-row');
+            if (rows.length === 0) {
+                // Fallback to server side submission if no rows exist
+                const submitBtn = document.createElement('button');
+                submitBtn.type = 'submit';
+                submitBtn.name = 'add_row';
+                submitBtn.value = '1';
+                document.querySelector('form[method="post"]').appendChild(submitBtn);
+                submitBtn.click();
+                return;
+            }
+            
+            const templateRow = rows[rows.length - 1];
+            const newRow = templateRow.cloneNode(true);
+            
+            const oldIndex = templateRow.id.split('-')[1];
+            const newIndex = totalForms;
+            
+            newRow.id = `row-${newIndex}`;
+            
+            const updateAttrs = (elem) => {
+                const regex1 = new RegExp(`-${oldIndex}-`, 'g');
+                const regex2 = new RegExp(`-${oldIndex}`, 'g');
+                if (elem.id) elem.id = elem.id.replace(regex1, `-${newIndex}-`).replace(regex2, `-${newIndex}`);
+                if (elem.name) elem.name = elem.name.replace(regex1, `-${newIndex}-`);
+                if (elem.htmlFor) elem.htmlFor = elem.htmlFor.replace(regex1, `-${newIndex}-`);
+                if (elem.getAttribute('onclick')) {
+                    elem.setAttribute('onclick', elem.getAttribute('onclick').replace(regex2, `-${newIndex}`));
+                }
+                Array.from(elem.children).forEach(updateAttrs);
+            };
+            updateAttrs(newRow);
+            
+            // Reset input values
+            const inputs = newRow.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                if (input.type === 'checkbox' || input.type === 'radio') {
+                    input.checked = false;
+                } else if (input.type !== 'hidden') {
+                    input.value = '';
+                }
+            });
+
+            document.querySelector('.doc-list').appendChild(newRow);
+            
+            newRow.classList.remove('state-completed', 'state-dropzone');
+            newRow.classList.add('state-pending');
+            
+            const docTypeSelect = newRow.querySelector(`select[name="form-${newIndex}-doc_type"]`);
+            if (docTypeSelect) {
+                docTypeSelect.value = '__custom__';
+            }
+            
+            const customDocInput = newRow.querySelector(`input[name="form-${newIndex}-custom_doc_type"]`);
+            if (customDocInput) {
+                customDocInput.value = customName;
+            }
+            
+            const isDeletedInput = newRow.querySelector(`input[name="form-${newIndex}-is_deleted"]`);
+            if (isDeletedInput) isDeletedInput.value = 'false';
+
+            newRow.setAttribute('data-is-custom', 'true');
+
+            const customDisplays = newRow.querySelectorAll('.custom-name-display');
+            customDisplays.forEach(d => {
+                d.textContent = customName;
+                d.style.display = 'inline';
+                d.style.fontStyle = 'normal';
+                d.style.color = 'var(--text-main)';
+            });
+            
+            const standardDisplays = newRow.querySelectorAll('.standard-name-display');
+            standardDisplays.forEach(d => {
+                d.style.display = 'none';
+            });
+            
+            const renameBtns = newRow.querySelectorAll('.rename-btn');
+            renameBtns.forEach(btn => btn.style.display = 'inline-flex');
+
+            totalFormsInput.value = totalForms + 1;
+            
+            cancelCustomAdd();
+            
+            // Open file dialog automatically
+            const fileInput = newRow.querySelector(`input[type="file"][name="form-${newIndex}-file"]`);
+            if (fileInput) {
+                fileInput.click();
+            }
+        };
+
+        window.openDropzone = function (rowId) {
+            document.querySelectorAll('.doc-row.state-dropzone').forEach(function (row) {
+                row.classList.remove('state-dropzone');
+                row.classList.add('state-pending');
+            });
+            const targetRow = document.getElementById(rowId);
+            if (targetRow) {
+                targetRow.classList.remove('state-pending');
+                targetRow.classList.add('state-dropzone');
+            }
+        };
+
+        window.confirmDeleteDoc = function(rowId, inputId) {
+            document.getElementById('delete_target_row').value = rowId;
+            document.getElementById('delete_target_input').value = inputId;
+            document.getElementById('deleteDocModal').style.display = 'flex';
+        };
+
+        window.executeDelete = function() {
+            const rowId = document.getElementById('delete_target_row').value;
+            const inputId = document.getElementById('delete_target_input').value;
+            document.getElementById('deleteDocModal').style.display = 'none';
+            clearFile(rowId, inputId);
+        };
+
+        window.clearFile = function (rowId, inputId) {
+            const fileInput = document.getElementById(inputId);
+            const row = document.getElementById(rowId);
+            if (fileInput) fileInput.value = '';
+
+            // Mark as deleted for backend
+            const isDeletedInput = row.querySelector('input[name$="-is_deleted"]');
+            if (isDeletedInput) isDeletedInput.value = 'true';
+
+            if (row) {
+                const isCustom = row.getAttribute('data-is-custom') === 'true';
+                
+                if (isCustom) {
+                    row.style.display = 'none';
+                } else {
+                    row.classList.remove('state-completed');
+                    row.classList.add('state-pending');
+                }
+            }
+        };
+
+        document.addEventListener('change', function (e) {
+            if (e.target && e.target.type === 'file') {
+                const fileInput = e.target;
+                const row = fileInput.closest('.doc-row');
+                if (row && fileInput.files.length > 0) {
+                    // Reset is_deleted if a new file is selected
+                    const isDeletedInput = row.querySelector('input[name$="-is_deleted"]');
+                    if (isDeletedInput) isDeletedInput.value = 'false';
+
+                    const fileName = fileInput.files[0].name;
+                    const rowIndex = row.id.split('-')[1];
+                    const nameDisplay = document.getElementById('filename-' + rowIndex);
+                    const metaDisplay = document.getElementById('filemeta-' + rowIndex);
+                    const customLabelDisplays = row.querySelectorAll('.custom-name-display');
+
+                    if (nameDisplay) nameDisplay.textContent = fileName;
+                    if (metaDisplay) {
+                        const now = new Date();
+                        let hours = now.getHours(); let ampm = hours >= 12 ? 'PM' : 'AM'; hours = hours % 12; hours = hours ? hours : 12;
+                        let mins = now.getMinutes() < 10 ? '0' + now.getMinutes() : now.getMinutes();
+                        metaDisplay.textContent = now.getFullYear() + '-' + (now.getMonth() + 1).toString().padStart(2, '0') + '-' + now.getDate().toString().padStart(2, '0') + ' ' + hours + ':' + mins + ' ' + ampm;
+                    }
+                    const customInput = row.querySelector('input[name$="-custom_doc_type"]');
+                    if (customInput && customInput.value.trim() !== '') {
+                        customLabelDisplays.forEach(d => d.textContent = customInput.value.trim());
+                    }
+                    row.classList.remove('state-pending', 'state-dropzone');
+                    row.classList.add('state-completed');
+                }
+            }
+        });
+        
+        window.renameCustomDoc = function(rowId) {
+            const row = document.getElementById(rowId);
+            if (!row) return;
+            const input = row.querySelector('input[name$="-custom_doc_type"]');
+            const currentName = input && input.value ? input.value : '';
+            
+            document.getElementById('rename_attachment_name').value = currentName;
+            document.getElementById('rename_target_row').value = rowId;
+            document.getElementById('renameDocModal').style.display = 'flex';
+            setTimeout(() => document.getElementById('rename_attachment_name').focus(), 50);
+        };
+        
+        window.submitRename = function() {
+            const newName = document.getElementById('rename_attachment_name').value;
+            const rowId = document.getElementById('rename_target_row').value;
+            
+            if (newName.trim() === '') {
+                document.getElementById('rename_attachment_name').focus();
+                return;
+            }
+            
+            const row = document.getElementById(rowId);
+            if (row) {
+                const input = row.querySelector('input[name$="-custom_doc_type"]');
+                if (input) input.value = newName.trim();
+                const displays = row.querySelectorAll('.custom-name-display');
+                displays.forEach(d => d.textContent = newName.trim());
+            }
+            document.getElementById('renameDocModal').style.display = 'none';
+        };
+
+        document.addEventListener('dragover', function (e) {
+            if (e.target.closest('.dropzone-area')) {
+                e.preventDefault();
+                e.target.closest('.dropzone-area').style.borderColor = '#1e3a8a';
+                e.target.closest('.dropzone-area').style.backgroundColor = '#eff6ff';
+            }
+        });
+        document.addEventListener('dragleave', function (e) {
+            if (e.target.closest('.dropzone-area')) {
+                e.preventDefault();
+                e.target.closest('.dropzone-area').style.borderColor = '#cbd5e1';
+                e.target.closest('.dropzone-area').style.backgroundColor = 'white';
+            }
+        });
+        document.addEventListener('drop', function (e) {
+            if (e.target.closest('.dropzone-area')) {
+                e.target.closest('.dropzone-area').style.borderColor = '#cbd5e1';
+                e.target.closest('.dropzone-area').style.backgroundColor = 'white';
+            }
+        });
+    }
+
+    // ===== STEP 3: DOCUMENT PREVIEW LOGIC =====
+    if (currentStep === 3) {
+        window.changePreview = function (tabElement, fileUrl) {
+            document.querySelectorAll('.preview-tab').forEach(function (tab) {
+                tab.classList.remove('active');
+            });
+
+            tabElement.classList.add('active');
+
+            const iframe = document.getElementById('doc-preview-frame');
+            const emptyState = document.getElementById('doc-empty-state');
+
+            if (iframe && fileUrl) {
+                iframe.src = fileUrl + "#toolbar=0";
+                iframe.style.display = "block";
+                if (emptyState) emptyState.style.display = "none";
+            } else if (emptyState) {
+                if (iframe) iframe.style.display = "none";
+                emptyState.style.display = "block";
+            }
+        };
+
+        // Frontend guard: block submission if no documents are attached
+        const step3Form = document.getElementById('step3SubmitForm');
+        if (step3Form) {
+            step3Form.addEventListener('submit', function (e) {
+                // Count preview tabs that have a data-url (real uploaded documents)
+                const docTabs = document.querySelectorAll('#doc-tabs .preview-tab[data-url]');
+                if (docTabs.length === 0) {
+                    e.preventDefault();
+                    const modal = document.getElementById('noDocsModal');
+                    if (modal) modal.style.display = 'flex';
+                }
+            });
+        }
+    }
+
+    // ===== SMART DEFAULT: AREA UNIT =====
+    if (currentStep === 1) {
+        document.addEventListener('DOMContentLoaded', function() {
+            const classificationSelect = document.getElementById('{{ form.classification.id_for_label }}');
+            const areaUnitSelect = document.getElementById('{{ form.area_unit.id_for_label }}');
+            
+            if (classificationSelect && areaUnitSelect) {
+                const classificationUnitMap = {
+                    'residential': 'sqm',
+                    'commercial':  'sqm',
+                    'industrial':  'sqm',
+                    'special':     'sqm',
+                    'agricultural':'ha',
+                    'mineral':     'ha',
+                    'timberland':  'ha',
+                };
+                
+                function updateAreaUnit() {
+                    const selectedClass = classificationSelect.value;
+                    if (classificationUnitMap[selectedClass]) {
+                        areaUnitSelect.value = classificationUnitMap[selectedClass];
+                    }
+                }
+                
+                classificationSelect.addEventListener('change', updateAreaUnit);
+                
+                // On page load, also apply the default based on current selected value
+                // We only apply this on load if there isn't a form validation error that they're trying to fix,
+                // but as per instructions we just apply it.
+                if (!areaUnitSelect.dataset.userModified) {
+                     updateAreaUnit();
+                }
+                
+                // Allow user to manually override Area Unit
+                areaUnitSelect.addEventListener('change', function() {
+                    areaUnitSelect.dataset.userModified = 'true';
+                });
+            }
+        });
+    }
+</script>
+
+<script>
+(function () {
+  const ownershipSelect = document.getElementById('id_ownership_type');
+  if (!ownershipSelect) return;
+
+  const standardFields  = document.getElementById('standard-name-fields');
+  const spouseGroup     = document.getElementById('spouse-name-group');
+  const corpGroup       = document.getElementById('corporation-name-group');
+  const coOwnersGroup   = document.getElementById('co-owners-group');
+
+  function applyOwnershipUI(value) {
+    // Reset all to hidden first
+    standardFields.style.display  = 'none';
+    spouseGroup.style.display     = 'none';
+    corpGroup.style.display       = 'none';
+    coOwnersGroup.style.display   = 'none';
+
+    if (value === 'single') {
+      standardFields.style.display = 'contents';
+    }
+    else if (value === 'married') {
+      standardFields.style.display = 'contents';
+      spouseGroup.style.display    = 'block';
+    }
+    else if (value === 'corporation') {
+      corpGroup.style.display = 'block';
+    }
+    else if (value === 'others') {
+      standardFields.style.display = 'contents';
+      coOwnersGroup.style.display  = 'block';
+    }
+  }
+
+  // Apply on page load (handles back-navigation and edit state)
+  applyOwnershipUI(ownershipSelect.value);
+
+  // Listen for changes
+  ownershipSelect.addEventListener('change', function(e) {
+    applyOwnershipUI(e.target.value);
+  });
+})();
+</script>
+
+<script>
+    // --- Co-Owners Dynamic Rows ---
+    window.addCoOwnerRow = function(firstName = '', lastName = '') {
+        const container = document.getElementById('co-owners-container');
+        if(!container) return;
+        const rowId = 'co-owner-' + Date.now() + Math.floor(Math.random() * 1000);
+        
+        const rowHTML = `
+            <div id="${rowId}" style="display: flex; gap: 0.5rem; align-items: center; animation: fadeIn 0.2s ease-in-out;">
+                <div style="flex: 1;">
+                    <input type="text" class="custom-input co-owner-first" placeholder="First Name" value="${firstName.replace(/"/g, '&quot;')}" oninput="updateCoOwnersInput()">
+                </div>
+                <div style="flex: 1;">
+                    <input type="text" class="custom-input co-owner-last" placeholder="Last Name" value="${lastName.replace(/"/g, '&quot;')}" oninput="updateCoOwnersInput()">
+                </div>
+                <button type="button" onclick="confirmRemoveCoOwner('${rowId}')" style="background: transparent; color: #ef4444; border: none; cursor: pointer; padding: 0.5rem; border-radius: 4px; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.backgroundColor='#fee2e2'" onmouseout="this.style.backgroundColor='transparent'" title="Remove Co-Owner">
+                    <i class="ri-close-line" style="font-size: 1.25rem;"></i>
+                </button>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', rowHTML);
+        updateCoOwnersInput();
+    }
+
+    window.confirmRemoveCoOwner = function(rowId) {
+        document.getElementById('remove_coowner_target_row').value = rowId;
+        document.getElementById('removeCoOwnerModal').style.display = 'flex';
+    };
+
+    window.executeRemoveCoOwner = function() {
+        const rowId = document.getElementById('remove_coowner_target_row').value;
+        document.getElementById('removeCoOwnerModal').style.display = 'none';
+        
+        const row = document.getElementById(rowId);
+        if (row) {
+            row.remove();
+            updateCoOwnersInput();
+        }
+    };
+
+    window.updateCoOwnersInput = function() {
+        const rows = document.querySelectorAll('#co-owners-container > div');
+        const coOwners = [];
+        rows.forEach(row => {
+            const first = row.querySelector('.co-owner-first').value.trim();
+            const last = row.querySelector('.co-owner-last').value.trim();
+            if (first || last) {
+                coOwners.push(`${first} ${last}`.trim());
+            }
+        });
+        const coOwnersInput = document.getElementById('id_co_owners');
+        if(coOwnersInput) {
+            coOwnersInput.value = coOwners.join(', ');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const coOwnersInput = document.getElementById('id_co_owners');
+        if (coOwnersInput) {
+            if (coOwnersInput.value.trim()) {
+                const names = coOwnersInput.value.split(',');
+                names.forEach(name => {
+                    name = name.trim();
+                    if (name) {
+                        const parts = name.split(' ');
+                        if (parts.length > 1) {
+                            const last = parts.pop();
+                            const first = parts.join(' ');
+                            addCoOwnerRow(first, last);
+                        } else {
+                            addCoOwnerRow(name, '');
+                        }
+                    }
+                });
+            } else {
+                addCoOwnerRow();
+            }
+        }
+    });
 </script>
 {% endblock %}

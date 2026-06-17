@@ -1,22 +1,108 @@
 {% extends "base.html" %}
+{% load static %}
+
 {% block title %}Verify Code{% endblock %}
-{% block container_class %}container--narrow{% endblock %}
+{% block container_class_anon %}login-page-container{% endblock %}
 
 {% block content %}
-<div class="card" style="text-align:center;">
-    <h1 class="page-title">Verify Reset Code</h1>
-    <p class="page-subtitle">We sent a 6-digit code to <strong>{{ email }}</strong>.</p>
+<style>
+    /* Full screen layout overrides - shared with login */
+    body { background: #fff; }
+    .container.login-page-container { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+    .login-wrapper { display: flex; min-height: 100vh; width: 100%; background: #fff; }
+    
+    .login-left { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 10%; min-width: 450px; }
+    .logo-container { margin-bottom: 48px; }
+    .logo-container img { height: 44px; width: auto; }
+    
+    .welcome-header { margin-bottom: 40px; }
+    .welcome-header h1 { font-size: 2.25rem; font-weight: 800; margin: 0 0 8px 0; color: #111827; }
+    .welcome-header p { color: #6b7280; font-size: 1rem; margin: 0; }
+    
+    .form-group { margin-bottom: 24px; }
+    .form-label { display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 8px; color: #374151; }
+    .form-input { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px 16px; width: 100%; font-size: 1rem; transition: all 0.2s; text-align: center; letter-spacing: 0.2em; }
+    .form-input:focus { background: #fff; border-color: #1f3a8a; outline: none; box-shadow: 0 0 0 4px rgba(31, 58, 138, 0.1); }
+    
+    .btn-signin { background: #4f46e5; color: #fff; padding: 14px; border-radius: 12px; font-weight: 700; width: 100%; border: none; cursor: pointer; font-size: 1rem; margin-bottom: 20px; transition: transform 0.1s, background 0.2s; }
+    .btn-signin:hover { background: #4338ca; }
+    
+    .footer-text { text-align: center; color: #6b7280; font-size: 0.95rem; }
+    .footer-link { color: #4f46e5; font-weight: 700; text-decoration: none; }
+    .footer-link:hover { text-decoration: underline; }
+    
+    .login-right { flex: 1.2; padding: 24px; display: flex; background: #f8fafc; }
+    .carousel-card { flex: 1; position: relative; border-radius: 32px; overflow: hidden; background: #000; }
+    .carousel-item { position: absolute; inset: 0; opacity: 0; transition: opacity 1.2s ease-in-out; z-index: 1; }
+    .carousel-item.active { opacity: 1; z-index: 2; }
+    .carousel-item img { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; }
+    .carousel-content { position: absolute; bottom: 0; left: 0; right: 0; padding: 64px; z-index: 10; color: #fff; background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%); }
+    .carousel-content h2 { font-size: 3rem; font-weight: 800; line-height: 1.1; margin: 0 0 24px 0; letter-spacing: -0.02em; }
+    .carousel-content p { font-size: 1.15rem; line-height: 1.6; opacity: 0.9; max-width: 500px; margin: 0; }
+    
+    /* Carousel Indicators */
+    .carousel-indicators { position: absolute; bottom: 48px; left: 64px; display: flex; gap: 10px; z-index: 20; }
+    .indicator { width: 8px; height: 8px; border-radius: 4px; background: rgba(255,255,255,0.3); cursor: pointer; transition: all 0.3s ease; }
+    .indicator.active { width: 32px; background: #fff; }
 
-    <form method="post" style="text-align:left;">
-        {% csrf_token %}
-        <label for="id_code">Verification Code</label>
-        <input type="text" id="id_code" name="code" required maxlength="6" pattern="\d{6}" placeholder="123456" inputmode="numeric">
+    @media (max-width: 1100px) { .login-right { display: none; } .login-left { padding: 40px; max-width: 600px; margin: 0 auto; } }
+</style>
 
-        <button class="btn btn-primary" type="submit" style="width:100%; margin-top:14px;">Verify Code</button>
-        
-        <div style="margin-top:12px; text-align:center;">
-            <a class="link-muted" href="{% url 'forgot_password' %}">Resend Code</a>
+<div class="login-wrapper" x-data="{ 
+    activeSlide: 0, 
+    slides: [
+        { title: 'Cebu Provincial Capitol.', subtitle: 'The seat of government for the Province of Cebu, representing our commitment to excellence and public service.', image: 'https://i.pinimg.com/1200x/d7/59/7f/d7597fe3104d6ec859faa6ec23a63296.jpg' },
+        { title: 'Unified Cebu Tracking.', subtitle: 'Connecting the Provincial Capitol and LGUs through a transparent, efficient, and robust tracking system.', image: 'https://i.pinimg.com/736x/25/16/53/2516539a218a892c55fb731ee6edd6b4.jpg' },
+        { title: 'Heritage & Governance.', subtitle: 'Preserving our history while modernizing administrative processes to better serve the people of Cebu.', image: 'https://i.pinimg.com/736x/f2/ec/47/f2ec4719565104c50a109318b4bee515.jpg' }
+    ],
+    init() { setInterval(() => { this.activeSlide = (this.activeSlide + 1) % this.slides.length; }, 6000); }
+}">
+    <div class="login-left">
+        <div class="logo-container">
+            <a href="/">
+                <img src="{% static 'core/PASTrack-logo.png' %}" alt="PAStrack">
+            </a>
         </div>
-    </form>
+        
+        <div class="welcome-header">
+            <h1>Verify Code</h1>
+            <p>We've sent a 6-digit OTP to <strong>{{ email }}</strong>.</p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label class="form-label" for="id_code">Verification Code</label>
+                <input type="text" name="code" id="id_code" class="form-input" placeholder="000000" required maxlength="6" pattern="\d{6}" inputmode="numeric" autofocus>
+            </div>
+            
+            <button type="submit" class="btn-signin">Verify Code</button>
+            
+            <p class="footer-text">
+                Didn't receive the code? <a href="{% url 'forgot_password' %}" class="footer-link">Resend OTP</a>
+            </p>
+        </form>
+    </div>
+
+    <div class="login-right">
+        <div class="carousel-card shadow-2xl">
+            <template x-for="(slide, index) in slides" :key="index">
+                <div class="carousel-item" :class="{ 'active': activeSlide === index }">
+                    <img :src="slide.image" :alt="slide.title">
+                    <div class="carousel-content">
+                        <h2 x-text="slide.title"></h2>
+                        <p x-text="slide.subtitle"></p>
+                    </div>
+                </div>
+            </template>
+            
+            <div class="carousel-indicators">
+                <template x-for="(slide, index) in slides" :key="index">
+                    <div class="indicator" :class="{ 'active': activeSlide === index }" @click="activeSlide = index"></div>
+                </template>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

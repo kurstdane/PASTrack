@@ -301,6 +301,59 @@ class Module2CapitolWorkflowTests(TestCase):
         self.assertEqual(case.return_reason, "Missing document")
         self.assertEqual(case.assigned_to_id, self.examiner.id)
 
+    def test_examiner_must_review_documents_before_submitting_for_approval(self):
+        case = Case.objects.create(
+            client_name="Doc Case",
+            client_contact="0912",
+            submitted_by=self.lgu,
+            status="in_review",
+            lgu_submitted_at=timezone.now(),
+            assigned_to=self.examiner,
+            assigned_at=timezone.now(),
+        )
+        doc = CaseDocument.objects.create(
+            case=case,
+            doc_type="Endorsement Letter",
+            file=SimpleUploadedFile("doc.txt", b"hello", content_type="text/plain"),
+            uploaded_by=self.lgu,
+        )
+
+        self.client.login(username=self.examiner.username, password="StrongPass123!")  # noqa: S106
+
+        resp1 = self.client.post(reverse("submit_for_approval", kwargs={"tracking_id": case.tracking_id}))
+        self.assertEqual(resp1.status_code, 302)
+        case.refresh_from_db()
+        self.assertEqual(case.status, "in_review")
+
+        resp2 = self.client.post(
+            reverse("review_case_documents", kwargs={"tracking_id": case.tracking_id}),
+            {f"reviewed_ok_{doc.id}": "1", f"review_remark_{doc.id}": "", "doc_id": str(doc.id)},
+        )
+        self.assertEqual(resp2.status_code, 302)
+        doc.refresh_from_db()
+        self.assertTrue(doc.reviewed_ok)
+
+        resp3 = self.client.post(reverse("submit_for_approval", kwargs={"tracking_id": case.tracking_id}))
+        self.assertEqual(resp3.status_code, 302)
+        case.refresh_from_db()
+        self.assertEqual(case.status, "for_approval")
+
+    def test_examiner_sees_forward_to_approver_button_on_case_detail(self):
+        case = Case.objects.create(
+            client_name="UI Case",
+            client_contact="0912",
+            submitted_by=self.lgu,
+            status="in_review",
+            lgu_submitted_at=timezone.now(),
+            assigned_to=self.examiner,
+            assigned_at=timezone.now(),
+        )
+
+        self.client.login(username=self.examiner.username, password="StrongPass123!")  # noqa: S106
+        resp = self.client.get(reverse("case_detail", kwargs={"tracking_id": case.tracking_id}))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Forward to Approver")
+
 
 class DocumentAccessTests(TestCase):
     def setUp(self):
@@ -398,3 +451,21 @@ class AuthenticationBackendsTests(TestCase):
 
         ok = self.client.login(username="admin@gmail.com", password="StrongPass123!")  # noqa: S106
         self.assertTrue(ok)
+
+
+class LogoutFlowTests(TestCase):
+    def test_logout_endpoint_logs_user_out(self):
+        u = CustomUser(email="user3@example.com", role="lgu_admin", full_name="User Three", lgu_municipality="Alcantara")
+        u.set_password("StrongPass123!")
+        u.save()
+        u.account_status = "active"
+        u.save(update_fields=["account_status", "is_active"])
+
+        self.client.force_login(u)
+        self.assertTrue(self.client.session.get("_auth_user_id"))
+
+        resp2 = self.client.post(reverse("logout"))
+        self.assertEqual(resp2.status_code, 302)
+        self.assertEqual(resp2.url, reverse("login"))
+
+        self.assertIsNone(self.client.session.get("_auth_user_id"))

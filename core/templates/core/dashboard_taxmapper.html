@@ -1,0 +1,233 @@
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <style>
+        /* Shared Dashboard CSS for Uniformity */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .greeting h1 { font-size: 1.5rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.25rem; }
+        .greeting span { font-size: 0.875rem; color: var(--text-muted); }
+        
+        .btn-primary {
+            background-color: var(--primary); color: white; border: none;
+            padding: 0.6rem 1.25rem; border-radius: var(--radius-md);
+            font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: 0.2s;
+            display: flex; align-items: center; gap: 0.5rem; box-shadow: var(--shadow-sm); text-decoration: none;
+        }
+        .btn-primary:hover { background-color: var(--primary-hover); box-shadow: var(--shadow-md); transform: translateY(-1px); color: white; }
+
+        /* KPI Grid */
+        .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
+        .kpi-card {
+            background: var(--bg-surface); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 1.25rem;
+            display: flex; align-items: flex-start; gap: 1.25rem;
+            box-shadow: var(--shadow-sm); transition: var(--transition);
+        }
+        .kpi-card:hover { border-color: var(--primary); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+        
+        .kpi-icon-box {
+            width: 48px; height: 48px; border-radius: var(--radius-md);
+            background-color: var(--primary-light); display: flex; align-items: center; justify-content: center;
+            color: var(--primary); font-size: 1.5rem; flex-shrink: 0;
+        }
+        .kpi-data h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.15rem; color: var(--text-main); }
+        .kpi-data span { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+        .kpi-trend { font-size: 0.75rem; font-weight: 500; display: flex; align-items: center; gap: 0.25rem; }
+        .trend-up { color: var(--success-text); }
+        .trend-neutral { color: var(--text-light); }
+
+        /* Panels */
+        .panel {
+            background: var(--bg-surface); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);
+            margin-bottom: 2rem; padding: 1.5rem;
+        }
+        
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .panel-title { font-size: 1.125rem; font-weight: 600; color: var(--text-main); margin: 0; }
+        .view-all-link { font-size: 0.875rem; color: var(--primary); text-decoration: none; font-weight: 500; transition: 0.2s; }
+        .view-all-link:hover { color: var(--primary-hover); text-decoration: underline; }
+
+        /* Table */
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { font-size: 0.75rem; font-weight: 600; color: var(--text-main); padding: 1rem 0.5rem; border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.05em; }
+        td { padding: 1.25rem 0.5rem; border-bottom: 1px solid #f1f5f9; font-size: 0.875rem; vertical-align: middle; transition: 0.2s; }
+        tbody tr:hover td { background-color: #fafbfc; }
+
+        .user-info strong { display: block; font-size: 0.875rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.1rem; }
+        .user-info span { font-size: 0.75rem; color: var(--text-muted); }
+
+        /* Action Links */
+        .action-link { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; text-decoration: none; transition: 0.2s; border: 1px solid transparent; }
+        .action-link.primary { background: var(--primary-light); color: var(--primary); }
+        .action-link.primary:hover { background: var(--primary); color: white; }
+        .action-link.secondary { background: transparent; color: var(--primary); border-bottom: 1px solid transparent; border-radius: 0; padding: 0.2rem 0; }
+        .action-link.secondary:hover { border-bottom-color: var(--primary); }
+
+        /* Bottom Grid & Activity */
+        .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .activity-list { display: flex; flex-direction: column; gap: 1.25rem; }
+        .activity-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 0.5rem 0; border-bottom: 1px solid #f8fafc; }
+        .activity-item:last-child { border-bottom: none; }
+        .activity-left { display: flex; gap: 1rem; align-items: flex-start; }
+        .activity-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+        
+        .icon-green { background: var(--success-bg); color: var(--success-text); }
+        .icon-blue { background: var(--primary-light); color: var(--primary); }
+        
+        .activity-text strong { display: block; font-size: 0.875rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.15rem; }
+        .activity-text span { font-size: 0.75rem; color: var(--text-muted); line-height: 1.4; display: block; }
+        .activity-time { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; margin-top: 0.2rem; font-weight: 500; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="header">
+        <div class="greeting">
+            <h1>Hi, {{ user.first_name|default:user.email }}!</h1>
+            <span>Tax Mapper Dashboard</span>
+        </div>
+        <a href="{% url 'submissions' %}?scope=me" class="btn-primary">
+            View My Workspace <i class="ri-arrow-right-line"></i>
+        </a>
+    </div>
+
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-icon-box" style="color: #0369a1; background: #e0f2fe;"><i class="ri-map-pin-line"></i></div>
+            <div class="kpi-data">
+                <h2>{{ stats_pending_mapping }}</h2>
+                <span>Pending Mapping</span>
+                <div class="kpi-trend trend-neutral"><i class="ri-loader-line"></i> Active Queue</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon-box" style="color: #166534; background: #dcfce7;"><i class="ri-map-2-line"></i></div>
+            <div class="kpi-data">
+                <h2>{{ stats_completed_today }}</h2>
+                <span>Mapped Today</span>
+                <div class="kpi-trend trend-up"><i class="ri-arrow-up-line"></i> Shift Output</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon-box" style="color: #6b21a8; background: #f3e8ff;"><i class="ri-stack-line"></i></div>
+            <div class="kpi-data">
+                <h2>{{ stats_total_mapped }}</h2>
+                <span>Total Cases Handled</span>
+                <div class="kpi-trend trend-up"><i class="ri-line-chart-line"></i> Cumulative Volume</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header">
+            <h3 class="panel-title">Mapping Queue</h3>
+            <a href="{% url 'submissions' %}?scope=me" class="view-all-link">View Workspace <i class="ri-arrow-right-line" style="vertical-align: middle;"></i></a>
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">Case Number</th>
+                        <th style="width: 35%;">Client / Request</th>
+                        <th style="width: 20%;">LGU Origin</th>
+                        <th style="width: 15%;">Date Assigned</th>
+                        <th style="width: 15%; text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for case in page_obj %}
+                    <tr>
+                        <td><span style="font-family: monospace; font-weight: 700; color: var(--text-main);">{{ case.tracking_id }}</span></td>
+                        <td>
+                            <div class="user-info">
+                                <strong>{{ case.client_name }}</strong>
+                                <span>{{ case.get_case_type_display }}</span>
+                            </div>
+                        </td>
+                        <td><span style="color: var(--text-muted);">{{ case.submitted_by.lgu_municipality|default:"—" }}</span></td>
+                        <td style="color: var(--text-muted);">{{ case.taxmapped_at|default:case.updated_at|date:"M d, g:i A" }}</td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            <div style="display: flex; gap: 1rem; justify-content: flex-end; align-items: center;">
+                                <a href="#" onclick="openQuickView('{{ case.tracking_id }}'); return false;" class="action-link secondary">Preview</a>
+                                <a href="{% url 'case_detail' case.tracking_id %}" class="action-link primary">Process Mapping</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 4rem 2rem; color: var(--text-muted);">
+                            <i class="ri-road-map-line" style="font-size: 2.5rem; color: var(--border); display: block; margin-bottom: 1rem;"></i>
+                            <h3 style="color: var(--text-main); font-weight: 600; margin-bottom: 0.25rem;">Your map is clear!</h3>
+                            <p style="font-size: 0.875rem;">No transactions currently require spatial verification.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="bottom-grid">
+        <div class="panel" style="margin-bottom: 0;">
+            <div class="panel-header">
+                <h3 class="panel-title">Recently Mapped</h3>
+                <a href="{% url 'submissions' %}?scope=all&tab=for_numbering" class="view-all-link">View Output <i class="ri-arrow-right-line" style="vertical-align: middle;"></i></a>
+            </div>
+            
+            <div class="activity-list">
+                {% for c in recently_mapped_cases %}
+                <div class="activity-item">
+                    <div class="activity-left" style="align-items: center;">
+                        <div class="activity-icon icon-green">
+                            <i class="ri-map-pin-user-line"></i>
+                        </div>
+                        <div class="activity-text">
+                            <strong style="font-family: monospace; color: #166534;">{{ c.tracking_id }}</strong>
+                            <span>{{ c.client_name }}</span>
+                        </div>
+                    </div>
+                    <a href="#" onclick="openQuickView('{{ c.tracking_id }}'); return false;" class="action-link secondary" style="padding: 0.2rem 0.5rem;"><i class="ri-eye-line"></i></a>
+                </div>
+                {% empty %}
+                <div style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.85rem;">
+                    No cases mapped recently.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="panel" style="margin-bottom: 0;">
+            <div class="panel-header">
+                <h3 class="panel-title">Recent Account Activity</h3>
+                <a href="{% url 'audit_logs' %}" class="view-all-link">View Full History <i class="ri-arrow-right-line" style="vertical-align: middle;"></i></a>
+            </div>
+
+            <div class="activity-list">
+                {% for log in routing_activity %}
+                <div class="activity-item">
+                    <div class="activity-left">
+                        <div class="activity-icon icon-blue">
+                            <i class="ri-arrow-right-down-line"></i>
+                        </div>
+                        <div class="activity-text">
+                            <strong>{{ log.actor.full_name|default:log.actor.email }}</strong>
+                            <span>
+                                Routed <span style="font-family: monospace; font-weight: 600;">{{ log.target_object|slice:"6:" }}</span> for mapping
+                            </span>
+                        </div>
+                    </div>
+                    <div class="activity-time">{{ log.created_at|timesince }} ago</div>
+                </div>
+                {% empty %}
+                <div style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.85rem;">
+                    No recent incoming cases.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
